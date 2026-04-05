@@ -1,188 +1,165 @@
-# TokenRoll Claude Code Plugin
+# llmdoc Claude Code Plugin
 
-<div align="center">
+`llmdoc` workflow for Claude Code with a small public surface:
 
-**llmdoc + SubAgent RAG: Solve the Context Floor Problem**
+- Skill: `llmdoc`
+- `/llmdoc:init` bootstraps `llmdoc/`
+- `/llmdoc:update` writes reflection first, then updates stable docs
 
-[![GitHub](https://img.shields.io/badge/GitHub-TokenRollAI%2Fcc--plugin-blue?logo=github)](https://github.com/TokenRollAI/cc-plugin)
+The default setup is simple:
 
-[English](README.md) | [简体中文](README.zh-CN.md)
+- `CLAUDE.md` and `AGENTS.md` only need one short rule: step one is loading the `llmdoc` skill
+- the skill entry is short, while detailed rationale, protocols, and templates are split under `skills/llmdoc/references/`
+- the skill also defines proactive guide/reflection reading and proactive user discussion before non-trivial edits
+- the skill also restores the good pattern of proactively asking whether to run `/llmdoc:update` at the end of non-trivial tasks
+- agents and commands stay focused on execution instead of carrying a large amount of duplicated guidance
 
-</div>
+## Why This Version
 
----
+The previous design exposed too many internal steps:
 
-## The Problem: Context Floor
+- separate skills for reading docs, investigating, and doc workflow
+- separate `scout` and `investigator` agents with overlapping responsibilities
+- heavy line-level references instead of file-level retrieval
 
-In serious production environments, AI Coding Agents face a fundamental challenge: **they don't truly understand your codebase**. They achieve understanding through CLAUDE.md + massive code file reading, which leads to:
+This refactor keeps the public interface small and moves the rest into one reusable skill.
 
-- Endless tool calls before reaching sufficient context
-- High token consumption with low information density
-- Slow Time to Context Ready (TTCR)
+## Public Surface
 
-We call the "minimum context richness required for an Agent to solve a task" the **Context Floor**.
+- Skill: `llmdoc`
+- Commands: `/llmdoc:init`, `/llmdoc:update`
+- Codex CLI plugin support: `.codex-plugin/plugin.json` and `.agents/plugins/marketplace.json`
+- Codex CLI subagents: `.codex/agents/*.toml`
+- Codex CLI hooks: `SessionStart`, `Stop` templates included
 
-### Existing Solutions Fall Short
+## Workflow
 
-| Approach | Tool Calls | Token Usage | Info Density | Effectiveness |
-|----------|-----------|-------------|--------------|---------------|
-| LSP MCP | High | Medium | High | Good, but slow |
-| ACE / RAG | Low | Low | Sparse | Poor correlation |
-| Agentic RAG (Explorer) | Medium | Low | High | Good, but TTCR too slow |
+### `use`
 
-## Our Solution: llmdoc + SubAgent RAG
+`use` is not a command.
 
-**Fast. High-density. Low main-agent token usage. Strongly correlated with tasks.**
+It is the operating mode defined by the `llmdoc` skill. The recommended setup is to tell the model to load that skill first, then follow it.
 
-### llmdoc
+### `/llmdoc:init`
 
-A documentation system designed from the ground up for AI to quickly acquire high-density information while remaining human-readable.
+Use `/llmdoc:init` to create or repair the llmdoc skeleton and generate initial docs.
 
-Based on [Diataxis](https://diataxis.fr/), optimized for LLM retrieval:
+The command:
 
-```
+1. Inspects the repo
+2. Creates the llmdoc directory structure
+3. Runs temporary investigation scratch work
+4. Generates initial MUST, overview, architecture, and reference docs
+5. Synchronizes `llmdoc/index.md`
+
+### `/llmdoc:update`
+
+Use `/llmdoc:update` after meaningful work when project knowledge should be persisted.
+
+The command:
+
+1. Rebuilds context from llmdoc and the current working tree
+2. Proactively reads relevant guides and reflections
+3. Investigates impacted concepts
+4. Writes a reflection under `llmdoc/memory/reflections/`
+5. Updates stable docs
+6. Synchronizes `llmdoc/index.md`
+
+In normal use, the main assistant should proactively ask whether to run `/llmdoc:update` when the task produced durable knowledge or a useful reflection.
+
+## llmdoc Layout
+
+```text
 llmdoc/
-├── index.md          # Entry point - always read first
-├── overview/         # "What is this project?" - MUST read all
-├── guides/           # "How do I do X?" - step-by-step instructions
-├── architecture/     # "How does it work?" - LLM retrieval map
-└── reference/        # "What are the specifics?" - API specs, conventions
+├── index.md
+├── startup.md
+├── must/                 # Small startup context package
+├── overview/             # Project and feature identity
+├── architecture/         # Retrieval maps, invariants, ownership
+├── guides/               # One workflow per document
+├── reference/            # Stable lookup facts and conventions
+└── memory/
+    ├── reflections/      # Post-task reflections
+    ├── decisions/        # Durable process or design decisions
+    └── doc-gaps.md       # Known documentation weaknesses
+
+.llmdoc-tmp/
+└── investigations/       # Temporary scratch investigation reports
 ```
 
-**Key Design Principles:**
-- Leverages Agent's ability to batch-read files quickly
-- Documents retain critical file paths + module descriptions
-- Project overview + architecture + topic-linked guides + references
-
-Example: [TokenRoll/minicc/llmdoc](https://github.com/TokenRollAI/minicc/tree/main/llmdoc)
-
-### SubAgent RAG
-
-Two primary functions:
-1. **Investigation**: Based on llmdoc + existing code, investigate decomposed tasks as prerequisites
-2. **Recording**: After completing coding tasks, automatically maintain llmdoc
-
----
-
-## Quick Start
-
-### Step 1: Install Plugin
-
-```bash
-# Add TokenRoll plugin marketplace
-/plugin marketplace add https://github.com/TokenRollAI/cc-plugin
-
-# Install tr plugin
-/plugin install tr@cc-plugin
-```
-
-### Step 2: Configure System Prompt
-
-Copy the contents of [`CLAUDE.example.md`](CLAUDE.example.md) into your `~/.claude/CLAUDE.md` file.
-
-**That's it.** Once configured, all behaviors activate automatically:
-
-- Agent will **always read llmdoc first** before any action
-- Investigation uses **documentation-first approach**
-- After coding tasks, Agent will **ask if you want to update docs**
-- All skills trigger automatically based on context
-
-### Update Plugin
-
-```bash
-/plugin marketplace update https://github.com/TokenRollAI/cc-plugin
-```
-
----
-
-## How It Works
-
-### Automatic Behaviors (No Commands Needed)
-
-Once `CLAUDE.example.md` is configured, these behaviors are **always active**:
-
-| Behavior | What Happens |
-|----------|--------------|
-| **Documentation First** | Agent reads `llmdoc/` before any action |
-| **Smart Investigation** | Uses `investigator` agent instead of generic exploration |
-| **Option-Based Coding** | Never jumps to conclusions; presents choices via questions |
-| **Doc Maintenance Prompt** | After coding, asks if you want to update documentation |
-
-### Available Skills (Auto-Triggered)
-
-These skills activate automatically based on your prompts:
-
-| Skill | Triggers | Description |
-|-------|----------|-------------|
-| `/investigate` | "what is", "how does X work", "analyze" | Quick codebase investigation |
-| `/commit` | "commit", "save changes" | Generate commit message |
-| `/update-doc` | "update docs", "sync documentation" | Update llmdoc |
-| `/read-doc` | "understand project", "read the docs" | Read llmdoc overview |
-
-### Commands (When You Need Control)
-
-| Command | Description |
-|---------|-------------|
-| `/tr:initDoc` | Initialize llmdoc for a new project |
-| `/tr:withScout` | Complex tasks: deep investigation first, then execute |
-| `/tr:what` | Clarify vague requests with structured questions |
-
----
-
-## Recommended Workflow
-
-### For New Projects
-
-```bash
-# Initialize documentation system
-/tr:initDoc
-```
-
-### For Daily Development
-
-Just talk naturally. The system handles the rest:
-
-```
-"How does the auth system work?"
-# -> Auto-triggers /investigate, reads llmdoc first
-
-"Add a new API endpoint for user profiles"
-# -> Reads llmdoc, investigates, implements, asks about doc update
-
-"commit"
-# -> Auto-triggers /commit with intelligent message
-```
-
----
-
-## Cost & Effectiveness
-
-**Honest assessment**: This approach costs approximately **1.5x more** to achieve a jump from 85 to 90 points in task completion quality.
-
-- Simple projects: Marginal benefit
-- Complex projects: Significant benefit
-- Production codebases (100k+ lines): Excellent results
-
-In our production backend (100k lines of code):
-- Task completion cost: **$1-5 per feature**
-- Human intervention: **Significantly reduced**
-- Output quality: **Ready for review and minor adjustments**
-
----
+`llmdoc/index.md` is the global doc map.
+`llmdoc/startup.md` is only the startup reading order.
+They should link to each other, but they should not repeat the same content.
 
 ## Internal Agents
 
 | Agent | Purpose |
-|-------|---------|
-| `worker` | Execute well-defined plans with precision |
-| `investigator` | Rapid, stateless codebase analysis |
-| `recorder` | Create and maintain llmdoc documentation |
-| `scout` | Deep investigation for initDoc |
+|------|---------|
+| `investigator` | Evidence gathering for chat or temporary scratch reports |
+| `worker` | Executes well-defined tasks |
+| `recorder` | Maintains stable llmdoc documents |
+| `reflector` | Writes post-task reflections |
 
----
+## Installation
 
-<div align="center">
+```bash
+/plugin marketplace add https://github.com/TokenRollAI/cc-plugin
+/plugin install llmdoc@cc-plugin
+```
 
-Made with care by **DJJ** & **Danniel** for the TokenRoll team
+Copy [`CLAUDE.example.md`](CLAUDE.example.md) into `~/.claude/CLAUDE.md`.
 
-</div>
+If you want repository-local instructions, adapt [`AGENTS.example.md`](AGENTS.example.md) into the project root.
+
+The reusable skill lives at [`skills/llmdoc/SKILL.md`](skills/llmdoc/SKILL.md).
+Detailed references live under [`skills/llmdoc/references/`](skills/llmdoc/references/).
+Codex CLI hook templates live under [`skills/llmdoc/templates/`](skills/llmdoc/templates/).
+
+## Codex CLI
+
+This repository now includes Codex CLI plugin metadata:
+
+- [`.codex-plugin/plugin.json`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex-plugin/plugin.json)
+- [`.agents/plugins/marketplace.json`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.agents/plugins/marketplace.json)
+
+This follows the OpenAI Codex plugin docs:
+
+- plugin manifest at `.codex-plugin/plugin.json`
+- repo marketplace at `.agents/plugins/marketplace.json`
+
+For repo-local testing in Codex:
+
+1. Open the repo in Codex.
+2. Ensure the repo marketplace file is present.
+3. Restart Codex so the local marketplace is reloaded.
+
+The current hook templates target the official Codex events documented today: `SessionStart` and `Stop`.
+
+## Codex Subagents
+
+This repository now also includes project-scoped Codex custom agents:
+
+- [`.codex/config.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/config.toml)
+- [`.codex/agents/llmdoc-investigator.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-investigator.toml)
+- [`.codex/agents/llmdoc-worker.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-worker.toml)
+- [`.codex/agents/llmdoc-recorder.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-recorder.toml)
+- [`.codex/agents/llmdoc-reflector.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-reflector.toml)
+
+These follow the Codex subagent docs pattern for project-scoped standalone TOML files under `.codex/agents/`.
+
+The names are intentionally prefixed with `llmdoc_` so they do not override Codex built-in agents like `worker` or `explorer`.
+
+## Migration Notes
+
+This version removes the old fragmented skills and replaces them with one skill:
+
+- active skill: `llmdoc`
+- removed skills: `read-doc`, `investigate`, `update-doc`, `doc-workflow`, `deep-dive`, `commit`
+- removed commands: `initDoc`, `withScout`, `what`
+- removed agent: `scout`
+
+If you used those before:
+
+- use `/llmdoc:init` instead of the old `tr`-prefixed init command
+- use `/llmdoc:update` instead of `/update-doc`
+- load the `llmdoc` skill instead of using separate read/investigate skills

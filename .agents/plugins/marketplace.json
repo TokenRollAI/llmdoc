@@ -1,0 +1,20 @@
+{
+  "name": "llmdoc-local",
+  "interface": {
+    "displayName": "llmdoc Local Plugins"
+  },
+  "plugins": [
+    {
+      "name": "llmdoc",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

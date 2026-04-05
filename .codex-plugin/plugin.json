@@ -1,0 +1,22 @@
+{
+  "name": "llmdoc",
+  "version": "2.0.0",
+  "description": "Doc-driven workflow with startup docs, reflections, update prompts, and reusable skills for Codex.",
+  "author": {
+    "name": "DJJ & Danniel",
+    "email": "shuaiqijianaho@qq.com",
+    "url": "https://github.com/TokenRollAI/cc-plugin"
+  },
+  "homepage": "https://github.com/TokenRollAI/cc-plugin",
+  "repository": "https://github.com/TokenRollAI/cc-plugin",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "llmdoc",
+    "shortDescription": "Doc-driven coding workflow",
+    "longDescription": "Use startup docs, guides, reflections, and update prompts to improve coding quality and reduce repeated mistakes.",
+    "developerName": "TokenRoll",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/TokenRollAI/cc-plugin"
+  }
+}

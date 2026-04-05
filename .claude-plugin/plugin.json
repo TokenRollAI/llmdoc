@@ -1,7 +1,7 @@
 {
-  "name": "tr",
-  "description": "TokenRoll standard Claude Code plugin for internal team use",
-  "version": "1.3.0",
+  "name": "llmdoc",
+  "description": "llmdoc Claude Code plugin with a minimal workflow: init, update, and use",
+  "version": "2.0.0",
   "author": {
     "name": "DJJ & Danniel"
   }
