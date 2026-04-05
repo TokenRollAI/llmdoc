@@ -1,3 +1,3 @@
 [agents]
-max_threads = 6
-max_depth = 1
+max_threads = 8
+max_depth = 2
