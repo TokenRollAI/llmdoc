@@ -1,6 +1,6 @@
-# llmdoc Claude Code 插件
+# llmdoc for Claude Code 和 Codex
 
-这是一个面向 Claude Code 的 `llmdoc` 工作流，公开接口保持很小：
+`llmdoc` 是一个同时面向 Claude Code 和 Codex 的文档驱动工作流。
 
 - Skill: `llmdoc`
 - `/llmdoc:init` 负责初始化 `llmdoc/`
@@ -28,6 +28,7 @@
 
 - Skill: `llmdoc`
 - Commands: `/llmdoc:init`, `/llmdoc:update`
+- Claude Code plugin 支持：`.claude-plugin/`
 - Codex CLI plugin 支持：已提供 `.codex-plugin/plugin.json` 和 `.agents/plugins/marketplace.json`
 - Codex CLI subagents 支持：已提供 `.codex/agents/*.toml`
 - Codex CLI hooks：已提供 `SessionStart`、`Stop` 模板
@@ -102,38 +103,68 @@ llmdoc/
 
 ## 安装
 
+### Claude Code
+
+先安装 Claude Code。Anthropic 官方文档当前给出的安装方式包括：
+
+- `npm install -g @anthropic-ai/claude-code`
+- 或 macOS/Linux/WSL 原生安装：`curl -fsSL https://claude.ai/install.sh | bash`
+
+官方文档：
+
+- https://docs.anthropic.com/en/docs/claude-code/quickstart
+- https://docs.anthropic.com/en/docs/claude-code/setup
+
+然后安装这个插件市场和插件：
+
 ```bash
-/plugin marketplace add https://github.com/TokenRollAI/cc-plugin
-/plugin install llmdoc@cc-plugin
+/plugin marketplace add https://github.com/TokenRollAI/llmdoc
+/plugin install llmdoc@llmdoc-cc-plugin
 ```
 
-把 [`CLAUDE.example.md`](CLAUDE.example.md) 复制到 `~/.claude/CLAUDE.md`。
+安装后：
 
-如果你还想加仓库级约束，可以把 [`AGENTS.example.md`](AGENTS.example.md) 改成项目根目录下的 `AGENTS.md`。
+1. 把 [`CLAUDE.example.md`](CLAUDE.example.md) 复制到 `~/.claude/CLAUDE.md`
+2. 如果你还想加仓库级约束，可以把 [`AGENTS.example.md`](AGENTS.example.md) 改成项目根目录下的 `AGENTS.md`
+3. 重启 Claude Code，让新的 prompt 和 plugin 状态生效
+
+### Codex CLI
+
+先安装 Codex CLI。OpenAI 官方文档当前给出的最小安装方式是：
+
+```bash
+npm i -g @openai/codex
+codex
+```
+
+官方文档：
+
+- https://developers.openai.com/codex/cli
+- https://developers.openai.com/codex/plugins
+- https://developers.openai.com/codex/plugins/build
+- https://developers.openai.com/codex/subagents
+- https://developers.openai.com/codex/hooks
+
+这个仓库已经内置了 Codex 侧需要的文件：
+
+- [`.codex-plugin/plugin.json`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex-plugin/plugin.json)
+- [`.agents/plugins/marketplace.json`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.agents/plugins/marketplace.json)
+- [`.codex/config.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/config.toml)
+- [`.codex/agents/`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents)
+- [skills/llmdoc/templates/codex-hooks.json](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/skills/llmdoc/templates/codex-hooks.json)
+
+在 Codex 里做 repo-local 使用时：
+
+1. 用 Codex 打开这个仓库
+2. 确认 `.agents/plugins/marketplace.json` 存在
+3. 重启 Codex，让 marketplace 和 project-scoped agents 重新加载
+4. 如果需要 hooks，把模板复制到 `.codex/hooks.json`，并按你的机器路径调整脚本路径
+
+## 仓库内文件
 
 可复用 skill 位于 [`skills/llmdoc/SKILL.md`](skills/llmdoc/SKILL.md)。
 详细参考文档位于 [`skills/llmdoc/references/`](skills/llmdoc/references/)。
 Codex CLI hooks 模板位于 [`skills/llmdoc/templates/`](skills/llmdoc/templates/)。
-
-## Codex CLI
-
-这个仓库现在已经包含 Codex CLI plugin 元数据：
-
-- [`.codex-plugin/plugin.json`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex-plugin/plugin.json)
-- [`.agents/plugins/marketplace.json`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.agents/plugins/marketplace.json)
-
-对应 OpenAI 官方 Codex plugin 文档里的两层结构：
-
-- 插件 manifest 放在 `.codex-plugin/plugin.json`
-- repo marketplace 放在 `.agents/plugins/marketplace.json`
-
-如果你要在 Codex 里做 repo-local 测试：
-
-1. 用 Codex 打开这个仓库
-2. 确认 repo marketplace 文件存在
-3. 重启 Codex，让本地 marketplace 重新加载
-
-当前 hooks 模板使用的是官方已经文档化的 Codex 事件：`SessionStart` 和 `Stop`。
 
 ## Codex Subagents
 

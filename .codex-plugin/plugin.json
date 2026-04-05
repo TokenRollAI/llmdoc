@@ -5,10 +5,10 @@
   "author": {
     "name": "DJJ & Danniel",
     "email": "shuaiqijianaho@qq.com",
-    "url": "https://github.com/TokenRollAI/cc-plugin"
+    "url": "https://github.com/TokenRollAI/llmdoc"
   },
-  "homepage": "https://github.com/TokenRollAI/cc-plugin",
-  "repository": "https://github.com/TokenRollAI/cc-plugin",
+  "homepage": "https://github.com/TokenRollAI/llmdoc",
+  "repository": "https://github.com/TokenRollAI/llmdoc",
   "skills": "./skills/",
   "interface": {
     "displayName": "llmdoc",
@@ -17,6 +17,6 @@
     "developerName": "TokenRoll",
     "category": "Productivity",
     "capabilities": ["Read", "Write"],
-    "websiteURL": "https://github.com/TokenRollAI/cc-plugin"
+    "websiteURL": "https://github.com/TokenRollAI/llmdoc"
   }
 }

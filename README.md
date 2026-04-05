@@ -1,6 +1,6 @@
-# llmdoc Claude Code Plugin
+# llmdoc for Claude Code and Codex
 
-`llmdoc` workflow for Claude Code with a small public surface:
+`llmdoc` is a doc-driven workflow for both Claude Code and Codex.
 
 - Skill: `llmdoc`
 - `/llmdoc:init` bootstraps `llmdoc/`
@@ -28,6 +28,7 @@ This refactor keeps the public interface small and moves the rest into one reusa
 
 - Skill: `llmdoc`
 - Commands: `/llmdoc:init`, `/llmdoc:update`
+- Claude Code plugin support: `.claude-plugin/`
 - Codex CLI plugin support: `.codex-plugin/plugin.json` and `.agents/plugins/marketplace.json`
 - Codex CLI subagents: `.codex/agents/*.toml`
 - Codex CLI hooks: `SessionStart`, `Stop` templates included
@@ -100,40 +101,70 @@ They should link to each other, but they should not repeat the same content.
 | `recorder` | Maintains stable llmdoc documents |
 | `reflector` | Writes post-task reflections |
 
-## Installation
+## Install
+
+### Claude Code
+
+Install Claude Code first. Anthropic’s official docs currently list:
+
+- `npm install -g @anthropic-ai/claude-code`
+- or native install on macOS/Linux/WSL: `curl -fsSL https://claude.ai/install.sh | bash`
+
+Official docs:
+
+- https://docs.anthropic.com/en/docs/claude-code/quickstart
+- https://docs.anthropic.com/en/docs/claude-code/setup
+
+Then install this plugin marketplace and plugin:
 
 ```bash
-/plugin marketplace add https://github.com/TokenRollAI/cc-plugin
-/plugin install llmdoc@cc-plugin
+/plugin marketplace add https://github.com/TokenRollAI/llmdoc
+/plugin install llmdoc@llmdoc-cc-plugin
 ```
 
-Copy [`CLAUDE.example.md`](CLAUDE.example.md) into `~/.claude/CLAUDE.md`.
+After installation:
 
-If you want repository-local instructions, adapt [`AGENTS.example.md`](AGENTS.example.md) into the project root.
+1. Copy [`CLAUDE.example.md`](CLAUDE.example.md) into `~/.claude/CLAUDE.md`.
+2. If you want repository-local instructions, adapt [`AGENTS.example.md`](AGENTS.example.md) into the project root.
+3. Restart Claude Code so the new prompt and plugin state are loaded.
 
-The reusable skill lives at [`skills/llmdoc/SKILL.md`](skills/llmdoc/SKILL.md).
-Detailed references live under [`skills/llmdoc/references/`](skills/llmdoc/references/).
-Codex CLI hook templates live under [`skills/llmdoc/templates/`](skills/llmdoc/templates/).
+### Codex CLI
 
-## Codex CLI
+Install Codex CLI first. OpenAI’s official docs currently list:
 
-This repository now includes Codex CLI plugin metadata:
+```bash
+npm i -g @openai/codex
+codex
+```
+
+Official docs:
+
+- https://developers.openai.com/codex/cli
+- https://developers.openai.com/codex/plugins
+- https://developers.openai.com/codex/plugins/build
+- https://developers.openai.com/codex/subagents
+- https://developers.openai.com/codex/hooks
+
+This repository already contains the Codex-side integration files:
 
 - [`.codex-plugin/plugin.json`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex-plugin/plugin.json)
 - [`.agents/plugins/marketplace.json`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.agents/plugins/marketplace.json)
+- [`.codex/config.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/config.toml)
+- [`.codex/agents/`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents)
+- [skills/llmdoc/templates/codex-hooks.json](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/skills/llmdoc/templates/codex-hooks.json)
 
-This follows the OpenAI Codex plugin docs:
+For repo-local use in Codex:
 
-- plugin manifest at `.codex-plugin/plugin.json`
-- repo marketplace at `.agents/plugins/marketplace.json`
+1. Open this repository in Codex.
+2. Ensure the repo marketplace file exists at `.agents/plugins/marketplace.json`.
+3. Restart Codex so the marketplace and project-scoped agents are reloaded.
+4. Optionally copy the hook template into `.codex/hooks.json` and adjust script paths if needed.
 
-For repo-local testing in Codex:
+## Repo Files
 
-1. Open the repo in Codex.
-2. Ensure the repo marketplace file is present.
-3. Restart Codex so the local marketplace is reloaded.
-
-The current hook templates target the official Codex events documented today: `SessionStart` and `Stop`.
+The reusable skill lives at [`skills/llmdoc/SKILL.md`](skills/llmdoc/SKILL.md).
+Detailed references live under [`skills/llmdoc/references/`](skills/llmdoc/references/).
+Codex hook templates live under [`skills/llmdoc/templates/`](skills/llmdoc/templates/).
 
 ## Codex Subagents
 
