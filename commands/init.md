@@ -33,13 +33,18 @@ Why:
      - `.llmdoc-tmp/investigations/`
 
 3. Run investigation.
-   - Use `investigator` as the only investigation agent.
-   - Prefer `depth=deep`.
+   - Use `investigator` for evidence gathering.
+   - Default to multiple focused investigators instead of one broad investigator pass.
+   - On most non-trivial repositories, start with 3-5 parallel investigators.
+   - Split by theme, not by random directories. Good slices include repo shape and entrypoints, runtime architecture, feature areas, tests and quality signals, and delivery or ops surfaces when present.
+   - Prefer `depth=deep` for the core investigation slices. Use `depth=quick` only for clearly secondary slices.
    - Persist reports under `.llmdoc-tmp/investigations/`.
-   - Split investigation only when the repository is large enough to justify multiple investigators.
+   - Do not wait for the repository to be "large enough" before splitting. Split whenever doing so will produce better coverage or clearer retrieval maps.
+   - After the first wave, run at least one follow-up investigation pass to resolve gaps, conflicts, and cross-cutting relationships discovered by the initial investigators.
    - Treat these reports as scratch artifacts for bootstrapping, not stable project memory.
 
 4. Generate the initial stable docs with `recorder`.
+   - Synthesize across all investigation reports, not just the first one that looks complete.
    - Create `llmdoc/index.md` as the global documentation map.
    - Create `llmdoc/startup.md`.
    - Create a small set of MUST docs for recurring startup context.
