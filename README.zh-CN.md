@@ -49,7 +49,7 @@
 
 1. 检查仓库结构
 2. 创建 llmdoc 目录骨架
-3. 启动多个 investigator 生成临时调查草稿，并补做一轮查缺补漏
+3. 启动多个 investigator 生成临时调查草稿，显式检查覆盖面，并补做一轮查缺补漏
 4. 生成初始 MUST、overview、architecture、reference 文档
 5. 同步 `llmdoc/index.md`
 

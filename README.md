@@ -49,7 +49,7 @@ The command:
 
 1. Inspects the repo
 2. Creates the llmdoc directory structure
-3. Runs multi-investigator temporary scratch work, then a follow-up gap-check pass
+3. Runs multi-investigator temporary scratch work with explicit coverage checks, then a follow-up gap-check pass
 4. Generates initial MUST, overview, architecture, and reference docs
 5. Synchronizes `llmdoc/index.md`
 
