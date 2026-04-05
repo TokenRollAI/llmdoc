@@ -1,188 +1,165 @@
-# TokenRoll Claude Code 插件
+# llmdoc Claude Code 插件
 
-<div align="center">
+这是一个面向 Claude Code 的 `llmdoc` 工作流，公开接口保持很小：
 
-**llmdoc + SubAgent RAG: 解决 Context Floor 问题**
+- Skill: `llmdoc`
+- `/llmdoc:init` 负责初始化 `llmdoc/`
+- `/llmdoc:update` 负责先写 reflection，再更新稳定文档
 
-[![GitHub](https://img.shields.io/badge/GitHub-TokenRollAI%2Fcc--plugin-blue?logo=github)](https://github.com/TokenRollAI/cc-plugin)
+推荐的默认配置很简单：
 
-[English](README.md) | [简体中文](README.zh-CN.md)
+- `CLAUDE.md` 和 `AGENTS.md` 里只保留一条短规则：step one 是加载 `llmdoc` skill
+- skill 入口保持简短，详细的方法论、协议和模板拆到 `skills/llmdoc/references/`
+- skill 还定义了主动阅读 guides/reflection，以及在非简单改动前主动和用户沟通
+- skill 还恢复了一个好模式：在非简单任务结束时，主动询问是否运行 `/llmdoc:update`
+- agent 和 command 只负责执行，不再各自复制一大段说明
 
-</div>
+## 为什么这么改
 
----
+旧设计暴露了太多内部步骤：
 
-## 问题：Context Floor
+- 读文档、调研、文档工作流都做成了独立 skill
+- `scout` 和 `investigator` 角色高度重叠
+- 默认输出倾向于行级引用，不利于文件级检索
 
-在严肃的面向生产的环境中，AI Coding Agent 面临一个根本性的挑战：**它们并不真正了解你的代码库**。它们通过 CLAUDE.md + 大量阅读代码文件来感知当前环境，这导致：
+这次改动把外部接口缩到最小，把详细协议统一收敛到一个可复用 skill 里。
 
-- 在达到足够上下文之前，不断地调用工具
-- Token 消耗高，信息密度低
-- 到达上下文就绪的时间（TTCR）太慢
+## 公开接口
 
-我们把"满足 Agent 解决需求的 context 的丰富度"称之为 **Context Floor**。
+- Skill: `llmdoc`
+- Commands: `/llmdoc:init`, `/llmdoc:update`
+- Codex CLI plugin 支持：已提供 `.codex-plugin/plugin.json` 和 `.agents/plugins/marketplace.json`
+- Codex CLI subagents 支持：已提供 `.codex/agents/*.toml`
+- Codex CLI hooks：已提供 `SessionStart`、`Stop` 模板
 
-### 现有方案的不足
+## 工作流
 
-| 方案 | 工具调用 | Token 占用 | 信息密度 | 效果 |
-|------|---------|-----------|---------|------|
-| LSP MCP | 高 | 中等 | 高 | 好，但慢 |
-| ACE / RAG | 低 | 低 | 稀疏 | 关联性差 |
-| Agentic RAG (Explorer) | 中等 | 低 | 高 | 好，但 TTCR 难以忍受 |
+### `use`
 
-## 我们的方案：llmdoc + SubAgent RAG
+`use` 不是命令。
 
-**足够快、信息密度足够高、主 Agent Token 占用足够少、信息和任务存在强关联且有效。**
+它是由 `llmdoc` skill 定义的默认工作模式。推荐做法是在系统提示词里先要求模型加载这个 skill，再按 skill 里的规则工作。
 
-### llmdoc
+### `/llmdoc:init`
 
-一个在设计之初就用来解决 AI 快速获取高密度信息 + 人类可读性的文档系统。
+用 `/llmdoc:init` 初始化或修复 `llmdoc` 结构。
 
-脱胎于 [Diataxis](https://diataxis.fr/)，针对 LLM 检索进行优化：
+这个命令会：
 
-```
+1. 检查仓库结构
+2. 创建 llmdoc 目录骨架
+3. 执行临时调查草稿
+4. 生成初始 MUST、overview、architecture、reference 文档
+5. 同步 `llmdoc/index.md`
+
+### `/llmdoc:update`
+
+在一次有价值的任务完成后，用 `/llmdoc:update` 持久化新知识。
+
+这个命令会：
+
+1. 基于 llmdoc 和当前 working tree 重建上下文
+2. 主动阅读相关 guides 和 reflection
+3. 调研受影响的概念
+4. 在 `llmdoc/memory/reflections/` 下写 reflection
+5. 更新稳定文档
+6. 同步 `llmdoc/index.md`
+
+在日常使用里，如果任务产生了值得长期保留的知识或反思，主 assistant 应该主动询问是否现在运行 `/llmdoc:update`。
+
+## llmdoc 结构
+
+```text
 llmdoc/
-├── index.md          # 入口 - 永远首先阅读
-├── overview/         # "这个项目是什么？" - 必须全部阅读
-├── guides/           # "如何做 X？" - 分步指南
-├── architecture/     # "它是怎么工作的？" - LLM 检索地图
-└── reference/        # "X 的具体细节是什么？" - API 规范、约定
+├── index.md
+├── startup.md
+├── must/                 # 每次运行都应读取的小型启动上下文
+├── overview/             # 项目和特性的身份与边界
+├── architecture/         # 检索地图、不变量、所有权边界
+├── guides/               # 一篇文档只讲一个工作流
+├── reference/            # 稳定的查阅型事实和约定
+└── memory/
+    ├── reflections/      # 每次任务后的反思
+    ├── decisions/        # 长期保留的过程或设计决策
+    └── doc-gaps.md       # 已知文档缺口
+
+.llmdoc-tmp/
+└── investigations/       # 临时调查草稿
 ```
 
-**核心设计原则：**
-- 利用 Agent 能够快速批量 Read 的能力
-- 文档中保留最关键的文件路径 + 负责的模块说明
-- 项目概览 + 架构 + 通过主题串联的 guides + reference
-
-示例：[TokenRoll/minicc/llmdoc](https://github.com/TokenRollAI/minicc/tree/main/llmdoc)
-
-### SubAgent RAG
-
-主要做两件事情：
-1. **调研**：基于 llmdoc + 现有的代码文件，调研拆解后的任务作为前置条件
-2. **记录**：在完成了编码任务之后，自动的更新维护 llmdoc
-
----
-
-## 快速开始
-
-### Step 1：安装插件
-
-```bash
-# 添加 TokenRoll 插件市场
-/plugin marketplace add https://github.com/TokenRollAI/cc-plugin
-
-# 安装 tr 插件
-/plugin install tr@cc-plugin
-```
-
-### Step 2：配置系统提示词
-
-将 [`CLAUDE.example.md`](CLAUDE.example.md) 的内容复制到 `~/.claude/CLAUDE.md` 文件中。
-
-**就这样。** 配置完成后，所有行为自动激活：
-
-- Agent 会**永远优先阅读 llmdoc**
-- 调研使用**文档优先的方法**
-- 完成编码任务后，Agent 会**询问是否更新文档**
-- 所有 skill 根据上下文自动触发
-
-### 更新插件
-
-```bash
-/plugin marketplace update https://github.com/TokenRollAI/cc-plugin
-```
-
----
-
-## 工作原理
-
-### 自动行为（无需命令）
-
-配置 `CLAUDE.example.md` 后，这些行为**始终激活**：
-
-| 行为 | 效果 |
-|------|------|
-| **文档优先** | Agent 在任何操作前先阅读 `llmdoc/` |
-| **智能调研** | 使用 `investigator` agent 而非通用探索 |
-| **选项式编程** | 不会直接下结论；通过问题呈现选择 |
-| **文档维护提示** | 编码后询问是否更新文档 |
-
-### 可用 Skills（自动触发）
-
-这些 skill 根据你的提示自动激活：
-
-| Skill | 触发词 | 描述 |
-|-------|--------|------|
-| `/investigate` | "什么是"、"X怎么工作"、"分析" | 快速代码库调查 |
-| `/commit` | "提交"、"commit" | 生成提交信息 |
-| `/update-doc` | "更新文档"、"同步文档" | 更新 llmdoc |
-| `/read-doc` | "了解项目"、"读文档" | 阅读 llmdoc 概览 |
-
-### 命令（需要精确控制时）
-
-| 命令 | 描述 |
-|------|------|
-| `/tr:initDoc` | 为新项目初始化 llmdoc |
-| `/tr:withScout` | 复杂任务：先深度调研，再执行 |
-| `/tr:what` | 通过结构化问题澄清模糊请求 |
-
----
-
-## 推荐工作流
-
-### 新项目
-
-```bash
-# 初始化文档系统
-/tr:initDoc
-```
-
-### 日常开发
-
-自然对话即可，系统会处理其余的：
-
-```
-"认证系统是怎么工作的？"
-# -> 自动触发 /investigate，优先读取 llmdoc
-
-"添加一个用户资料的 API 端点"
-# -> 读取 llmdoc，调研，实现，询问是否更新文档
-
-"commit"
-# -> 自动触发 /commit，生成智能提交信息
-```
-
----
-
-## 成本与效果
-
-**诚实评估**：这套方案大概用 **1.5 倍的价钱**完成了从 85 分到 90 分的效果提升。
-
-- 简单项目：效果一般
-- 复杂项目：收益显著
-- 生产级代码库（10万+ 行）：效果出色
-
-在我们的线上业务后端（约 10 万行代码）：
-- 需求完成成本：**$1-5 / 功能**
-- 人类介入：**大大降低**
-- 输出质量：**Review 后稍作修改即可放心交付**
-
----
+`llmdoc/index.md` 是全局文档地图。
+`llmdoc/startup.md` 只负责启动阅读顺序。
+两者可以互相链接，但不应该重复同一批内容。
 
 ## 内部 Agents
 
 | Agent | 用途 |
-|-------|------|
-| `worker` | 精确执行明确定义的计划 |
-| `investigator` | 快速、无状态的代码库分析 |
-| `recorder` | 创建和维护 llmdoc 文档 |
-| `scout` | 为 initDoc 进行深度调查 |
+|------|------|
+| `investigator` | 做证据驱动的调研，可回对话，也可输出临时调查草稿 |
+| `worker` | 执行明确的任务 |
+| `recorder` | 维护稳定 llmdoc 文档 |
+| `reflector` | 记录任务后的 reflection |
 
----
+## 安装
 
-<div align="center">
+```bash
+/plugin marketplace add https://github.com/TokenRollAI/cc-plugin
+/plugin install llmdoc@cc-plugin
+```
 
-由 **DJJ** 和 **Danniel** 为 TokenRoll 团队精心打造
+把 [`CLAUDE.example.md`](CLAUDE.example.md) 复制到 `~/.claude/CLAUDE.md`。
 
-</div>
+如果你还想加仓库级约束，可以把 [`AGENTS.example.md`](AGENTS.example.md) 改成项目根目录下的 `AGENTS.md`。
+
+可复用 skill 位于 [`skills/llmdoc/SKILL.md`](skills/llmdoc/SKILL.md)。
+详细参考文档位于 [`skills/llmdoc/references/`](skills/llmdoc/references/)。
+Codex CLI hooks 模板位于 [`skills/llmdoc/templates/`](skills/llmdoc/templates/)。
+
+## Codex CLI
+
+这个仓库现在已经包含 Codex CLI plugin 元数据：
+
+- [`.codex-plugin/plugin.json`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex-plugin/plugin.json)
+- [`.agents/plugins/marketplace.json`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.agents/plugins/marketplace.json)
+
+对应 OpenAI 官方 Codex plugin 文档里的两层结构：
+
+- 插件 manifest 放在 `.codex-plugin/plugin.json`
+- repo marketplace 放在 `.agents/plugins/marketplace.json`
+
+如果你要在 Codex 里做 repo-local 测试：
+
+1. 用 Codex 打开这个仓库
+2. 确认 repo marketplace 文件存在
+3. 重启 Codex，让本地 marketplace 重新加载
+
+当前 hooks 模板使用的是官方已经文档化的 Codex 事件：`SessionStart` 和 `Stop`。
+
+## Codex Subagents
+
+这个仓库现在也包含 project-scoped 的 Codex 自定义 agents：
+
+- [`.codex/config.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/config.toml)
+- [`.codex/agents/llmdoc-investigator.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-investigator.toml)
+- [`.codex/agents/llmdoc-worker.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-worker.toml)
+- [`.codex/agents/llmdoc-recorder.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-recorder.toml)
+- [`.codex/agents/llmdoc-reflector.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-reflector.toml)
+
+这些文件遵循官方 Codex subagents 文档里 project-scoped TOML agents 的模式，放在 `.codex/agents/` 下。
+
+这里使用了 `llmdoc_` 前缀，避免覆盖 Codex 自带的 `worker`、`explorer` 等内置 agents。
+
+## 迁移说明
+
+这个版本把旧的碎片化 skill 收敛成一个 skill：
+
+- 当前 skill: `llmdoc`
+- 移除 skills: `read-doc`、`investigate`、`update-doc`、`doc-workflow`、`deep-dive`、`commit`
+- 移除 commands: `initDoc`、`withScout`、`what`
+- 移除 agent: `scout`
+
+如果你之前依赖这些入口：
+
+- 用 `/llmdoc:init` 替代旧的 `tr` 前缀 init 命令
+- 用 `/llmdoc:update` 替代 `/update-doc`
+- 用 `llmdoc` skill 替代分散的 read/investigate skill

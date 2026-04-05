@@ -1,15 +1,15 @@
 {
-  "name": "tokenroll-cc-plugin",
+  "name": "llmdoc-cc-plugin",
   "owner": {
     "name": "TokenRoll",
     "email": "shuaiqijianaho@qq.com"
   },
-  "description": "TokenRoll internal Claude Code plugin marketplace",
+  "description": "Marketplace for the minimal llmdoc Claude Code workflow",
   "plugins": [
     {
-      "name": "tr",
+      "name": "llmdoc",
       "source": "./",
-      "description": "TokenRoll custom commands and agents for Claude Code"
+      "description": "Minimal llmdoc workflow for Claude Code: init, update, and use"
     }
   ]
 }
