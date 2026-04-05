@@ -6,6 +6,8 @@
 ## Stable Facts
 - `commands/init.md`: Contract for initializing or re-bootstrapping llmdoc.
 - `commands/update.md`: Contract for reflecting first and then updating stable docs.
+- `skills/llmdoc/SKILL.md`: Core operating skill for llmdoc projects.
+- `skills/llmdoc-init/SKILL.md` and `skills/llmdoc-update/SKILL.md`: Codex-native helper entry skills that mirror `/llmdoc:init` and `/llmdoc:update`.
 - `agents/investigator.md`, `agents/worker.md`, `agents/recorder.md`, `agents/reflector.md`: Claude-style role prompts for the internal workflow.
 - `.codex/config.toml`: Codex-wide agent fan-out and depth limits for this repository.
 - `.codex/agents/*.toml`: Project-scoped Codex custom agents.

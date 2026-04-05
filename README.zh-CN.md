@@ -2,17 +2,18 @@
 
 `llmdoc` 是一个同时面向 Claude Code 和 Codex 的文档驱动工作流。
 
-- Skill: `llmdoc`
-- `/llmdoc:init` 负责初始化 `llmdoc/`
-- `/llmdoc:update` 负责先写 reflection，再更新稳定文档
+- Core skill: `llmdoc`
+- Claude Code commands: `/llmdoc:init`、`/llmdoc:update`
+- Codex helper skills: `llmdoc-init`、`llmdoc-update`
 
 推荐的默认配置很简单：
 
 - `CLAUDE.md` 和 `AGENTS.md` 里只保留一条短规则：step one 是加载 `llmdoc` skill
-- skill 入口保持简短，详细的方法论、协议和模板拆到 `skills/llmdoc/references/`
-- skill 还定义了主动阅读 guides/reflection，以及在非简单改动前主动和用户沟通
-- skill 还恢复了一个好模式：在非简单任务结束时，主动询问是否运行 `/llmdoc:update`
-- agent 和 command 只负责执行，不再各自复制一大段说明
+- core skill 入口保持简短，详细的方法论、协议和模板拆到 `skills/llmdoc/references/`
+- core skill 还定义了主动阅读 guides/reflection，以及在非简单改动前主动和用户沟通
+- 整套工作流还恢复了一个好模式：在非简单任务结束时，主动询问是否运行 `/llmdoc:update`
+- Codex helper skills 提供了接近 command 的入口，但不会误导用户以为 Codex 已经支持这个插件的自定义 slash command
+- agent 和 command contract 只负责执行，不再各自复制一大段说明
 
 ## 为什么这么改
 
@@ -22,12 +23,13 @@
 - `scout` 和 `investigator` 角色高度重叠
 - 默认输出倾向于行级引用，不利于文件级检索
 
-这次改动把外部接口缩到最小，把详细协议统一收敛到一个可复用 skill 里。
+这次改动把外部接口缩到最小，把详细协议统一收敛到一个可复用的核心 skill，加上少量 Codex helper skills 入口。
 
 ## 公开接口
 
-- Skill: `llmdoc`
-- Commands: `/llmdoc:init`, `/llmdoc:update`
+- Core skill: `llmdoc`
+- Claude Code commands: `/llmdoc:init`、`/llmdoc:update`
+- Codex helper skills: `llmdoc-init`、`llmdoc-update`
 - Claude Code plugin 支持：`.claude-plugin/`
 - Codex CLI plugin 支持：已提供 `.codex-plugin/plugin.json` 和 `.agents/plugins/marketplace.json`
 - Codex CLI subagents 支持：已提供 `.codex/agents/*.toml`
@@ -45,6 +47,9 @@
 
 用 `/llmdoc:init` 初始化或修复 `llmdoc` 结构。
 
+在 Claude Code 里，它是 command。
+在 Codex 里，用 helper skill `llmdoc-init` 走等价工作流。
+
 这个命令会：
 
 1. 检查仓库结构
@@ -56,6 +61,9 @@
 ### `/llmdoc:update`
 
 在一次有价值的任务完成后，用 `/llmdoc:update` 持久化新知识。
+
+在 Claude Code 里，它是 command。
+在 Codex 里，用 helper skill `llmdoc-update` 走等价工作流。
 
 这个命令会：
 
@@ -145,24 +153,96 @@ codex
 - https://developers.openai.com/codex/subagents
 - https://developers.openai.com/codex/hooks
 
-这个仓库已经内置了 Codex 侧需要的文件：
+这个仓库里有两类不同的 Codex 集成面：
 
-- [`.codex-plugin/plugin.json`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex-plugin/plugin.json)
-- [`.agents/plugins/marketplace.json`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.agents/plugins/marketplace.json)
-- [`.codex/config.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/config.toml)
-- [`.codex/agents/`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents)
-- [skills/llmdoc/templates/codex-hooks.json](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/skills/llmdoc/templates/codex-hooks.json)
+- `llmdoc` 插件本身的打包文件：
+  - [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json)
+  - [`skills/llmdoc/`](skills/llmdoc/)
+  - [`skills/llmdoc-init/`](skills/llmdoc-init/)
+  - [`skills/llmdoc-update/`](skills/llmdoc-update/)
+  - [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json)，作为 repo 级本地 marketplace 示例
+- 这个仓库自己的 repo-local Codex 工作流文件：
+  - [`.codex/config.toml`](.codex/config.toml)
+  - [`.codex/agents/`](.codex/agents)
+  - [`skills/llmdoc/templates/codex-hooks.json`](skills/llmdoc/templates/codex-hooks.json)
 
-在 Codex 里做 repo-local 使用时：
+#### 方式一：直接在 Codex 里使用这个仓库
+
+适合你就在这个仓库里工作，并且希望插件跟着这个 repo 走。
 
 1. 用 Codex 打开这个仓库
-2. 确认 `.agents/plugins/marketplace.json` 存在
-3. 重启 Codex，让 marketplace 和 project-scoped agents 重新加载
-4. 如果需要 hooks，把模板复制到 `.codex/hooks.json`，并按你的机器路径调整脚本路径
+2. 确认 [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json) 存在
+3. 如果 Codex 已经在运行，先重启一次，让 repo marketplace 和 project-scoped agents 重新加载
+4. 打开插件列表：
+
+```bash
+codex
+/plugins
+```
+
+5. 在 marketplace 列表里打开 `llmdoc Local Plugins`
+6. 安装插件 `llmdoc`
+7. 在这个仓库里新开一个对话，然后按你的目标选择入口：
+   - 正常工作时，让 Codex 先加载 `llmdoc` skill
+   - 要执行 `/llmdoc:init` 等价流程时，选择 `llmdoc-init`
+   - 要执行 `/llmdoc:update` 等价流程时，选择 `llmdoc-update`
+   - 或者输入 `@`，再显式选择这个插件或它打包进来的 skill
+8. 如果你需要 hooks，把 [`skills/llmdoc/templates/codex-hooks.json`](skills/llmdoc/templates/codex-hooks.json) 复制到 `.codex/hooks.json`，再按你的机器路径调整脚本路径
+
+当你打开的就是这个仓库时，Codex 还会同时使用 [`.codex/agents/`](.codex/agents) 里的 project-scoped agents，以及 [`.codex/config.toml`](.codex/config.toml) 里的 agent 限制配置。
+
+#### 方式二：把 `llmdoc` 安装成个人全局本地插件
+
+适合你希望这台机器上的其他仓库也能使用 `llmdoc` 插件。
+
+1. 把这个仓库复制到 `~/.codex/plugins/llmdoc`：
+
+```bash
+mkdir -p ~/.codex/plugins
+cp -R /absolute/path/to/llmdoc ~/.codex/plugins/llmdoc
+```
+
+2. 新建或更新 `~/.agents/plugins/marketplace.json`，让它指向这个插件目录。这里的 `source.path` 需要是相对 home 目录、并带 `./` 前缀的路径：
+
+```json
+{
+  "name": "local-personal",
+  "interface": {
+    "displayName": "My Local Plugins"
+  },
+  "plugins": [
+    {
+      "name": "llmdoc",
+      "source": {
+        "source": "local",
+        "path": "./.codex/plugins/llmdoc"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
+```
+
+3. 重启 Codex
+4. 用 `codex` 打开 CLI，然后执行 `/plugins`
+5. 在 marketplace 列表里打开 `My Local Plugins`
+6. 安装插件 `llmdoc`
+7. 在任意仓库里新开一个对话，然后按你的目标选择入口：
+   - 正常工作时，让 Codex 先加载 `llmdoc` skill
+   - 要执行 `/llmdoc:init` 等价流程时，选择 `llmdoc-init`
+   - 要执行 `/llmdoc:update` 等价流程时，选择 `llmdoc-update`
+   - 或者输入 `@`，再显式选择这个插件或它打包进来的 skill
+
+这种个人安装会让插件和它自带的 skill 在多个仓库里可用；但这个仓库里的 [`.codex/agents/`](.codex/agents) 和 [`.codex/config.toml`](.codex/config.toml) 仍然是 project-scoped 的，只会在你打开这个仓库时生效。
 
 ## 仓库内文件
 
 可复用 skill 位于 [`skills/llmdoc/SKILL.md`](skills/llmdoc/SKILL.md)。
+Codex helper 入口 skills 位于 [`skills/llmdoc-init/SKILL.md`](skills/llmdoc-init/SKILL.md) 和 [`skills/llmdoc-update/SKILL.md`](skills/llmdoc-update/SKILL.md)。
 详细参考文档位于 [`skills/llmdoc/references/`](skills/llmdoc/references/)。
 Codex CLI hooks 模板位于 [`skills/llmdoc/templates/`](skills/llmdoc/templates/)。
 
@@ -170,13 +250,13 @@ Codex CLI hooks 模板位于 [`skills/llmdoc/templates/`](skills/llmdoc/template
 
 这个仓库现在也包含 project-scoped 的 Codex 自定义 agents：
 
-- [`.codex/config.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/config.toml)
-- [`.codex/agents/llmdoc-investigator.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-investigator.toml)
-- [`.codex/agents/llmdoc-worker.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-worker.toml)
-- [`.codex/agents/llmdoc-recorder.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-recorder.toml)
-- [`.codex/agents/llmdoc-reflector.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-reflector.toml)
+- [`.codex/config.toml`](.codex/config.toml)
+- [`.codex/agents/llmdoc-investigator.toml`](.codex/agents/llmdoc-investigator.toml)
+- [`.codex/agents/llmdoc-worker.toml`](.codex/agents/llmdoc-worker.toml)
+- [`.codex/agents/llmdoc-recorder.toml`](.codex/agents/llmdoc-recorder.toml)
+- [`.codex/agents/llmdoc-reflector.toml`](.codex/agents/llmdoc-reflector.toml)
 
-这些文件遵循官方 Codex subagents 文档里 project-scoped TOML agents 的模式，放在 `.codex/agents/` 下。
+这些文件遵循官方 Codex subagents 文档里 project-scoped TOML agents 的模式，放在 `.codex/agents/` 下，所以它们是在“打开这个仓库”时生效的。
 
 这里使用了 `llmdoc_` 前缀，避免覆盖 Codex 自带的 `worker`、`explorer` 等内置 agents。
 

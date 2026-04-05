@@ -2,7 +2,7 @@
 
 ## Identity
 - This repository packages `llmdoc` as a doc-driven workflow for Claude Code and Codex.
-- Its public interface is intentionally small: one skill, two commands, plugin integration files, and project-scoped agents.
+- Its public interface is intentionally small: one core operating skill, two helper Codex entry skills, two workflow command contracts, plugin integration files, and project-scoped agents.
 
 ## Boundaries
 - This repository owns the reusable `llmdoc` skill, workflow commands, agent prompts, and plugin metadata.

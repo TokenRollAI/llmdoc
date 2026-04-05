@@ -2,17 +2,18 @@
 
 `llmdoc` is a doc-driven workflow for both Claude Code and Codex.
 
-- Skill: `llmdoc`
-- `/llmdoc:init` bootstraps `llmdoc/`
-- `/llmdoc:update` writes reflection first, then updates stable docs
+- Core skill: `llmdoc`
+- Claude Code commands: `/llmdoc:init`, `/llmdoc:update`
+- Codex helper skills: `llmdoc-init`, `llmdoc-update`
 
 The default setup is simple:
 
 - `CLAUDE.md` and `AGENTS.md` only need one short rule: step one is loading the `llmdoc` skill
-- the skill entry is short, while detailed rationale, protocols, and templates are split under `skills/llmdoc/references/`
-- the skill also defines proactive guide/reflection reading and proactive user discussion before non-trivial edits
-- the skill also restores the good pattern of proactively asking whether to run `/llmdoc:update` at the end of non-trivial tasks
-- agents and commands stay focused on execution instead of carrying a large amount of duplicated guidance
+- the core skill entry is short, while detailed rationale, protocols, and templates are split under `skills/llmdoc/references/`
+- the core skill defines proactive guide/reflection reading and proactive user discussion before non-trivial edits
+- the workflow restores the good pattern of proactively asking whether to run `/llmdoc:update` at the end of non-trivial tasks
+- helper Codex skills provide command-like entrypoints without pretending Codex has custom slash commands for this plugin
+- agents and command contracts stay focused on execution instead of carrying a large amount of duplicated guidance
 
 ## Why This Version
 
@@ -22,12 +23,13 @@ The previous design exposed too many internal steps:
 - separate `scout` and `investigator` agents with overlapping responsibilities
 - heavy line-level references instead of file-level retrieval
 
-This refactor keeps the public interface small and moves the rest into one reusable skill.
+This refactor keeps the public interface small and moves the rest into one reusable operating skill plus small Codex helper entry skills.
 
 ## Public Surface
 
-- Skill: `llmdoc`
-- Commands: `/llmdoc:init`, `/llmdoc:update`
+- Core skill: `llmdoc`
+- Claude Code commands: `/llmdoc:init`, `/llmdoc:update`
+- Codex helper skills: `llmdoc-init`, `llmdoc-update`
 - Claude Code plugin support: `.claude-plugin/`
 - Codex CLI plugin support: `.codex-plugin/plugin.json` and `.agents/plugins/marketplace.json`
 - Codex CLI subagents: `.codex/agents/*.toml`
@@ -45,6 +47,9 @@ It is the operating mode defined by the `llmdoc` skill. The recommended setup is
 
 Use `/llmdoc:init` to create or repair the llmdoc skeleton and generate initial docs.
 
+In Claude Code, this is a command.
+In Codex, use the helper skill `llmdoc-init` for the equivalent workflow.
+
 The command:
 
 1. Inspects the repo
@@ -56,6 +61,9 @@ The command:
 ### `/llmdoc:update`
 
 Use `/llmdoc:update` after meaningful work when project knowledge should be persisted.
+
+In Claude Code, this is a command.
+In Codex, use the helper skill `llmdoc-update` for the equivalent workflow.
 
 The command:
 
@@ -145,24 +153,96 @@ Official docs:
 - https://developers.openai.com/codex/subagents
 - https://developers.openai.com/codex/hooks
 
-This repository already contains the Codex-side integration files:
+This repository contains two separate Codex integration surfaces:
 
-- [`.codex-plugin/plugin.json`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex-plugin/plugin.json)
-- [`.agents/plugins/marketplace.json`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.agents/plugins/marketplace.json)
-- [`.codex/config.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/config.toml)
-- [`.codex/agents/`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents)
-- [skills/llmdoc/templates/codex-hooks.json](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/skills/llmdoc/templates/codex-hooks.json)
+- Plugin packaging for `llmdoc` itself:
+  - [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json)
+  - [`skills/llmdoc/`](skills/llmdoc/)
+  - [`skills/llmdoc-init/`](skills/llmdoc-init/)
+  - [`skills/llmdoc-update/`](skills/llmdoc-update/)
+  - [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json) as a repo-scoped local marketplace example
+- Repo-local Codex workflow files for this repository:
+  - [`.codex/config.toml`](.codex/config.toml)
+  - [`.codex/agents/`](.codex/agents)
+  - [`skills/llmdoc/templates/codex-hooks.json`](skills/llmdoc/templates/codex-hooks.json)
 
-For repo-local use in Codex:
+#### Option 1: Use this repository directly in Codex
+
+Use this when you want to work inside this repository and keep the plugin local to the repo checkout.
 
 1. Open this repository in Codex.
-2. Ensure the repo marketplace file exists at `.agents/plugins/marketplace.json`.
-3. Restart Codex so the marketplace and project-scoped agents are reloaded.
-4. Optionally copy the hook template into `.codex/hooks.json` and adjust script paths if needed.
+2. Make sure [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json) exists.
+3. If Codex was already running, restart it so the repo marketplace and project-scoped agents are reloaded.
+4. Open the plugin directory:
+
+```bash
+codex
+/plugins
+```
+
+5. In the marketplace picker, open `llmdoc Local Plugins`.
+6. Install the plugin `llmdoc`.
+7. Start a new thread in this repository and either:
+   - ask Codex to load the `llmdoc` skill first for normal work
+   - choose `llmdoc-init` when you want the `/llmdoc:init` workflow
+   - choose `llmdoc-update` when you want the `/llmdoc:update` workflow
+   - or type `@` and choose the plugin or one of its bundled skills explicitly
+8. If you want hooks, copy [`skills/llmdoc/templates/codex-hooks.json`](skills/llmdoc/templates/codex-hooks.json) to `.codex/hooks.json` and adjust the script paths for your machine.
+
+When you open this repository itself, Codex can also use the project-scoped agents under [`.codex/agents/`](.codex/agents) and the agent limits from [`.codex/config.toml`](.codex/config.toml).
+
+#### Option 2: Install `llmdoc` as a personal local plugin
+
+Use this when you want the `llmdoc` plugin to be available across repositories on your machine.
+
+1. Copy this repository into `~/.codex/plugins/llmdoc`:
+
+```bash
+mkdir -p ~/.codex/plugins
+cp -R /absolute/path/to/llmdoc ~/.codex/plugins/llmdoc
+```
+
+2. Add or update `~/.agents/plugins/marketplace.json` so it points at that plugin directory with a `./`-prefixed path relative to your home directory:
+
+```json
+{
+  "name": "local-personal",
+  "interface": {
+    "displayName": "My Local Plugins"
+  },
+  "plugins": [
+    {
+      "name": "llmdoc",
+      "source": {
+        "source": "local",
+        "path": "./.codex/plugins/llmdoc"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
+```
+
+3. Restart Codex.
+4. Open the plugin directory with `codex` and `/plugins`.
+5. In the marketplace picker, open `My Local Plugins`.
+6. Install the plugin `llmdoc`.
+7. Start a new thread in any repository and either:
+   - ask Codex to load the `llmdoc` skill first for normal work
+   - choose `llmdoc-init` when you want the `/llmdoc:init` workflow
+   - choose `llmdoc-update` when you want the `/llmdoc:update` workflow
+   - or type `@` and choose the plugin or one of its bundled skills explicitly
+
+This personal install gives you the plugin and its bundled skill across repositories. The files under [`.codex/agents/`](.codex/agents) and [`.codex/config.toml`](.codex/config.toml) in this repository are still project-scoped and only apply when you open this repository itself.
 
 ## Repo Files
 
 The reusable skill lives at [`skills/llmdoc/SKILL.md`](skills/llmdoc/SKILL.md).
+The Codex helper entry skills live at [`skills/llmdoc-init/SKILL.md`](skills/llmdoc-init/SKILL.md) and [`skills/llmdoc-update/SKILL.md`](skills/llmdoc-update/SKILL.md).
 Detailed references live under [`skills/llmdoc/references/`](skills/llmdoc/references/).
 Codex hook templates live under [`skills/llmdoc/templates/`](skills/llmdoc/templates/).
 
@@ -170,13 +250,13 @@ Codex hook templates live under [`skills/llmdoc/templates/`](skills/llmdoc/templ
 
 This repository now also includes project-scoped Codex custom agents:
 
-- [`.codex/config.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/config.toml)
-- [`.codex/agents/llmdoc-investigator.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-investigator.toml)
-- [`.codex/agents/llmdoc-worker.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-worker.toml)
-- [`.codex/agents/llmdoc-recorder.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-recorder.toml)
-- [`.codex/agents/llmdoc-reflector.toml`](/Users/djj/.superset/worktrees/cc-plugin/DJJ/djj/skill/.codex/agents/llmdoc-reflector.toml)
+- [`.codex/config.toml`](.codex/config.toml)
+- [`.codex/agents/llmdoc-investigator.toml`](.codex/agents/llmdoc-investigator.toml)
+- [`.codex/agents/llmdoc-worker.toml`](.codex/agents/llmdoc-worker.toml)
+- [`.codex/agents/llmdoc-recorder.toml`](.codex/agents/llmdoc-recorder.toml)
+- [`.codex/agents/llmdoc-reflector.toml`](.codex/agents/llmdoc-reflector.toml)
 
-These follow the Codex subagent docs pattern for project-scoped standalone TOML files under `.codex/agents/`.
+These follow the Codex subagent docs pattern for project-scoped standalone TOML files under `.codex/agents/`, so they apply when you open this repository in Codex.
 
 The names are intentionally prefixed with `llmdoc_` so they do not override Codex built-in agents like `worker` or `explorer`.
 
