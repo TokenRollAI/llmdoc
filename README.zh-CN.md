@@ -173,15 +173,9 @@ codex
 1. 用 Codex 打开这个仓库
 2. 确认 [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json) 存在
 3. 如果 Codex 已经在运行，先重启一次，让 repo marketplace 和 project-scoped agents 重新加载
-4. 打开插件列表：
-
-```bash
-codex
-/plugins
-```
-
-5. 在 marketplace 列表里打开 `llmdoc Local Plugins`
-6. 安装插件 `llmdoc`
+4. 在 Codex 中执行 `/plugins`
+5. 在插件列表中找到 `llmdoc`，选中进入详情页
+6. 安装插件
 7. 在这个仓库里新开一个对话，然后按你的目标选择入口：
    - 正常工作时，让 Codex 先加载 `llmdoc` skill
    - 要执行 `/llmdoc:init` 等价流程时，选择 `llmdoc-init`
@@ -228,9 +222,9 @@ cp -R /absolute/path/to/llmdoc ~/.codex/plugins/llmdoc
 ```
 
 3. 重启 Codex
-4. 用 `codex` 打开 CLI，然后执行 `/plugins`
-5. 在 marketplace 列表里打开 `My Local Plugins`
-6. 安装插件 `llmdoc`
+4. 在 Codex 中执行 `/plugins`
+5. 在插件列表中找到 `llmdoc`，选中进入详情页
+6. 安装插件
 7. 在任意仓库里新开一个对话，然后按你的目标选择入口：
    - 正常工作时，让 Codex 先加载 `llmdoc` skill
    - 要执行 `/llmdoc:init` 等价流程时，选择 `llmdoc-init`

@@ -173,15 +173,9 @@ Use this when you want to work inside this repository and keep the plugin local 
 1. Open this repository in Codex.
 2. Make sure [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json) exists.
 3. If Codex was already running, restart it so the repo marketplace and project-scoped agents are reloaded.
-4. Open the plugin directory:
-
-```bash
-codex
-/plugins
-```
-
-5. In the marketplace picker, open `llmdoc Local Plugins`.
-6. Install the plugin `llmdoc`.
+4. In Codex, run `/plugins`.
+5. Find `llmdoc` in the plugin list, select it to open the detail page.
+6. Install the plugin.
 7. Start a new thread in this repository and either:
    - ask Codex to load the `llmdoc` skill first for normal work
    - choose `llmdoc-init` when you want the `/llmdoc:init` workflow
@@ -228,9 +222,9 @@ cp -R /absolute/path/to/llmdoc ~/.codex/plugins/llmdoc
 ```
 
 3. Restart Codex.
-4. Open the plugin directory with `codex` and `/plugins`.
-5. In the marketplace picker, open `My Local Plugins`.
-6. Install the plugin `llmdoc`.
+4. In Codex, run `/plugins`.
+5. Find `llmdoc` in the plugin list, select it to open the detail page.
+6. Install the plugin.
 7. Start a new thread in any repository and either:
    - ask Codex to load the `llmdoc` skill first for normal work
    - choose `llmdoc-init` when you want the `/llmdoc:init` workflow
