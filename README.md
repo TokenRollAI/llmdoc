@@ -54,9 +54,12 @@ The command:
 
 1. Inspects the repo
 2. Creates the llmdoc directory structure
-3. Runs multi-investigator temporary scratch work with explicit coverage checks, then a follow-up gap-check pass
-4. Generates initial MUST, overview, architecture, and reference docs
-5. Synchronizes `llmdoc/index.md`
+3. Runs a short pre-investigation user calibration; pressing Enter with no extra reply continues with repository evidence
+4. Runs size-aware, theme-driven multi-investigator temporary scratch work with explicit coverage checks and targeted follow-up passes instead of rerunning the whole repo
+5. Shows a required post-investigation concept list so the user can generate docs now or add terms, emphasis, or conventions
+6. Generates initial MUST, overview, architecture, and reference docs
+7. Synchronizes `llmdoc/index.md`
+8. Removes `.llmdoc-tmp/` after the stable docs are complete
 
 ### `/llmdoc:update`
 
@@ -128,6 +131,15 @@ Then install this plugin marketplace and plugin:
 ```bash
 /plugin marketplace add https://github.com/TokenRollAI/llmdoc
 /plugin install llmdoc@llmdoc-cc-plugin
+```
+
+Compatibility note: if Claude Code still has an older cached marketplace entry such as `tokenroll-cc-plugin`, reset the marketplace and reload plugins with:
+
+```bash
+/plugin marketplace remove tokenroll-cc-plugin
+/plugin marketplace add https://github.com/TokenRollAI/llmdoc
+/plugin install llmdoc@llmdoc-cc-plugin
+/reload-plugins
 ```
 
 After installation:

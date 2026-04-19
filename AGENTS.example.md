@@ -1,5 +1,7 @@
 # Load The `llmdoc` Skill First
 
+Always answer in 简体中文
+
 Before broad source-code exploration, planning, or documentation work, load the `llmdoc` skill.
 
 The main assistant should align with the user before non-trivial plans or edits.

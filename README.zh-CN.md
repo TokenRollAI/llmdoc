@@ -54,9 +54,12 @@
 
 1. 检查仓库结构
 2. 创建 llmdoc 目录骨架
-3. 启动多个 investigator 生成临时调查草稿，显式检查覆盖面，并补做一轮查缺补漏
-4. 生成初始 MUST、overview、architecture、reference 文档
-5. 同步 `llmdoc/index.md`
+3. 进行一轮简短的调研前用户确认；如果无需补充，直接回车即可继续并按仓库证据推进
+4. 按项目体量和主题驱动 investigator 调查，显式检查覆盖面，并只做定向补查，不重跑整仓
+5. 展示一份必选的调查后概念列表，让用户直接生成文档，或补充术语、重点、约定
+6. 生成初始 MUST、overview、architecture、reference 文档
+7. 同步 `llmdoc/index.md`
+8. 在稳定文档完成后移除 `.llmdoc-tmp/`
 
 ### `/llmdoc:update`
 
@@ -128,6 +131,15 @@ llmdoc/
 ```bash
 /plugin marketplace add https://github.com/TokenRollAI/llmdoc
 /plugin install llmdoc@llmdoc-cc-plugin
+```
+
+兼容性说明：如果 Claude Code 本地还缓存着旧的 marketplace 条目，比如 `tokenroll-cc-plugin`，可以按下面的命令重置 marketplace 并重新加载插件：
+
+```bash
+/plugin marketplace remove tokenroll-cc-plugin
+/plugin marketplace add https://github.com/TokenRollAI/llmdoc
+/plugin install llmdoc@llmdoc-cc-plugin
+/reload-plugins
 ```
 
 安装后：
