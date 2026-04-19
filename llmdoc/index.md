@@ -25,7 +25,7 @@
 - Read `architecture/init-investigation-orchestration.md` before changing `/llmdoc:init`, agent fan-out strategy, follow-up gates, repository-size thresholds, exclusion rules, or Codex agent limits.
 - Read `guides/init-user-calibration.md` before changing `/llmdoc:init` user questions, confirmation checkpoints, or evidence-vs-user-input rules.
 - Read `guides/updating-init-investigation-depth.md` before tuning investigation breadth, follow-up passes, or repository-size thresholds.
-- Read `reference/repo-surfaces.md` before moving or renaming public repo surfaces such as commands, agents, plugin files, or `.codex/config.toml`.
+- Read `reference/repo-surfaces.md` before moving or renaming public repo surfaces such as commands, agents, plugin files, marketplace manifests, or `.codex/config.toml`.
 
 ## Memory
 - `llmdoc/memory/reflections/`: task-specific lessons and mistakes
