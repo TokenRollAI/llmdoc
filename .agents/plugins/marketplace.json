@@ -1,5 +1,5 @@
 {
-  "name": "llmdoc-local",
+  "name": "llmdoc-cc-plugin",
   "interface": {
     "displayName": "llmdoc Local Plugins"
   },

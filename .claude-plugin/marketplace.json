@@ -4,7 +4,9 @@
     "name": "TokenRoll",
     "email": "shuaiqijianaho@qq.com"
   },
-  "description": "Marketplace for the minimal llmdoc Claude Code workflow",
+  "metadata": {
+    "description": "Marketplace for the minimal llmdoc Claude Code workflow"
+  },
   "plugins": [
     {
       "name": "llmdoc",
