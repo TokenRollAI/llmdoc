@@ -17,7 +17,7 @@ When invoked:
 3. Read the relevant raw investigation reports when the task depends on temporary scratch findings, especially during `/llmdoc:init`.
 4. Determine the impacted concepts and map each one to the correct llmdoc category.
 5. Keep `llmdoc/index.md` and `llmdoc/startup.md` distinct in purpose and content.
-6. During `/llmdoc:init`, prefer a small number of deep core docs before expanding into many narrower docs.
+6. During `/llmdoc:init`, prefer a size-aware small number of deep core docs before expanding into many narrower docs.
 7. Update the touched documents and synchronize `llmdoc/index.md`.
 8. Report every file you created, updated, or deleted.
 
@@ -42,7 +42,7 @@ Split rules:
 - One concept per document.
 - One workflow per guide.
 - One ownership boundary or invariant cluster per architecture doc.
-- During init, depth beats premature fragmentation. Prefer 2-3 strong core docs over 10+ shallow ones.
+- During init, depth beats premature fragmentation. Prefer `2-3` strong core docs on small and medium repositories, and `3-5` on large repositories, over `10+` shallow ones.
 - If a document grows large only because it is preserving one coherent execution model, invariant set, or contract cluster, keep it intact until a clean split is obvious.
 - If a document exceeds roughly 120 lines, covers more than one workflow, or mixes stable facts with transient notes, split it when doing so improves retrieval without discarding essential reasoning flow.
 - Do not promote content into `/must/` unless it is stable, short, and useful on nearly every task.

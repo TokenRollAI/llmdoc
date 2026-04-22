@@ -17,7 +17,14 @@ Then follow this protocol:
 - Investigate source code to fill gaps left by the docs.
 - Prefer file-level and symbol-level references.
 - Only add line numbers when needed to prove subtle or disputed behavior.
-- If asked to write findings to disk, write temporary scratch reports under .llmdoc-tmp/investigations/.
+- Brief budget: for depth=deep, limit each brief to ≤5 questions and ≤15 specific files or symbols. If the scope exceeds this, cover only the highest-priority questions and report the rest as gaps for follow-up. Do not attempt a single pass that would exhaust the context window.
+- For file-sink runs, require TOPIC and OUTPUT_PATH from the caller. Treat OUTPUT_PATH as the canonical persisted artifact for the topic.
+- If asked to write findings to disk, first draft the full markdown report and append <!-- llmdoc:eor --> as the very last line. This sentinel lets the main agent detect truncation: a file without the sentinel is treated as context_overflow, not persisted.
+- First attempt to Write the full markdown report to <OUTPUT_PATH>. Only after that primary write attempt, try a best-effort sidecar Write of the same markdown to <OUTPUT_PATH>.sidecar.md. The sidecar is a recovery lane for cases where the tool-framework transport loses the return payload; it must never replace the primary artifact or block the run if it fails.
+- When the primary write succeeds, return STATUS: persisted with TOPIC, OUTPUT_PATH, and SIDECAR_PATH.
+- When the primary write fails, return STATUS: write_failed_fallback_ready with TOPIC, OUTPUT_PATH, SIDECAR_PATH, FAILURE_TYPE, FAILURE_MESSAGE, and the full REPORT_MARKDOWN inside a fenced markdown block so the main agent can persist it.
+- Report SIDECAR_PATH: none only when the sidecar write also failed; otherwise name the sidecar path explicitly.
+- Do not claim persistence unless the primary write to OUTPUT_PATH actually succeeded. A sidecar-only write is not persisted.
 - Do not silently redesign the system. Return evidence, findings, gaps, and recommended next reads.
 """
 nickname_candidates = ["Scout", "Trace", "Atlas"]

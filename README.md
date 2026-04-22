@@ -55,11 +55,37 @@ The command:
 1. Inspects the repo
 2. Creates the llmdoc directory structure
 3. Runs a short pre-investigation user calibration; pressing Enter with no extra reply continues with repository evidence
-4. Runs size-aware, theme-driven multi-investigator temporary scratch work with explicit coverage checks and targeted follow-up passes instead of rerunning the whole repo
+4. Runs size-aware, theme-driven multi-investigator temporary scratch work with explicit persistence checks, subagent-to-main-agent write fallback, and targeted follow-up passes instead of rerunning the whole repo
 5. Shows a required post-investigation concept list so the user can generate docs now or add terms, emphasis, or conventions
 6. Generates initial MUST, overview, architecture, and reference docs
 7. Synchronizes `llmdoc/index.md`
 8. Removes `.llmdoc-tmp/` after the stable docs are complete
+
+Repository size is estimated from first-party source files and tests after excluding dependency, generated, cache, and VCS directories such as `node_modules/`, `dist/`, `build/`, `.next/`, `coverage/`, `vendor/`, and `.git/`. Lockfiles, generated artifacts, vendored code, and cache directories do not count toward the thresholds. The current size bands are: small `<= 1000 LOC`, medium `1001-5000 LOC`, large `> 5000 LOC`.
+
+The first stable pass stays depth-first, but the core-doc target is now size-aware: small and medium repositories usually start with `2-3` deep architecture or reference docs, while large repositories can start with `3-5` when they have distinct invariant clusters worth documenting separately.
+
+If an investigator can return a report but cannot write its scratch file, init now falls back to having the coordinating assistant persist the returned markdown to the same `.llmdoc-tmp/investigations/` path. Investigators also perform a best-effort sidecar write to `<output_path>.sidecar.md`, so that even if the tool-framework transport drops the return payload (for example `Tool result missing due to internal error`), the coordinating assistant can recover the report from disk without re-materializing the markdown through the model. A sidecar is only a recovery source: if `output_path` is missing but the sidecar is complete, the coordinating assistant copies the sidecar back to `output_path` and verifies the restored canonical file before continuing. It should ask the user for write authorization only if the coordinating assistant's own fallback write or restore copy also fails.
+
+#### Investigator failure handling
+
+Init tracks four investigator result states and applies a different recovery path for each:
+
+| State | Trigger | Recovery |
+|-------|---------|----------|
+| `persisted` | Report written; `<!-- llmdoc:eor -->` sentinel present | Verify file and continue |
+| `write_failed_fallback_ready` | Write failed; full markdown in return payload | Coordinating assistant writes to same path, verifies sentinel |
+| `transport_failure` | Tool call returns internal error; no payload | Check `output_path`, then sidecar; if only the sidecar is complete, copy it back to `output_path`, verify, and rerun only if neither path is restorable |
+| `context_overflow` | File present but sentinel missing (truncated) | Split brief into ≤3 narrower sub-briefs; route via follow-up slot |
+
+Each investigator report ends with the sentinel `<!-- llmdoc:eor -->`. A file without the sentinel is treated as truncated (`context_overflow`), not complete. The sentinel lives only in `.llmdoc-tmp/investigations/` scratch files and is removed with the directory at the end of init.
+
+Platform concurrency limits shape how recovery fan-out works:
+
+- **Claude Code**: hard cap of 10 concurrent subagents; excess requests are queued automatically. Recovery sub-briefs can be sent concurrently within this cap.
+- **Codex**: bounded by `max_threads` and `max_depth` in `.codex/config.toml`. Recovery sub-briefs must stay within remaining budget; prefer sequential when budget is tight.
+
+Context overflow recovery does not rerun the same brief scope — that would overflow again. Instead, the topic is split and processed through the existing follow-up slot.
 
 ### `/llmdoc:update`
 
@@ -72,10 +98,12 @@ The command:
 
 1. Rebuilds context from llmdoc and the current working tree
 2. Proactively reads relevant guides and reflections
-3. Investigates impacted concepts
+3. Recreates `.llmdoc-tmp/investigations/` on demand and investigates impacted concepts with the same persistence checks and fallback recovery used by init when file-sink scratch reports are needed
 4. Writes a reflection under `llmdoc/memory/reflections/`
 5. Updates stable docs
 6. Synchronizes `llmdoc/index.md`
+
+If `/llmdoc:update` needs file-sink scratch work after a previous init cleaned up `.llmdoc-tmp/`, it recreates `.llmdoc-tmp/investigations/` before launching the investigation or writing fallback artifacts. If the coordinating assistant cannot create that directory, cannot write a fallback report, or cannot restore `output_path` from a valid sidecar, it must pause and ask the user for write authorization instead of silently stalling.
 
 In normal use, the main assistant should proactively ask whether to run `/llmdoc:update` when the task produced durable knowledge or a useful reflection.
 
