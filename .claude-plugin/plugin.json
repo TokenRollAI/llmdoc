@@ -1,7 +1,7 @@
 {
   "name": "llmdoc",
   "description": "llmdoc Claude Code plugin with a minimal workflow: init, update, and use",
-  "version": "2.0.3",
+  "version": "3.0.0",
   "author": {
     "name": "DJJ & Danniel"
   }
