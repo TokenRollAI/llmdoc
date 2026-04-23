@@ -127,7 +127,7 @@ Init 的 fan-out 不是固定值，而是先按排除依赖、生成物、缓存
 
 | 文件 | 改动内容 |
 |------|---------|
-| `.claude-plugin/plugin.json` | 版本号更新为 `2.0.3` |
+| `.claude-plugin/plugin.json` | 版本号更新为 `3.0.0` |
 | `.claude/settings.local.json` | 增加本仓库本地 Claude 权限白名单：`WebFetch(domain:claude.com)`、`WebSearch` |
 
 ## 文件落盘调查失败处理
