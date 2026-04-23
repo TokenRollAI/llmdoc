@@ -10,7 +10,7 @@
 - `commands/init.md` (`/llmdoc:init`): The main orchestration contract for repository inspection, investigation, and stable doc generation.
 - `agents/investigator.md` (`investigator`): The evidence-gathering role used for targeted codebase and doc investigation.
 - `agents/recorder.md` (`recorder`): The stable-doc writer that must preserve investigation depth instead of flattening it into thin summaries.
-- `.codex/config.toml` (`[agents]`): Global Codex agent limits that cap fan-out depth and concurrency. Current repo values: `max_threads = 8`, `max_depth = 2`. These bound how many investigators can run in parallel and how deep follow-up can nest. Recovery investigators must stay within remaining thread and depth budget.
+- `.codex/config.toml` (`[agents]`): Global Codex agent limits that cap fan-out depth and concurrency. Current repo values: `max_threads = 8`, `max_depth = 2` during developing. These bound how many investigators can run in parallel and how deep follow-up can nest. Recovery investigators must stay within remaining thread and depth budget.
 - `README.md` (`/llmdoc:init`): English public summary of the init workflow.
 - `README.zh-CN.md` (`/llmdoc:init`): Chinese public summary of the init workflow.
 
