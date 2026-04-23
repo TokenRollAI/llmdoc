@@ -54,9 +54,38 @@
 
 1. 检查仓库结构
 2. 创建 llmdoc 目录骨架
-3. 启动多个 investigator 生成临时调查草稿，显式检查覆盖面，并补做一轮查缺补漏
-4. 生成初始 MUST、overview、architecture、reference 文档
-5. 同步 `llmdoc/index.md`
+3. 进行一轮简短的调研前用户确认；如果无需补充，直接回车即可继续并按仓库证据推进
+4. 按项目体量和主题驱动 investigator 调查，显式检查调查报告是否已落盘，在 subagent 写入失败时由主 assistant 补写，并只做定向补查，不重跑整仓
+5. 展示一份必选的调查后概念列表，让用户直接生成文档，或补充术语、重点、约定
+6. 生成初始 MUST、overview、architecture、reference 文档
+7. 同步 `llmdoc/index.md`
+8. 在稳定文档完成后移除 `.llmdoc-tmp/`
+
+项目体量的估算基于“排除依赖、生成物、缓存和 VCS 目录之后”的第一方源码与测试文件。至少会忽略 `node_modules/`、`dist/`、`build/`、`.next/`、`coverage/`、`vendor/` 和 `.git/`；lockfile、生成产物、vendored code 和缓存目录也不计入阈值。当前分档为：小型 `<= 1000 LOC`，中型 `1001-5000 LOC`，大型 `> 5000 LOC`。
+
+首轮稳定文档仍然坚持“先深后广”，但核心文档数量现在按仓库规模放宽：小型和中型仓库通常先产出 `2-3` 篇深度 architecture / reference 文档，大型仓库如果确实存在多个应独立成文的不变量簇，可以先产出 `3-5` 篇。
+
+如果 investigator 能返回调研结果但无法把草稿写入 `.llmdoc-tmp/investigations/`，init 现在会先由主 assistant 把返回的 markdown 补写到同一路径。investigator 在返回前还会尽量把同一份 markdown 再写入 `<output_path>.sidecar.md`，这样即便工具框架传输层丢掉整个返回（例如 `Tool result missing due to internal error`），主 assistant 也能直接从磁盘恢复报告，而不用通过模型重新展开这份 markdown。sidecar 只是恢复来源：如果 `output_path` 缺失但 sidecar 完整，主 assistant 会先把 sidecar 复制回 `output_path`，验证恢复后的 canonical 文件，再继续后续流程。只有在主 assistant 的 fallback 写入或这次恢复 copy 也失败时，才会请求用户授权继续。
+
+#### Investigator 失败处理
+
+Init 追踪四种 investigator 结果状态，每种有不同的恢复路径：
+
+| 状态 | 触发条件 | 恢复路径 |
+|------|---------|---------|
+| `persisted` | 报告已写盘且含 `<!-- llmdoc:eor -->` 哨兵 | 验证文件后继续 |
+| `write_failed_fallback_ready` | 写盘失败，返回完整 markdown | 主 assistant 写到同一路径并验证哨兵 |
+| `transport_failure` | 工具调用返回 internal error，无 payload | 先查 `output_path`，再查 sidecar；如果只有 sidecar 完整，则先复制回 `output_path` 并验证；只有两条路径都不可恢复时才重跑 |
+| `context_overflow` | 文件存在但哨兵缺失（被截断） | 拆分 brief 为 ≤3 个子 brief，走 follow-up 槽 |
+
+每个 investigator 报告的最后一行写入哨兵 `<!-- llmdoc:eor -->`。没有哨兵的文件视为截断（`context_overflow`），不会被当作已完成的报告。哨兵只存在于 `.llmdoc-tmp/investigations/` 临时文件中，随目录在 init 结束时一并清除。
+
+平台并发限制决定恢复时的扇出方式：
+
+- **Claude Code**：并发上限 10，超出自动排队。溢出恢复的子 brief 可以并发发出，超出上限会排队等待。
+- **Codex**：受 `.codex/config.toml` 中 `max_threads` 和 `max_depth` 约束。恢复时的子 brief 必须控制在剩余预算内，线程或深度紧张时优先串行执行。
+
+context overflow 的恢复路径不会用同样的 scope 重跑——会再次溢出。正确做法是将该 topic 拆分，走现有的 follow-up 槽位串行处理。
 
 ### `/llmdoc:update`
 
@@ -69,10 +98,12 @@
 
 1. 基于 llmdoc 和当前 working tree 重建上下文
 2. 主动阅读相关 guides 和 reflection
-3. 调研受影响的概念
+3. 在需要 file-sink 临时报告时按需重建 `.llmdoc-tmp/investigations/`，并用和 init 一致的落盘检查与 fallback 恢复机制调研受影响的概念
 4. 在 `llmdoc/memory/reflections/` 下写 reflection
 5. 更新稳定文档
 6. 同步 `llmdoc/index.md`
+
+如果 `/llmdoc:update` 发生在一次已经清理掉 `.llmdoc-tmp/` 的 init 之后，而这次 update 又需要 file-sink 临时调查报告，它会先重建 `.llmdoc-tmp/investigations/`，再启动调查或补写 fallback 文件。如果主 assistant 无法创建该目录、无法写入 fallback 报告，或无法从有效 sidecar 恢复 `output_path`，就必须暂停并向用户请求写入授权，而不是无声卡住。
 
 在日常使用里，如果任务产生了值得长期保留的知识或反思，主 assistant 应该主动询问是否现在运行 `/llmdoc:update`。
 
@@ -128,6 +159,15 @@ llmdoc/
 ```bash
 /plugin marketplace add https://github.com/TokenRollAI/llmdoc
 /plugin install llmdoc@llmdoc-cc-plugin
+```
+
+兼容性说明：如果 Claude Code 本地还缓存着旧的 marketplace 条目，比如 `tokenroll-cc-plugin`，可以按下面的命令重置 marketplace 并重新加载插件：
+
+```bash
+/plugin marketplace remove tokenroll-cc-plugin
+/plugin marketplace add https://github.com/TokenRollAI/llmdoc
+/plugin install llmdoc@llmdoc-cc-plugin
+/reload-plugins
 ```
 
 安装后：

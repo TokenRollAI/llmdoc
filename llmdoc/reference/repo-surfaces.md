@@ -12,6 +12,7 @@
 - `.codex/config.toml`: Codex-wide agent fan-out and depth limits for this repository.
 - `.codex/agents/*.toml`: Project-scoped Codex custom agents.
 - `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`: Plugin metadata for Codex and Claude Code.
+- `.agents/plugins/marketplace.json` and `.claude-plugin/marketplace.json`: Marketplace manifests that publish the install identifier. Current identifier is `llmdoc-cc-plugin`; renames break existing caches and require a README compatibility note.
 - `README.md` and `README.zh-CN.md`: Public summaries that should reflect actual workflow behavior, not aspirational behavior.
 
 ## Sources of Truth
