@@ -6,8 +6,8 @@
 - Reflection history is starting to feel easier to search than the stable docs.
 
 ## Goal
-- Keep reflections as historical evidence.
-- Move recurring lessons into stable docs that are easier to reuse.
+- Move recurring lessons into stable docs and move the source reflections to an archive folder.
+- Keep archived reflections as historical evidence in llmdoc/memory/reflections/archive/.
 - Summarize and classify ideas instead of copying reflection narratives into a new dump file.
 
 ## Main Steps
