@@ -25,7 +25,7 @@
 ## Routing Rules
 - Read `startup.md` for startup context
 - Read `guides/` before editing a known workflow
-- Read `memory/reflections/` before repeating a workflow or revisiting a problematic subsystem
+- Read the relevant stable docs first, then `memory/reflections/` selectively when you need the original task context for a repeated workflow or problematic subsystem
 ```
 
 ## `startup.md`
@@ -44,7 +44,7 @@ Escalate to more docs when:
 - changing architecture or conventions
 - updating workflows or stable docs
 
-Read related guides and reflections before editing when available.
+Read related guides and the relevant stable docs or reflections before editing when available.
 ```
 
 ## `overview/project-overview.md`

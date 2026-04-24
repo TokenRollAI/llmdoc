@@ -12,6 +12,7 @@
 - core skill 入口保持简短，详细的方法论、协议和模板拆到 `skills/llmdoc/references/`
 - core skill 还定义了主动阅读 guides/reflection，以及在非简单改动前主动和用户沟通
 - 整套工作流还恢复了一个好模式：在非简单任务结束时，主动询问是否运行 `/llmdoc:update`
+- update 工作流也会控制 reflection 历史的体量：当 reflections 超过 5 篇时，把反复出现的经验、规则和约束归并进 `must/` 或 `reference/`
 - Codex helper skills 提供了接近 command 的入口，但不会误导用户以为 Codex 已经支持这个插件的自定义 slash command
 - agent 和 command contract 只负责执行，不再各自复制一大段说明
 
@@ -71,8 +72,9 @@
 2. 主动阅读相关 guides 和 reflection
 3. 调研受影响的概念
 4. 在 `llmdoc/memory/reflections/` 下写 reflection
-5. 更新稳定文档
-6. 同步 `llmdoc/index.md`
+5. 当 reflections 超过 5 篇时，把重复出现的经验归并成通俗易懂的 `must/` 或 `reference/` 文档
+6. 更新稳定文档
+7. 同步 `llmdoc/index.md`
 
 在日常使用里，如果任务产生了值得长期保留的知识或反思，主 assistant 应该主动询问是否现在运行 `/llmdoc:update`。
 
@@ -88,7 +90,7 @@ llmdoc/
 ├── guides/               # 一篇文档只讲一个工作流
 ├── reference/            # 稳定的查阅型事实和约定
 └── memory/
-    ├── reflections/      # 每次任务后的反思
+    ├── reflections/      # 每次任务后的反思，后续会按规则归并
     ├── decisions/        # 长期保留的过程或设计决策
     └── doc-gaps.md       # 已知文档缺口
 

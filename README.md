@@ -12,6 +12,7 @@ The default setup is simple:
 - the core skill entry is short, while detailed rationale, protocols, and templates are split under `skills/llmdoc/references/`
 - the core skill defines proactive guide/reflection reading and proactive user discussion before non-trivial edits
 - the workflow restores the good pattern of proactively asking whether to run `/llmdoc:update` at the end of non-trivial tasks
+- the update workflow also prevents reflection history from growing without bound by consolidating recurring lessons into `must/` or `reference/` once reflections exceed five files
 - helper Codex skills provide command-like entrypoints without pretending Codex has custom slash commands for this plugin
 - agents and command contracts stay focused on execution instead of carrying a large amount of duplicated guidance
 
@@ -71,8 +72,9 @@ The command:
 2. Proactively reads relevant guides and reflections
 3. Investigates impacted concepts
 4. Writes a reflection under `llmdoc/memory/reflections/`
-5. Updates stable docs
-6. Synchronizes `llmdoc/index.md`
+5. When reflections exceed five files, consolidates recurring lessons into plain-language `must/` or `reference/` docs
+6. Updates stable docs
+7. Synchronizes `llmdoc/index.md`
 
 In normal use, the main assistant should proactively ask whether to run `/llmdoc:update` when the task produced durable knowledge or a useful reflection.
 
@@ -88,7 +90,7 @@ llmdoc/
 ├── guides/               # One workflow per document
 ├── reference/            # Stable lookup facts and conventions
 └── memory/
-    ├── reflections/      # Post-task reflections
+    ├── reflections/      # Post-task reflections before promotion
     ├── decisions/        # Durable process or design decisions
     └── doc-gaps.md       # Known documentation weaknesses
 

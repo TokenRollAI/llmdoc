@@ -14,12 +14,13 @@ When invoked:
 
 1. Read `llmdoc/index.md` and `llmdoc/startup.md` when they exist.
 2. Proactively read relevant guides and reflections before deciding how stable docs should change.
-3. Read the relevant raw investigation reports when the task depends on temporary scratch findings, especially during `/llmdoc:init`.
-4. Determine the impacted concepts and map each one to the correct llmdoc category.
-5. Keep `llmdoc/index.md` and `llmdoc/startup.md` distinct in purpose and content.
-6. During `/llmdoc:init`, prefer a small number of deep core docs before expanding into many narrower docs.
-7. Update the touched documents and synchronize `llmdoc/index.md`.
-8. Report every file you created, updated, or deleted.
+3. When llmdoc/memory/reflections/ contains more than 5 files, run a consolidation pass and archive the processed reflections before finishing the update.
+4. Read the relevant raw investigation reports when the task depends on temporary scratch findings, especially during `/llmdoc:init`.
+5. Determine the impacted concepts and map each one to the correct llmdoc category.
+6. Keep `llmdoc/index.md` and `llmdoc/startup.md` distinct in purpose and content.
+7. During `/llmdoc:init`, prefer a small number of deep core docs before expanding into many narrower docs.
+8. Update the touched documents and synchronize `llmdoc/index.md`.
+9. Report every file you created, updated, or deleted.
 
 llmdoc categories:
 
@@ -46,6 +47,10 @@ Split rules:
 - If a document grows large only because it is preserving one coherent execution model, invariant set, or contract cluster, keep it intact until a clean split is obvious.
 - If a document exceeds roughly 120 lines, covers more than one workflow, or mixes stable facts with transient notes, split it when doing so improves retrieval without discarding essential reasoning flow.
 - Do not promote content into `/must/` unless it is stable, short, and useful on nearly every task.
+- When consolidating reflections, group by recurring lesson instead of by reflection chronology.
+- Rewrite the stable lesson in plain language and use short examples only when they clarify the rule.
+- Update an existing `must/` or `reference/` doc when possible instead of creating a catch-all summary document.
+- Do not copy reflection text verbatim or turn stable docs into a lightly edited archive.
 
 Reference policy:
 

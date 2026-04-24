@@ -18,6 +18,8 @@ Why reflection comes first:
 - missing-doc signals are easier to capture before they are rationalized away
 - stable docs should absorb only durable lessons, not raw frustration
 
+Reflections are process memory, not the final long-term rule surface.
+
 ## End-of-task update prompt
 
 At the end of a non-trivial task, the main assistant should actively evaluate whether the user should be prompted to run `/llmdoc:update`.
@@ -46,6 +48,34 @@ Read relevant reflections:
 - before repeating a workflow that previously failed
 - before updating docs after a difficult or ambiguous task
 - after user corrections, failed tests, or major rework
+
+When recurring lessons have already been promoted into stable docs, prefer those stable docs first and re-open raw reflections only when the original task context still matters.
+
+## Reflection consolidation
+
+`llmdoc/memory/reflections/` should not grow into a second documentation system.
+
+When the directory grows beyond 5 reflection files, the next `/llmdoc:update` should run a consolidation pass:
+
+- group reflections by recurring lesson, not by date or filename
+- extract reusable rules, constraints, and reminders instead of retelling each task
+- write the stable version in plain language
+- use a short example only when it makes the lesson easier to apply
+- update an existing stable doc when it already has the right home
+- avoid creating a catch-all "reflection summary" file
+- do not copy or lightly paraphrase reflection text into stable docs
+
+Default destinations:
+
+- `must/`: short cross-task rules that should matter on nearly every run
+- `reference/`: reusable constraints, checklists, thresholds, lookup facts, and worked examples
+
+Examples:
+
+- If several reflections all point to "align with the user before non-trivial edits", promote one short `must/` rule instead of preserving the lesson only as repeated memory.
+- If multiple reflections expose the same update checklist, promote one `reference/` note that states the checklist clearly and adds a short example of when to use it.
+
+After consolidation, future retrieval should prefer the resulting stable docs and use raw reflections selectively.
 
 ## Memory ownership
 

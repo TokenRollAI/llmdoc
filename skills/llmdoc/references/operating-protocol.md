@@ -10,11 +10,14 @@ If `llmdoc/` exists:
 4. Proactively read task-relevant `guides/` and `memory/reflections/` before planning or editing.
 5. Read the remaining task-relevant docs from `overview/`, `architecture/`, and `reference/`.
 
+When recurring lessons have already been promoted into stable docs, prefer those stable docs first and use raw reflections selectively.
+
 Why:
 
 - startup reads give the minimum common context
 - proactive guide reads reduce avoidable implementation mistakes
 - proactive reflection reads reduce repeated workflow mistakes
+- promoted stable docs keep reflection history from becoming the default retrieval surface
 
 ## Re-entry rules
 

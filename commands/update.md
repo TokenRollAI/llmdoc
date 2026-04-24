@@ -21,6 +21,7 @@ Why:
    - Read `llmdoc/index.md`.
    - Read `llmdoc/startup.md` and the files it lists when available.
    - Proactively read relevant `llmdoc/guides/` and `llmdoc/memory/reflections/` before planning edits.
+   - When recurring lessons have already been promoted into stable docs, prefer those stable docs first and re-open raw reflections only when the original task context still matters.
    - Inspect the current working tree, staged changes, and any explicit change summary from `$ARGUMENTS`.
 
 2. Investigate the impacted concepts.
@@ -35,6 +36,12 @@ Why:
 4. Update stable llmdoc with `recorder`.
    - Update only the impacted docs.
    - Promote lessons into `must/`, `guides/`, or `reference/` only when they are stable and likely to recur.
+   - If `llmdoc/memory/reflections/` now contains more than 5 files, run a consolidation pass before finishing the update.
+   - Consolidate by recurring lesson, not by reflection chronology.
+   - Promote short cross-task rules into `must/`.
+   - Promote reusable constraints, checklists, thresholds, and small worked examples into `reference/`.
+   - Use plain language. Add examples only when they make the lesson easier to apply.
+   - Update an existing stable doc when it already fits the lesson. Do not create a catch-all summary dump and do not copy reflection text verbatim.
    - Split documents aggressively instead of appending to a large file.
 
 5. Synchronize `llmdoc/index.md`.

@@ -51,6 +51,7 @@ Use this split:
 - One ownership boundary or invariant cluster per architecture doc.
 - Put repeated startup knowledge in `must/`, not in `overview/`.
 - Put mistakes and raw learnings in `memory/reflections/`, then promote only recurring stable lessons.
+- When reflections exceed 5 files, consolidate recurring patterns into plain-language `must/` or `reference/` docs so `memory/` does not become the default retrieval surface.
 - Keep temporary investigation reports in `.llmdoc-tmp/`, not in `llmdoc/memory/`.
 
 ## Recommended architecture slicing

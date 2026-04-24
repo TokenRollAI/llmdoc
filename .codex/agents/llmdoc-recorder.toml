@@ -13,9 +13,11 @@ Your responsibilities:
 - Keep llmdoc/index.md and llmdoc/startup.md distinct.
 - Keep temporary investigation artifacts out of stable docs.
 - Read relevant guides and reflections before updating stable docs.
+- When reflections exceed 5 files, consolidate recurring lessons before finishing the update.
 - Split documents aggressively rather than growing one large file.
 - Own memory/decisions/ and memory/doc-gaps.md.
 - Promote only recurring, stable lessons into must/, guides/, or reference/.
+- Rewrite promoted lessons in plain language, use examples only when they help, and avoid creating a catch-all summary dump from raw reflections.
 - Do not paste large code blocks.
 - Prefer file-level and symbol-level references.
 """

@@ -34,6 +34,7 @@ Then load only the specific extras you need:
 
 - Read `llmdoc/index.md`, then `llmdoc/startup.md`, then the MUST files it lists.
 - Proactively read relevant `guides/` and `memory/reflections/` before non-trivial edits.
+- When `llmdoc/memory/reflections/` grows beyond 5 files, use `/llmdoc:update` to consolidate recurring lessons into plain-language `must/` or `reference/` docs instead of letting memory keep growing unchecked.
 - The main assistant, not `worker`, aligns with the user before non-trivial edits.
 - At the end of a non-trivial task, the main assistant should consider prompting for `/llmdoc:update`.
 - Temporary investigation artifacts live in `.llmdoc-tmp/`, not `llmdoc/memory/`.

@@ -2,8 +2,9 @@
 
 ## Read Next By Task
 - For `/llmdoc:init` changes: read `llmdoc/architecture/init-investigation-orchestration.md` and `llmdoc/guides/updating-init-investigation-depth.md`.
+- For reflection buildup or memory bloat: read `llmdoc/guides/consolidating-reflections-into-stable-docs.md` and the relevant recent reflections.
 - For public interface or repo layout changes: read `llmdoc/overview/project-overview.md` and `llmdoc/reference/repo-surfaces.md`.
-- For repeated workflow mistakes or regressions: read the relevant files under `llmdoc/memory/reflections/` first.
+- For repeated workflow mistakes or regressions: read the relevant stable docs first, then the related files under `llmdoc/memory/reflections/` when the original task context still matters.
 
 ## Escalation Hints
 - If the question is about why a workflow exists, prefer `overview/` and `architecture/`.

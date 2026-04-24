@@ -20,6 +20,7 @@ Before editing stable docs:
 - read `llmdoc/index.md`
 - read `llmdoc/startup.md` and the MUST docs it lists
 - proactively read relevant `llmdoc/guides/` and `llmdoc/memory/reflections/`
+- when recurring lessons have already been promoted into stable docs, prefer those stable docs first and open raw reflections only when the original task context still matters
 - align with the user before non-trivial edits
 
 Then execute this workflow:
@@ -39,6 +40,12 @@ Then execute this workflow:
 4. Update stable llmdoc docs.
    - Update only the impacted docs.
    - Promote lessons into `must/`, `guides/`, or `reference/` only when they are stable and likely to recur.
+   - If `llmdoc/memory/reflections/` now contains more than 5 files, run a consolidation pass before finishing the update.
+   - Consolidate by recurring lesson, not by reflection chronology.
+   - Promote short cross-task rules into `must/`.
+   - Promote reusable constraints, checklists, thresholds, and small worked examples into `reference/`.
+   - Use plain language. Add examples only when they make the lesson easier to apply.
+   - Update an existing stable doc when it already fits the lesson. Do not create a catch-all summary dump and do not copy reflection text verbatim.
    - Split docs aggressively instead of appending to large mixed files.
 
 5. Synchronize `llmdoc/index.md`.
