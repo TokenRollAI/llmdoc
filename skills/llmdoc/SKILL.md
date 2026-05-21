@@ -24,6 +24,7 @@ Read these references in order:
 2. `references/operating-protocol.md`
 3. `references/doc-structure.md`
 4. `references/update-and-memory.md`
+5. `references/lessons-learned.md`
 
 Then load only the specific extras you need:
 

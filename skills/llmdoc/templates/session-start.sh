@@ -8,7 +8,7 @@ if [ -d "$project_dir/llmdoc" ]; then
 {
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
-    "additionalContext": "This project has llmdoc enabled. Load the llmdoc skill. Read llmdoc/index.md, then llmdoc/startup.md, then the MUST docs listed there. Before non-trivial edits, proactively read relevant guides and reflections and align with the user on approach."
+    "additionalContext": "This project has llmdoc enabled. Load the llmdoc skill. Read llmdoc/index.md, then llmdoc/startup.md, then the MUST docs listed there. If llmdoc/memory/lessons-learned.md exists, read it as the archived memory summary. Before non-trivial edits, proactively read relevant guides and reflections and align with the user on approach."
   }
 }
 EOF

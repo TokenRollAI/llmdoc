@@ -8,7 +8,29 @@ timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$tmp_dir"
 cat > "$tmp_dir/stop-$timestamp.json"
 
-cat <<'EOF'
+active_memory_count=0
+if [ -d "$project_dir/llmdoc/memory" ]; then
+  active_memory_count="$(
+    find "$project_dir/llmdoc/memory" -type f \
+      ! -path "$project_dir/llmdoc/memory/archive/*" \
+      ! -name "lessons-learned.md" \
+      ! -name "doc-gaps.md" \
+      | wc -l \
+      | tr -d '[:space:]'
+  )"
+fi
+
+if [ "$active_memory_count" -gt 5 ]; then
+  cat <<EOF
+{
+  "hookSpecificOutput": {
+    "hookEventName": "Stop",
+    "additionalContext": "llmdoc active memory has ${active_memory_count} files, which exceeds the archive threshold of 5. During /llmdoc:update, summarize recurring lessons into llmdoc/memory/lessons-learned.md and archive summarized raw memory per skills/llmdoc/references/lessons-learned.md."
+  }
+}
+EOF
+else
+  cat <<'EOF'
 {
   "hookSpecificOutput": {
     "hookEventName": "Stop",
@@ -16,3 +38,4 @@ cat <<'EOF'
   }
 }
 EOF
+fi
