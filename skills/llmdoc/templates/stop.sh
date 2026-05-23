@@ -25,7 +25,7 @@ if [ "$active_memory_count" -gt 5 ]; then
 {
   "hookSpecificOutput": {
     "hookEventName": "Stop",
-    "additionalContext": "llmdoc active memory has ${active_memory_count} files, which exceeds the archive threshold of 5. During /llmdoc:update, summarize recurring lessons into llmdoc/memory/lessons-learned.md and archive summarized raw memory per skills/llmdoc/references/lessons-learned.md."
+    "additionalContext": "Best-effort reminder: llmdoc active memory currently has ${active_memory_count} files, which exceeds the archive threshold of 5. The precise checkpoint is /llmdoc:update after any new reflection is written; then summarize recurring lessons into llmdoc/memory/lessons-learned.md and archive summarized raw memory per skills/llmdoc/references/lessons-learned.md."
   }
 }
 EOF

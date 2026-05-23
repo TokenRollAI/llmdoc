@@ -4,12 +4,12 @@
     "name": "TokenRoll",
     "email": "shuaiqijianaho@qq.com"
   },
-  "description": "Marketplace for the minimal llmdoc Claude Code workflow",
+  "description": "Marketplace for the llmdoc Claude Code workflow",
   "plugins": [
     {
       "name": "llmdoc",
       "source": "./",
-      "description": "Minimal llmdoc workflow for Claude Code: init, update, and use"
+      "description": "llmdoc workflow for Claude Code: init, update modes, temporary investigation cache, and use"
     }
   ]
 }

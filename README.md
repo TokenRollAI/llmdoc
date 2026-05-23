@@ -12,6 +12,7 @@ The default setup is simple:
 - the core skill entry is short, while detailed rationale, protocols, and templates are split under `skills/llmdoc/references/`
 - the core skill defines proactive guide/reflection reading and proactive user discussion before non-trivial edits
 - the workflow restores the good pattern of proactively asking whether to run `/llmdoc:update` at the end of non-trivial tasks
+- `/llmdoc:update` supports lightweight and heavier modes, so immediate post-task doc updates do not always require a full multi-agent pipeline
 - helper Codex skills provide command-like entrypoints without pretending Codex has custom slash commands for this plugin
 - agents and command contracts stay focused on execution instead of carrying a large amount of duplicated guidance
 
@@ -65,14 +66,23 @@ Use `/llmdoc:update` after meaningful work when project knowledge should be pers
 In Claude Code, this is a command.
 In Codex, use the helper skill `llmdoc-update` for the equivalent workflow.
 
+The command keeps tracked `llmdoc/` docs consistent with the current repository. Stable docs should stay compact: either smaller than the source they describe or useful because they explain architecture, implementation intent, boundaries, and stable contracts.
+
+The command selects the lightest mode that can keep docs correct:
+
+- `fast`: default for immediate post-implementation updates when the coordinating assistant has fresh context
+- `analysis`: one focused evidence pass for stale context, current-state research, or unclear impact
+- `full`: separate investigation, reflection, and recording when risk or process learning justifies the extra independence
+
 The command:
 
 1. Rebuilds context from llmdoc and the current working tree
 2. Proactively reads relevant guides and reflections
-3. Investigates impacted concepts
-4. Writes a reflection under `llmdoc/memory/reflections/`
-5. Updates stable docs
-6. Synchronizes `llmdoc/index.md`
+3. Chooses an update mode
+4. Investigates impacted concepts only when the selected mode requires it
+5. Writes a reflection under `llmdoc/memory/reflections/` only when there is a workflow lesson or missing-doc signal
+6. Updates stable docs and reconciles `llmdoc/memory/doc-gaps.md`
+7. Synchronizes `llmdoc/index.md`
 
 In normal use, the main assistant should proactively ask whether to run `/llmdoc:update` when the task produced durable knowledge or a useful reflection.
 
@@ -100,11 +110,13 @@ llmdoc/
 `llmdoc/startup.md` is only the startup reading order.
 They should link to each other, but they should not repeat the same content.
 
+`.llmdoc-tmp/` is a local temporary context cache. Investigator reports can persist across nearby sessions and help avoid repeated research, but they are ignored by git, not indexed, and not a source of truth. Promote only durable conclusions into tracked `llmdoc/` docs.
+
 ## Internal Agents
 
 | Agent | Purpose |
 |------|---------|
-| `investigator` | Evidence gathering for chat or temporary scratch reports |
+| `investigator` | Evidence gathering for chat, current-state research, or temporary scratch reports |
 | `worker` | Executes well-defined tasks |
 | `recorder` | Maintains stable llmdoc documents |
 | `reflector` | Writes post-task reflections |

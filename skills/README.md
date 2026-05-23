@@ -12,3 +12,5 @@ Recommended setup:
 - Keep the detailed working model in `skills/llmdoc/references/`
 - Keep reusable Codex hook and script templates in `skills/llmdoc/templates/`
 - Let the skill carry the proactive guide/reflection reading protocol and the proactive user-discussion protocol
+- Keep `/llmdoc:update` behavior aligned across Claude Code commands, Codex helper skills, public README files, and project-scoped agents
+- Treat `.llmdoc-tmp/` as a local temporary context cache, not stable project memory

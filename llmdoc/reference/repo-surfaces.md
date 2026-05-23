@@ -5,7 +5,7 @@
 
 ## Stable Facts
 - `commands/init.md`: Contract for initializing or re-bootstrapping llmdoc.
-- `commands/update.md`: Contract for reflecting first and then updating stable docs.
+- `commands/update.md`: Contract for selecting an update mode and keeping tracked stable docs current.
 - `skills/llmdoc/SKILL.md`: Core operating skill for llmdoc projects.
 - `skills/llmdoc-init/SKILL.md` and `skills/llmdoc-update/SKILL.md`: Codex-native helper entry skills that mirror `/llmdoc:init` and `/llmdoc:update`.
 - `agents/investigator.md`, `agents/worker.md`, `agents/recorder.md`, `agents/reflector.md`: Claude-style role prompts for the internal workflow.
@@ -19,4 +19,5 @@
 - `README.zh-CN.md` (`公开接口`): Chinese user-facing contract.
 - `commands/init.md` (`/llmdoc:init`): Init workflow source of truth.
 - `commands/update.md` (`/llmdoc:update`): Update workflow source of truth.
+- `llmdoc/architecture/update-orchestration.md` (`/llmdoc:update` design): Update mode and knowledge-layer source of truth.
 - `.codex/config.toml` (`[agents]`): Codex runtime limit source of truth.

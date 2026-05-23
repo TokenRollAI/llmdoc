@@ -26,15 +26,18 @@ Good uses:
 
 ### `Stop`
 
-Use it for end-of-turn review or lightweight cleanup.
+Use it for end-of-turn review or lightweight cleanup. Treat it as a best-effort reminder, not as the precise memory archive checkpoint.
 
 Good uses:
 
 - append a stop-hook record into `.llmdoc-tmp/`
 - add lightweight review context after a turn ends
 - capture raw hook payloads for troubleshooting
+- remind the assistant that active memory may need archiving
 
 Do not expect `Stop` to replace end-of-task prompting inside the assistant. It runs at turn scope, not task scope.
+
+Do not rely on `Stop` to enforce the `lessons-learned.md` threshold exactly. `/llmdoc:update` must perform the exact active-memory count after any new reflection is written, because hook timing can miss boundary cases.
 
 ## Configuration
 

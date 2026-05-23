@@ -12,6 +12,7 @@
 - core skill 入口保持简短，详细的方法论、协议和模板拆到 `skills/llmdoc/references/`
 - core skill 还定义了主动阅读 guides/reflection，以及在非简单改动前主动和用户沟通
 - 整套工作流还恢复了一个好模式：在非简单任务结束时，主动询问是否运行 `/llmdoc:update`
+- `/llmdoc:update` 支持轻量和重型模式，所以刚完成实现后的文档更新不必每次都跑完整多 agent 流水线
 - Codex helper skills 提供了接近 command 的入口，但不会误导用户以为 Codex 已经支持这个插件的自定义 slash command
 - agent 和 command contract 只负责执行，不再各自复制一大段说明
 
@@ -65,14 +66,23 @@
 在 Claude Code 里，它是 command。
 在 Codex 里，用 helper skill `llmdoc-update` 走等价工作流。
 
+这个命令会让 tracked `llmdoc/` 文档和当前仓库保持一致。稳定文档应该保持紧凑：要么比它描述的源码更小，要么能解释源码搜索无法快速提供的架构、实现意图、边界和稳定契约。
+
+这个命令会选择能保证文档正确的最轻模式：
+
+- `fast`：默认模式，适合主 assistant 刚完成实现、上下文仍然新鲜的情况
+- `analysis`：适合上下文变旧、需要调研当前现状、或影响范围不清时的一次聚焦证据 pass
+- `full`：适合风险较高、事实有争议、或确实需要独立反思与复核的情况
+
 这个命令会：
 
 1. 基于 llmdoc 和当前 working tree 重建上下文
 2. 主动阅读相关 guides 和 reflection
-3. 调研受影响的概念
-4. 在 `llmdoc/memory/reflections/` 下写 reflection
-5. 更新稳定文档
-6. 同步 `llmdoc/index.md`
+3. 选择 update mode
+4. 只在所选模式需要时调研受影响的概念
+5. 只有出现工作流教训或缺失文档信号时，才在 `llmdoc/memory/reflections/` 下写 reflection
+6. 更新稳定文档，并清账 `llmdoc/memory/doc-gaps.md`
+7. 同步 `llmdoc/index.md`
 
 在日常使用里，如果任务产生了值得长期保留的知识或反思，主 assistant 应该主动询问是否现在运行 `/llmdoc:update`。
 
@@ -100,11 +110,13 @@ llmdoc/
 `llmdoc/startup.md` 只负责启动阅读顺序。
 两者可以互相链接，但不应该重复同一批内容。
 
+`.llmdoc-tmp/` 是本地临时 context cache。investigator 报告可以跨相邻会话保留，帮助减少重复调研，但它被 git 忽略、不会进入 index，也不是 source of truth。只有稳定、可复用的结论才应该提升到 tracked `llmdoc/` 文档里。
+
 ## 内部 Agents
 
 | Agent | 用途 |
 |------|------|
-| `investigator` | 做证据驱动的调研，可回对话，也可输出临时调查草稿 |
+| `investigator` | 做证据驱动的调研，可回对话、调研当前现状，也可输出临时调查草稿 |
 | `worker` | 执行明确的任务 |
 | `recorder` | 维护稳定 llmdoc 文档 |
 | `reflector` | 记录任务后的 reflection |

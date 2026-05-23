@@ -2,6 +2,7 @@
 
 ## Read Next By Task
 - For `/llmdoc:init` changes: read `llmdoc/architecture/init-investigation-orchestration.md` and `llmdoc/guides/updating-init-investigation-depth.md`.
+- For `/llmdoc:update` changes: read `llmdoc/architecture/update-orchestration.md` and `llmdoc/guides/updating-update-workflow.md`.
 - For public interface or repo layout changes: read `llmdoc/overview/project-overview.md` and `llmdoc/reference/repo-surfaces.md`.
 - For repeated workflow mistakes or regressions: read the relevant files under `llmdoc/memory/reflections/` first.
 

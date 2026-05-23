@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Build release notes
+        id: notes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${GITHUB_REF_NAME}"
+          previous_tag="$(git tag --sort=-creatordate | grep -v "^${tag}$" | head -n 1 || true)"
+
+          {
+            echo "## Changes"
+            echo
+            if [ -n "$previous_tag" ]; then
+              git log --pretty='- %s (%h)' "${previous_tag}..${tag}"
+            else
+              git log --pretty='- %s (%h)' "${tag}"
+            fi
+            echo
+            echo "## Changed Files"
+            echo
+            if [ -n "$previous_tag" ]; then
+              git diff --name-only "${previous_tag}..${tag}" | sed 's/^/- /'
+            else
+              git show --name-only --pretty='' "${tag}" | sed '/^$/d; s/^/- /'
+            fi
+          } > release-notes.md
+
+      - name: Publish release
+        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2.3.3
+        with:
+          body_path: release-notes.md

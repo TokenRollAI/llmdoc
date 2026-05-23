@@ -144,6 +144,12 @@ Read related guides and reflections before editing when available.
 ```md
 # Investigation Scratch Report
 
+## Metadata
+- Date:
+- Git Revision:
+- Evidence Scope:
+- Reuse Conditions:
+
 ## Goal
 - What questions this scratch report answers.
 
@@ -156,4 +162,7 @@ Read related guides and reflections before editing when available.
 ## Promotion Notes
 - What should become stable docs.
 - What should stay temporary and be deleted later.
+
+## Gaps
+- What remains unresolved or needs fresh investigation before reuse.
 ```

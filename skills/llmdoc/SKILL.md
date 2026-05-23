@@ -38,6 +38,7 @@ Then load only the specific extras you need:
 - The main assistant, not `worker`, aligns with the user before non-trivial edits.
 - At the end of a non-trivial task, the main assistant should consider prompting for `/llmdoc:update`.
 - Temporary investigation artifacts live in `.llmdoc-tmp/`, not `llmdoc/memory/`.
+- `.llmdoc-tmp/` is a local temporary context cache. It may help nearby sessions, but it is ignored by git, not indexed, and not a source of truth.
 - `recorder` owns stable docs, `memory/decisions/`, and `memory/doc-gaps.md`. `reflector` owns `memory/reflections/`.
 
 ## Hook Support

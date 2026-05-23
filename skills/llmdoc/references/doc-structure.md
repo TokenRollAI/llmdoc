@@ -10,13 +10,13 @@
 - `guides/`: one workflow per document
 - `reference/`: stable lookup facts, schemas, conventions, contracts
 - `memory/`: reflections, decisions, and doc gaps
-- `.llmdoc-tmp/`: temporary investigation scratch artifacts
+- `.llmdoc-tmp/`: local temporary context cache for scratch artifacts
 
 Why this split works:
 
 - stable docs stay small and reusable
 - transient notes stop polluting architecture docs
-- temporary reports can go stale without contaminating long-lived docs
+- temporary reports can go stale or disappear without contaminating long-lived docs
 
 ## Index responsibilities
 
@@ -52,6 +52,25 @@ Use this split:
 - Put repeated startup knowledge in `must/`, not in `overview/`.
 - Put mistakes and raw learnings in `memory/reflections/`, then promote only recurring stable lessons.
 - Keep temporary investigation reports in `.llmdoc-tmp/`, not in `llmdoc/memory/`.
+
+## Temporary Context Cache
+
+`.llmdoc-tmp/` is deliberately outside stable llmdoc.
+
+Use it for:
+
+- investigator scratch reports under `.llmdoc-tmp/investigations/`
+- hook logs or other local run artifacts
+- temporary handoff notes that may help the current or next nearby session
+
+Do not use it for:
+
+- current-state snapshots that should be trusted by future users
+- tracked project documentation
+- entries in `llmdoc/index.md`
+- durable decisions, reflections, or doc gaps
+
+Scratch reports may survive across sessions, but they are still temporary. Reuse them only after validating their recorded git revision, scope, and unresolved gaps against the current repository. If they are stale, delete or ignore them and investigate again.
 
 ## Recommended architecture slicing
 
