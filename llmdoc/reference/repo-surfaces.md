@@ -13,11 +13,13 @@
 - `.codex/agents/*.toml`: Project-scoped Codex custom agents.
 - `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`: Plugin metadata for Codex and Claude Code.
 - `README.md` and `README.zh-CN.md`: Public summaries that should reflect actual workflow behavior, not aspirational behavior.
+- `llmdoc/state/sync.md`: Tracked, machine-managed commit watermark (`watermark-commit`) recording the last source commit reflected in `llmdoc/`. It is state, not knowledge: `recorder` is its sole writer, and it is never indexed or added to `startup.md`/`must/`. Seeded at init; advanced only as the terminal step of a successful `/llmdoc:update`.
 
 ## Sources of Truth
 - `README.md` (`Public Surface`): English user-facing contract.
 - `README.zh-CN.md` (`公开接口`): Chinese user-facing contract.
 - `commands/init.md` (`/llmdoc:init`): Init workflow source of truth.
 - `commands/update.md` (`/llmdoc:update`): Update workflow source of truth.
-- `llmdoc/architecture/update-orchestration.md` (`/llmdoc:update` design): Update mode and knowledge-layer source of truth.
+- `llmdoc/architecture/update-orchestration.md` (`/llmdoc:update` design): Update mode, commit-watermark model, and knowledge-layer source of truth.
+- `llmdoc/state/sync.md` (`watermark-commit`): Machine-managed change-detection anchor; not a knowledge source of truth.
 - `.codex/config.toml` (`[agents]`): Codex runtime limit source of truth.

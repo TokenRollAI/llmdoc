@@ -16,7 +16,7 @@
 - `llmdoc/startup.md`: ordered startup reading list
 - `llmdoc/overview/project-overview.md`: what this repository is and what belongs here
 - `llmdoc/architecture/init-investigation-orchestration.md`: how `/llmdoc:init` investigation is expected to fan out and converge
-- `llmdoc/architecture/update-orchestration.md`: how `/llmdoc:update` chooses fast, analysis, or full update paths
+- `llmdoc/architecture/update-orchestration.md`: how `/llmdoc:update` uses the commit watermark to detect changes and chooses fast, analysis, or full update paths
 - `llmdoc/guides/updating-init-investigation-depth.md`: how to change init depth safely when the workflow is too shallow or too broad
 - `llmdoc/guides/updating-update-workflow.md`: how to update the update workflow across Claude Code, Codex, agents, and docs
 - `llmdoc/reference/repo-surfaces.md`: stable map of commands, agents, plugin files, and Codex config surfaces
@@ -25,8 +25,9 @@
 - Read `startup.md` first on normal work.
 - Read `architecture/init-investigation-orchestration.md` before changing `/llmdoc:init`, agent fan-out strategy, or Codex agent limits.
 - Read `guides/updating-init-investigation-depth.md` before tuning investigation breadth or follow-up passes.
-- Read `architecture/update-orchestration.md` and `guides/updating-update-workflow.md` before changing `/llmdoc:update`, `llmdoc-update`, investigator scratch behavior, or recorder update rules.
+- Read `architecture/update-orchestration.md` and `guides/updating-update-workflow.md` before changing `/llmdoc:update`, `llmdoc-update`, the commit-watermark change detection, investigator scratch behavior, or recorder update rules.
 - Read `reference/repo-surfaces.md` before moving or renaming public repo surfaces such as commands, agents, plugin files, or `.codex/config.toml`.
+- `llmdoc/state/sync.md` is machine-managed commit-watermark state, not knowledge: `recorder` is its sole writer; never index it here or in `startup.md`/`must/`.
 
 ## Memory
 - `llmdoc/memory/reflections/`: task-specific lessons and mistakes

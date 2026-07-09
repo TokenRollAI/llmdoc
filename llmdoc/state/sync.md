@@ -4,8 +4,8 @@
 
 - schema: 1
 
-- watermark-commit: 7a8fe470627898d46258d8abf50b160a8e198eb8
+- watermark-commit: a9ad7bf877ba12b48e666fb3bc19638cfcf5680f
 
-- watermark-subject: docs: simplify Codex install and add Chinese README link
-- updated-at: 2026-07-09T00:00:00Z
-- updated-by: /llmdoc:update (dogfood seed)
+- watermark-subject: feat: commit-watermark based /llmdoc:update (contract, agents, state)
+- updated-at: 2026-07-09T09:46:29Z
+- updated-by: /llmdoc:update
