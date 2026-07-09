@@ -23,7 +23,7 @@ Invariants, design rationale, and verified git semantics: `llmdoc/architecture/u
 
 ## Sync State
 
-`llmdoc/state/sync.md` is a tracked, machine-managed markdown file holding one load-bearing field, `watermark-commit` (full 40-hex SHA). It is not project knowledge: never index it, never add it to `startup.md`/`must/`, never count it as active memory. Read the watermark with a single anchored line:
+`llmdoc/state/sync.md` is a tracked, machine-managed markdown file holding one load-bearing field, `watermark-commit` (the full commit SHA, whatever hash the repo uses — SHA-1 or SHA-256). It is not project knowledge: never index it, never add it to `startup.md`/`must/`, never count it as active memory. Read the watermark with a single anchored line:
 
 ```sh
 W=$(awk -F': ' '/^- watermark-commit:/{print $2}' llmdoc/state/sync.md 2>/dev/null | tr -d '[:space:]')
@@ -44,33 +44,43 @@ Run all git plumbing without `set -e` (capture each exit code) so a `128` degrad
 SHALLOW=$(git rev-parse --is-shallow-repository)
 H=$(git rev-parse HEAD)                                  # capture once
 
-# 2. Read watermark (empty/unknown-schema → first-run: base=HEAD, no backfill unless --from/--since, force ≥ analysis, seed at HEAD)
+# 2. Read watermark
 W=$(awk -F': ' '/^- watermark-commit:/{print $2}' llmdoc/state/sync.md 2>/dev/null | tr -d '[:space:]')
 
-# 3. EXISTENCE before reachability (merge-base --is-ancestor exits 128 fatal on a missing object; guard first)
-git rev-parse --verify --quiet "$W^{commit}" >/dev/null || { echo "watermark object missing"; }  # rev-parse --verify --quiet exits 1 cleanly on a missing/non-commit object (cat-file -e "$W^{commit}" would fatal 128 on the peel) → first-run baseline=HEAD, warn, do not advance; if $SHALLOW=true suggest: git fetch --unshallow
+# 3-4. Resolve RANGE_BASE with EXPLICIT branching. Existence gates reachability: never run merge-base
+#      on an empty/missing $W — it would fatal-128, not skip. Each branch is terminal.
+if [ -z "$W" ]; then
+  echo "watermark empty/missing → first-run: base=HEAD (no backfill unless --from/--since), force ≥ analysis, seed at HEAD on success"
+  RANGE_BASE=$H
+elif ! git rev-parse --verify --quiet "$W^{commit}" >/dev/null; then
+  echo "watermark object missing (GC'd / below shallow boundary) → first-run baseline=HEAD, warn, do NOT advance"
+  # if $SHALLOW = true, suggest: git fetch --unshallow. (rev-parse --verify --quiet exits 1 cleanly; cat-file -e "$W^{commit}" would fatal 128 on the peel.)
+  RANGE_BASE=$H
+elif git merge-base --is-ancestor "$W" "$H"; then
+  RANGE_BASE=$W                                          # watermark valid
+elif git merge-base --is-ancestor "$H" "$W"; then
+  echo "HEAD BEHIND watermark → REFUSE (reverse W..HEAD would list future files as deletions and strip docs); working-tree input only, do NOT advance"
+  RANGE_BASE=$H
+else
+  RANGE_BASE=$(git merge-base "$W" "$H")                 # true divergence (rebase/squash-merge); force ≥ analysis
+fi
 
-# 4. Reachability
-git merge-base --is-ancestor "$W" "$H"                   # rc=0 → valid, RANGE_BASE=$W
-#   rc≠0 → not ancestor; reverse test:
-git merge-base --is-ancestor "$H" "$W"                   # rc=0 → HEAD BEHIND watermark → REFUSE (reverse range would delete docs); do not advance backward; working-tree input only
-#   else → true divergence (rebase/squash): RANGE_BASE=$(git merge-base "$W" "$H"); force ≥ analysis
-
-# 5. Net change set (rename-aware, NUL-safe)
-git diff --name-status -M -C -z "$RANGE_BASE" "$H"       # R<score> old\tnew → old path cleans stale refs, new path reflects current state
+# 5. Net change set (rename-aware, NUL-safe). In -z mode a rename/copy record is STATUS\0OLD\0NEW\0
+#    (3 fields; STATUS is R<score>/C<score>); a normal record is STATUS\0PATH\0.
+git diff --name-status -M -C -z "$RANGE_BASE" "$H"
 ```
 
-Batch flags (if any of `--range/--commits/--since/--from` is given, the default `RANGE_BASE..HEAD` is NOT added unless `--include-default`). Each batch resolves to a set of changed **paths**: parse the `--name-status` records — drop the status column, and for a rename `R` take BOTH the old and new path. Union all batch path-sets with the working-tree set, deduplicated (do not `sort -u` raw NUL/status records):
+Batch flags (if any of `--range/--commits/--since/--from` is given, the default `RANGE_BASE..HEAD` is NOT added unless `--include-default`). Each batch resolves to a set of changed **paths**: parse the `--name-status -z` records — drop the status column; in `-z` mode a record is `STATUS\0PATH\0`, but a rename/copy record (status `R<score>`/`C<score>`) is `STATUS\0OLD\0NEW\0`, so read TWO path tokens when the status starts with `R` or `C` (take both) and one otherwise, or the parser desyncs. Union all batch path-sets with the working-tree set, deduplicated (do not `sort -u` raw NUL/status records):
 
 - `--range A..B` (repeatable): `git diff --name-status -M -C -z A B`.
 - `--commits SHA,…`: per commit `git diff --name-status -M -C -z <sha>^ <sha>`; **reject merge commits** (parent count > 1 → tell the user to pass `A..B`); **root commit** diffs against the empty tree `git hash-object -t tree /dev/null` (`4b825dc642cb6eb9a060e54bf8d69288fbee4904`).
-- `--since REF|date`: for a ref, `<ref>..HEAD`; for a date, resolve a boundary commit `B=$(git rev-list -1 --before=<date> HEAD)` and diff `B..HEAD` with the same `git diff --name-status -M -C -z` as every other branch (do NOT `git log --name-only`, which yields a statusless, blank-line-polluted shape that will not union cleanly).
+- `--since REF|date`: for a ref, `<ref>..HEAD`; for a date, resolve a boundary commit `B=$(git rev-list -1 --before=<date> HEAD)` and diff `B..HEAD` with the same `git diff --name-status -M -C -z` as every other branch. If `B` is empty (no commit predates `<date>`, so the whole history is in range), diff against the empty tree `git hash-object -t tree /dev/null` instead of `B..HEAD` (which would be `..HEAD` and fatal). Do NOT `git log --name-only`, which yields a statusless, blank-line-polluted shape that will not union cleanly.
 - `--from SHA`: one-off start override for this run only; does not touch `sync.md`.
 - `--working-tree-only`: skip the committed range entirely; document only uncommitted changes; never advance the watermark.
 
-Always fold in, as an ADDITIONAL input tagged `worktree` (never advances the watermark): `git diff --name-only HEAD` (unstaged) ∪ `git diff --name-only --cached` (staged) ∪ `git ls-files --others --exclude-standard` (untracked).
+Always fold in, as an ADDITIONAL input tagged `worktree` (never advances the watermark): `git diff --name-only HEAD` (every tracked path whose on-disk content differs from HEAD — staged and unstaged) ∪ `git ls-files --others --exclude-standard` (untracked). `git diff --name-only HEAD` already covers staged changes, so a separate `--cached` diff is redundant.
 
-Empty range (`W == HEAD`, the commonest steady-state run): if `RANGE_BASE..HEAD` is empty AND there are no working-tree changes AND no batch flags, report `already up to date through <Hshort>` and exit without touching docs, the index, or the watermark.
+Empty range (already synced) — applies ONLY when the watermark was VALID (the `RANGE_BASE=$W` branch) and `W == HEAD`: if there are also no working-tree changes and no batch flags, report `already up to date through <Hshort>` and exit without touching docs, the index, or the watermark. The degraded branches that force `RANGE_BASE=HEAD` (empty/missing watermark → first-run seed; HEAD-behind → refuse) also produce an empty range but are NOT "already synced" — each is handled by its own branch outcome above, not by this terminal.
 
 Doc-commit loop-breaker: exclude `llmdoc/` from the "is there source work?" test. If `git diff --name-only "$RANGE_BASE".."$H" -- ':(exclude)llmdoc/**'` is empty (range non-empty but doc-only), fast-forward the watermark to HEAD with zero doc work. Always exclude the sync file and `.llmdoc-tmp/` from every diff so a run never self-triggers.
 
@@ -133,9 +143,9 @@ Self-authored test: a commit is self-authored when its author email (`git log -1
    - Do not index `.llmdoc-tmp/`, and do not index `llmdoc/state/sync.md` as knowledge.
 
 9. Advance the watermark (recorder-owned terminal step).
-   - Safe-to-advance gate — ALL must hold: the update completed successfully and consumed a committed range; HEAD is attached (`git symbolic-ref -q HEAD` succeeds); and no git operation is in progress (none of `git rev-parse --git-path MERGE_HEAD`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `rebase-merge`, `rebase-apply` exists).
+   - Safe-to-advance gate — ALL must hold: the update completed successfully and consumed a committed range; HEAD is attached (`git symbolic-ref -q HEAD` succeeds); and no git operation is in progress. Test the last one by whether the resolved path EXISTS on disk (`git rev-parse --git-path` always prints a path and exits 0 regardless of existence, so check with `[ -f ]`/`[ -d ]`): none of `[ -f "$(git rev-parse --git-path MERGE_HEAD)" ]`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `[ -d "$(git rev-parse --git-path rebase-merge)" ]`, `rebase-apply` may exist.
    - If the gate holds, advance `watermark-commit` to the captured `H` (default) or the highest unbroken-prefix tip (partial/batch). Rewrite ONLY these fields, keeping the exact `- watermark-commit: ` line prefix (the reader anchors on it — do not reformat it):
-     - `watermark-commit`: the new full 40-hex SHA
+     - `watermark-commit`: the new full commit SHA
      - `watermark-subject`: `git log -1 --format=%s <new-sha>`
      - `updated-at`: ISO-8601 UTC, e.g. `date -u +%Y-%m-%dT%H:%M:%SZ`
      - `updated-by`: `/llmdoc:update`

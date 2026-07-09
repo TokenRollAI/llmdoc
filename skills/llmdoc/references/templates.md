@@ -58,7 +58,7 @@ Machine-managed commit watermark. Seed at init with `watermark-commit=$(git rev-
 
 - schema: 1
 
-- watermark-commit: <40-hex SHA of HEAD at init>
+- watermark-commit: <full commit SHA of HEAD at init>
 
 - watermark-subject: <subject line of the watermark commit>
 - updated-at: <ISO-8601 UTC>
