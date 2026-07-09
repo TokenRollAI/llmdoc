@@ -70,21 +70,25 @@
 
 这个命令会让 tracked `llmdoc/` 文档和当前仓库保持一致。稳定文档应该保持紧凑：要么比它描述的源码更小，要么能解释源码搜索无法快速提供的架构、实现意图、边界和稳定契约。
 
-这个命令会选择能保证文档正确的最轻模式：
+变更检测是**基于 commit** 的。一个被 git 跟踪的水位线 `llmdoc/state/sync.md` 记录 `llmdoc/` 已反映到的最后一个 source commit。默认对 `水位线..HEAD` 做 diff（自上次同步以来所有提交的净变更），成功后推进水位线。未提交的工作树变更作为附加输入纳入，但永不移动水位线。
 
-- `fast`：默认模式，适合主 assistant 刚完成实现、上下文仍然新鲜的情况
-- `analysis`：适合上下文变旧、需要调研当前现状、或影响范围不清时的一次聚焦证据 pass
-- `full`：适合风险较高、事实有争议、或确实需要独立反思与复核的情况
+它可以在一次运行里吞掉多批 commit —— `--range A..B`（可重复）、`--commits SHA,…`、`--since REF`、`--from SHA`、`--working-tree-only` —— 并在非 git 项目、shallow clone、首次运行无水位线、rebase/孤儿水位线等情况下优雅降级。
+
+这个命令会选择能保证文档正确的最轻模式，触发器是 范围大小 × 作者归属 × 风险：
+
+- `fast`：小范围、自己作者、受影响文档可点名
+- `analysis`：较大范围、含任一他人提交、或恢复/首次运行的 baseline —— 一次聚焦证据 pass
+- `full`：大范围或高风险、多批回填、或历史重写恢复 —— 独立的调研、反思与记录
 
 这个命令会：
 
-1. 基于 llmdoc 和当前 working tree 重建上下文
+1. 读水位线并计算 commit 范围（外加任何批次 flag 与工作树）
 2. 主动阅读相关 guides 和 reflection
-3. 选择 update mode
+3. 基于范围大小、作者归属、风险选择 update mode
 4. 只在所选模式需要时调研受影响的概念
 5. 只有出现工作流教训或缺失文档信号时，才在 `llmdoc/memory/reflections/` 下写 reflection
 6. 更新稳定文档，并清账 `llmdoc/memory/doc-gaps.md`
-7. 同步 `llmdoc/index.md`
+7. 同步 `llmdoc/index.md`，并在成功后推进水位线
 
 在日常使用里，如果任务产生了值得长期保留的知识或反思，主 assistant 应该主动询问是否现在运行 `/llmdoc:update`。
 

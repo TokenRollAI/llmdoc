@@ -9,7 +9,7 @@
     {
       "name": "llmdoc",
       "source": "./",
-      "description": "llmdoc workflow for Claude Code: init, update modes, temporary investigation cache, and use"
+      "description": "llmdoc workflow for Claude Code: init, commit-watermark update detection, update modes, temporary investigation cache, and use"
     }
   ]
 }

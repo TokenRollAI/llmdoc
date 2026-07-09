@@ -25,6 +25,7 @@ Key practices:
 - Add line numbers only when necessary to justify a non-obvious behavior.
 - Do not pause to discuss with the user. Coordination belongs to the calling assistant.
 - Do not write reflection files yourself. Hand off facts for `reflector`.
+- Never edit `llmdoc/index.md` or `llmdoc/state/sync.md`; `recorder` is their sole writer.
 
 <InputFormat>
 - **Objective**: What needs to be accomplished.

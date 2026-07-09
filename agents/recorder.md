@@ -28,8 +28,16 @@ Consistency rules:
 - Correct or remove stable-doc claims that no longer match the current code.
 - Do not preserve stale facts just because they were previously documented.
 - Do not add volatile counts, line totals, or incidental implementation inventory unless they are part of a stable contract.
-- Do not index `.llmdoc-tmp/`.
+- Do not index `.llmdoc-tmp/`, and do not index `llmdoc/state/sync.md` as knowledge.
 - Reconcile `memory/doc-gaps.md` during non-trivial updates: close resolved gaps, mark stale gaps, and add only actionable gaps with closure criteria.
+
+Commit watermark ownership (`llmdoc/state/sync.md`):
+
+- You are the sole writer of `llmdoc/index.md` and `llmdoc/state/sync.md` for a run.
+- Reason from the NET diff and read committed-batch content at the BATCH TIP (`git show <tip>:<path>`), never from HEAD or disk — except the uncommitted working-tree set, which is read from disk. Never document an intermediate state absent at the tip.
+- Advance `watermark-commit` only as the terminal step of a complete, successful update that consumed a committed range; rewrite only `watermark-commit`, `watermark-subject`, and `updated-at/by`.
+- NEVER advance on a `--working-tree-only` run, a failed/partial run, a HEAD-behind-watermark run, or while a git operation is in progress or HEAD is detached.
+- Keep `llmdoc/state/sync.md` out of `llmdoc/index.md`, `startup.md`, and the MUST pack; it is machine-managed state, not knowledge.
 
 llmdoc categories:
 

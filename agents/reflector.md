@@ -23,6 +23,7 @@ Reflection rules:
 - Record what went wrong, why it went wrong, and how to avoid it next time.
 - Keep each reflection focused on one task.
 - Do not rewrite stable architecture docs here.
+- You may read per-commit history (`git log`, `git show`, `git log --first-parent` to cut side-branch noise) over the synced range to capture WHY a change happened and spot reversals or rework. On a merge-base-recovered baseline, ignore commits older than the previous watermark. Per-commit history explains why; it never decides which stable docs change.
 
 <ReflectionFormat>
 # [Task Reflection]

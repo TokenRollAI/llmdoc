@@ -14,6 +14,7 @@ Your responsibilities:
 - Write concise reflections to llmdoc/memory/reflections/.
 - Capture what went wrong, why it happened, what docs or signals were missing, and what may deserve promotion.
 - Do not rewrite stable architecture docs here.
+- You may read per-commit history (git log, git show, git log --first-parent to cut side-branch noise) over the synced range to capture WHY a change happened and spot reversals or rework; on a merge-base-recovered baseline, ignore commits older than the previous watermark. Per-commit history explains why; it never decides which stable docs change.
 - Leave compact, reusable learning artifacts.
 """
 nickname_candidates = ["Echo", "Pulse", "North"]

@@ -47,6 +47,24 @@ Escalate to more docs when:
 Read related guides and reflections before editing when available.
 ```
 
+## `state/sync.md`
+
+Machine-managed commit watermark. Seed at init with `watermark-commit=$(git rev-parse HEAD)`. Keep the `watermark-commit` line isolated by blank lines (minimizes merge-conflict surface). Never index it, never add it to `startup.md`/`must/`, never count it as active memory.
+
+```md
+# llmdoc sync state
+<!-- Machine-managed by /llmdoc:update. Do not hand-edit watermark-commit except to
+     recover from a rebase. Never add to startup.md / MUST. Never index as knowledge. -->
+
+- schema: 1
+
+- watermark-commit: <40-hex SHA of HEAD at init>
+
+- watermark-subject: <subject line of the watermark commit>
+- updated-at: <ISO-8601 UTC>
+- updated-by: /llmdoc:init (seed)
+```
+
 ## `overview/project-overview.md`
 
 ```md

@@ -6,15 +6,32 @@ When project knowledge changes, use `/llmdoc:update`.
 
 Tracked `llmdoc/` docs should describe the current repository. They should be smaller than the source code they describe, or add architectural intent, boundaries, and implementation reasoning that raw source search does not provide quickly.
 
+## Commit watermark
+
+Change detection is commit-based, anchored on a durable, git-tracked watermark: `llmdoc/state/sync.md`, whose one load-bearing field `watermark-commit` is the last source commit already reflected in `llmdoc/`.
+
+- Default change set = the NET diff `watermark..HEAD` (`git diff --name-status -M -C -z`): the current state of every path touched since the watermark.
+- Multiple batches can be consumed in one run (`--range` repeatable, `--commits`, `--since`, `--from`, `--working-tree-only`); all impact sets are unioned and processed in a single pass.
+- Uncommitted working-tree/staged/untracked changes are always an ADDITIONAL input, but they never advance the watermark.
+- `recorder` advances the watermark only as the terminal step of a complete, successful update that consumed a committed range.
+- `llmdoc/state/sync.md` is machine-managed state, not project knowledge: never index it, never put it in `startup.md`/`must/`, never count it as active memory.
+
+The resolution ladder, batch flags, degraded-mode handling, and exact git commands are the contract in `commands/update.md` and `skills/llmdoc-update/SKILL.md`. Invariants, design rationale, and verified git semantics: `llmdoc/architecture/update-orchestration.md`.
+
+### Net diff vs per-commit
+
+- `recorder` documents CURRENT state, read at the batch tip (`git show <tip>:<path>`, never HEAD/disk except for the uncommitted working-tree set). The net diff decides which docs change and what they now say. Never document an intermediate state absent at the tip.
+- `reflector`/`investigator` may consult per-commit history (`git log`, `git show`, `--first-parent`) only to explain WHY a change happened, and only when a reflection is being written. Per-commit history never decides which docs change.
+
 ## Update modes
 
-Choose the lightest mode that keeps the docs correct:
+Choose the lightest mode that keeps the docs correct. The trigger is range size × authorship × risk, not context freshness:
 
-- `fast`: default after the coordinating assistant has just implemented the change. Use the fresh task summary, diff, targeted checks, and any still-valid local scratch reports.
-- `analysis`: use one focused evidence pass when current-state research, stale context, or unclear impact makes the update uncertain.
-- `full`: use separate investigation, reflection, and stable-doc maintenance when high risk, disputed facts, or process learning justify the extra independence.
+- `fast`: small range (≤ ~3 commits), self-authored, impacted docs nameable. Use the task summary, diff, targeted checks, and any still-valid local scratch reports.
+- `analysis`: ~4–15 commits, OR any non-self-authored commit, OR multiple clusters, OR a recovered/derived/first-run baseline. One focused evidence pass.
+- `full`: > ~15 commits, multi-batch backfill, history-rewrite recovery, disputed facts, or process learning — separate investigation, reflection, and stable-doc maintenance.
 
-Escalate from `fast` only when the assistant cannot confidently name the impacted docs and facts.
+Hard floors force ≥ `analysis`: a merge-base-recovered baseline, a derived/first-run baseline, or any non-self-authored commit. A first-run/`--since` range beyond ~20 commits or ~50 files forces `full` and explicit user confirmation. Freshness of the assistant's context is an input to mode selection, not the source of change detection.
 
 The update order is:
 
@@ -89,6 +106,7 @@ Read relevant reflections:
 - `reflector` writes `llmdoc/memory/reflections/`
 - `recorder` maintains `llmdoc/memory/decisions/`
 - `recorder` maintains `llmdoc/memory/doc-gaps.md`
+- `recorder` is the sole writer of `llmdoc/state/sync.md` (the commit watermark), advancing it only as the terminal step of a successful update; it is machine-managed state, not memory or knowledge
 
 Use `decisions/` for durable design or process decisions.
 Use `memory/doc-gaps.md` to track missing or weak documentation that should be improved later.

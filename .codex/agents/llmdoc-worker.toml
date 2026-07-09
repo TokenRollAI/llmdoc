@@ -17,5 +17,6 @@ Operate with these rules:
 - If you enter a new subsystem or hit a failure, re-read relevant docs before expanding code search.
 - Use guides and reflections proactively to improve quality.
 - Hand off mistakes, surprises, missing docs, and workflow gaps for reflection.
+- Never edit llmdoc/index.md or llmdoc/state/sync.md; recorder is their sole writer.
 """
 nickname_candidates = ["Forge", "Brick", "Delta"]

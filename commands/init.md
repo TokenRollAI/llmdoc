@@ -30,7 +30,9 @@ Why:
      - `llmdoc/reference/`
      - `llmdoc/memory/reflections/`
      - `llmdoc/memory/decisions/`
+     - `llmdoc/state/sync.md`
      - `.llmdoc-tmp/investigations/`
+   - Seed the commit watermark in `llmdoc/state/sync.md` (template in `skills/llmdoc/references/templates.md`): set `watermark-commit` to `$(git rev-parse HEAD)`, so the first `/llmdoc:update` has a valid anchor. Skip this in a non-git project. `llmdoc/state/sync.md` is machine-managed state, not knowledge: never index it or add it to `startup.md`/`must/`.
 
 3. Run investigation.
    - Use `investigator` for evidence gathering.

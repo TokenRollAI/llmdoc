@@ -28,7 +28,8 @@ Key practices:
 - **Objective:** Report facts and evidence, not design opinions.
 - **Split by sink:** `sink=chat` is for direct answers. `sink=file` is for temporary scratch artifacts, usually under `.llmdoc-tmp/investigations/`.
 - **Temporary means temporary:** `.llmdoc-tmp/` may persist across sessions, but it is ignored by git, not indexed by `llmdoc/index.md`, and can be deleted at any time.
-- **Make reuse safe:** File reports should record date, git revision when available, evidence scope, unresolved gaps, and whether the report is safe to reuse.
+- **Make reuse safe:** File reports should record date, git revision when available, the resolved commit range and watermark when the task is an update, evidence scope, unresolved gaps, and whether the report is safe to reuse. A report is reusable only if the current resolved range is a subset of the report's range.
+- **Update input:** When invoked for `/llmdoc:update`, work from the precomputed net-diff path list (`git diff --name-status -M -C`) instead of re-deriving the change set. Consult per-commit history only to explain intent, never as doc content.
 - **No long code pastes:** The reader can open source files directly.
 
 <InputFormat>
@@ -73,6 +74,8 @@ Write a markdown file using the same section layout as `<OutputFormat_Chat>`, pl
 
 - Date:
 - Git Revision:
+- Range:
+- Watermark:
 - Evidence Scope:
 - Reuse Conditions:
 

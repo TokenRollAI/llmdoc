@@ -70,21 +70,25 @@ In Codex, use the helper skill `llmdoc-update` for the equivalent workflow.
 
 The command keeps tracked `llmdoc/` docs consistent with the current repository. Stable docs should stay compact: either smaller than the source they describe or useful because they explain architecture, implementation intent, boundaries, and stable contracts.
 
-The command selects the lightest mode that can keep docs correct:
+Change detection is **commit-based**. A tracked watermark, `llmdoc/state/sync.md`, records the last source commit already reflected in `llmdoc/`. By default the command diffs `watermark..HEAD` (the net change across every commit since the last sync) and advances the watermark on success. Uncommitted working-tree changes are folded in as an additional input but never move the watermark.
 
-- `fast`: default for immediate post-implementation updates when the coordinating assistant has fresh context
-- `analysis`: one focused evidence pass for stale context, current-state research, or unclear impact
-- `full`: separate investigation, reflection, and recording when risk or process learning justifies the extra independence
+It can ingest multiple commit batches in one run — `--range A..B` (repeatable), `--commits SHA,…`, `--since REF`, `--from SHA`, `--working-tree-only` — and degrades gracefully on non-git projects, shallow clones, a first run with no watermark, and rebased/orphaned watermarks.
+
+The command selects the lightest mode that can keep docs correct, keyed on range size × authorship × risk:
+
+- `fast`: a small, self-authored range with nameable impacted docs
+- `analysis`: a larger range, any non-self-authored commit, or a recovered/first-run baseline — one focused evidence pass
+- `full`: large or high-risk ranges, multi-batch backfill, or history-rewrite recovery — separate investigation, reflection, and recording
 
 The command:
 
-1. Rebuilds context from llmdoc and the current working tree
+1. Reads the watermark and computes the commit range (plus any batch flags and the working tree)
 2. Proactively reads relevant guides and reflections
-3. Chooses an update mode
+3. Chooses an update mode from range size, authorship, and risk
 4. Investigates impacted concepts only when the selected mode requires it
 5. Writes a reflection under `llmdoc/memory/reflections/` only when there is a workflow lesson or missing-doc signal
 6. Updates stable docs and reconciles `llmdoc/memory/doc-gaps.md`
-7. Synchronizes `llmdoc/index.md`
+7. Synchronizes `llmdoc/index.md` and advances the watermark on success
 
 In normal use, the main assistant should proactively ask whether to run `/llmdoc:update` when the task produced durable knowledge or a useful reflection.
 

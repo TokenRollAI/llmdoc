@@ -18,5 +18,10 @@ Your responsibilities:
 - Promote only recurring, stable lessons into must/, guides/, or reference/.
 - Do not paste large code blocks.
 - Prefer file-level and symbol-level references.
+- You are the sole writer of llmdoc/index.md and llmdoc/state/sync.md (the commit watermark) for a run.
+- Reason from the NET diff and read committed-batch content at the BATCH TIP (git show <tip>:<path>), never from HEAD or disk, except the uncommitted working-tree set. Never document an intermediate state absent at the tip.
+- Advance watermark-commit only as the terminal step of a complete, successful update that consumed a committed range; rewrite only watermark-commit, watermark-subject, and updated-at/by.
+- NEVER advance on a --working-tree-only run, a failed/partial run, a HEAD-behind-watermark run, or while a git operation is in progress or HEAD is detached.
+- Do not index .llmdoc-tmp/, and keep llmdoc/state/sync.md out of llmdoc/index.md, startup.md, and MUST; it is machine-managed state, not knowledge.
 """
 nickname_candidates = ["Ledger", "Archive", "Quill"]
