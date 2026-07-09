@@ -36,8 +36,11 @@ W=$(awk -F': ' '/^- watermark-commit:/{print $2}' llmdoc/state/sync.md 2>/dev/nu
 Run all git plumbing without `set -e` (capture each exit code) so a `128` degrades instead of aborting. The resolution ladder order is an invariant — never reorder:
 
 ```sh
-# 1. Capability probe
-[ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" = true ] || { echo "non-git: watermark inactive"; }  # → legacy working-tree detection, no watermark read/advance
+# 1. Capability probe (gates the whole ladder — steps 2-5 assume a git work tree)
+[ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" = true ] || {
+  echo "non-git: watermark inactive"   # STOP HERE: use legacy working-tree + staged + summary detection;
+  return 0 2>/dev/null || exit 0        # do NOT run steps 2-5, do NOT read or advance the watermark
+}
 SHALLOW=$(git rev-parse --is-shallow-repository)
 H=$(git rev-parse HEAD)                                  # capture once
 
@@ -82,6 +85,8 @@ Choose the lightest mode that can keep the docs correct. The trigger is range si
 - `full`: > ~15 commits, multi-batch backfill, history-rewrite recovery, disputed facts, or reflection-heavy failures. Use investigator, reflector, and recorder as separate roles.
 
 Hard floors (always force ≥ `analysis`): a merge-base-recovered baseline, a derived/first-run baseline, or any non-self-authored commit. Backfill blast-radius cap: a first-run/`--since` range beyond ~20 commits or ~50 files forces `full` and explicit user confirmation. Thresholds are tunable defaults; report the chosen mode and the signals that triggered it.
+
+Self-authored test: a commit is self-authored when its author email (`git log -1 --format=%ae <sha>`) equals the current `git config user.email`. If the identity cannot be determined (e.g., a subagent with no git identity, or `user.email` unset), treat commits as non-self-authored — the conservative side that forces ≥ `analysis`.
 
 ## `.llmdoc-tmp/`
 
@@ -128,8 +133,12 @@ Hard floors (always force ≥ `analysis`): a merge-base-recovered baseline, a de
    - Do not index `.llmdoc-tmp/`, and do not index `llmdoc/state/sync.md` as knowledge.
 
 9. Advance the watermark (recorder-owned terminal step).
-   - Only on a complete, successful update that consumed a committed range.
-   - Advance `watermark-commit` to the captured `H` (default) or the highest unbroken-prefix tip (partial/batch); rewrite only `watermark-commit`, `watermark-subject`, and `updated-at/by`.
-   - NEVER advance on a `--working-tree-only` run, a failed/partial run, a HEAD-behind-watermark run, or while a git operation is in progress or HEAD is detached.
+   - Safe-to-advance gate — ALL must hold: the update completed successfully and consumed a committed range; HEAD is attached (`git symbolic-ref -q HEAD` succeeds); and no git operation is in progress (none of `git rev-parse --git-path MERGE_HEAD`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `rebase-merge`, `rebase-apply` exists).
+   - If the gate holds, advance `watermark-commit` to the captured `H` (default) or the highest unbroken-prefix tip (partial/batch). Rewrite ONLY these fields, keeping the exact `- watermark-commit: ` line prefix (the reader anchors on it — do not reformat it):
+     - `watermark-commit`: the new full 40-hex SHA
+     - `watermark-subject`: `git log -1 --format=%s <new-sha>`
+     - `updated-at`: ISO-8601 UTC, e.g. `date -u +%Y-%m-%dT%H:%M:%SZ`
+     - `updated-by`: `/llmdoc:update`
+   - NEVER advance on a `--working-tree-only` run, a failed/partial run, a HEAD-behind-watermark run, or when the safe-to-advance gate fails.
 
 10. Report the mode used, resolved range(s)/batches and commit count, old → new watermark (or why it did not move), any scratch report or reflection path, the archive action taken or skipped, and the stable docs that changed.
