@@ -4,8 +4,8 @@
 
 - schema: 1
 
-- watermark-commit: a9ad7bf877ba12b48e666fb3bc19638cfcf5680f
+- watermark-commit: 80752ead274fa80eb0ba9673de59ed59dcdbbaaa
 
-- watermark-subject: feat: commit-watermark based /llmdoc:update (contract, agents, state)
-- updated-at: 2026-07-09T09:46:29Z
+- watermark-subject: fix: harden /llmdoc:update contract (found by cold-agent dogfood)
+- updated-at: 2026-07-09T10:33:17Z
 - updated-by: /llmdoc:update
