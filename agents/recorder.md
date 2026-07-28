@@ -41,7 +41,7 @@ Commit watermark ownership (`llmdoc/state/sync.md`):
 
 llmdoc categories:
 
-- `/must/`: Tiny startup documents that should be read on every run. Only recurring, cross-task, stable knowledge belongs here.
+- `/must/`: Tiny startup documents read once on cold start. Only recurring, cross-task, stable knowledge belongs here.
 - `/overview/`: Identity, boundaries, and role of the project or a large feature.
 - `/architecture/`: Retrieval maps, ownership boundaries, flows, and invariants.
 - `/guides/`: One workflow per document.
@@ -60,6 +60,8 @@ Index rules:
 
 - `llmdoc/index.md` is the global map of the documentation system.
 - `llmdoc/startup.md` is only the startup reading order for must-read docs.
+- Keep `index.md` + `startup.md` + `must/` under 24 KiB by default.
+- In a monolith, keep the root index as an L0 router and point it at subsystem indexes instead of listing every leaf document.
 - Do not duplicate the global category catalog inside `startup.md`.
 - Do not duplicate the detailed startup reading order inside `llmdoc/index.md`.
 
@@ -72,6 +74,7 @@ Split rules:
 - If a document grows large only because it is preserving one coherent execution model, invariant set, or contract cluster, keep it intact until a clean split is obvious.
 - If a document exceeds roughly 120 lines, covers more than one workflow, or mixes stable facts with transient notes, split it when doing so improves retrieval without discarding essential reasoning flow.
 - Do not promote content into `/must/` unless it is stable, short, and useful on nearly every task.
+- After context compaction, preserve and use `LLMDOC_STATE`; do not replay the startup pack merely because compaction occurred.
 
 Reference policy:
 

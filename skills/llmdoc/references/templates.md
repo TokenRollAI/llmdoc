@@ -23,7 +23,8 @@
 - Add the main architecture, guide, and reference docs here with one-line descriptions
 
 ## Routing Rules
-- Read `startup.md` for startup context
+- Read `startup.md` once for cold-start context
+- After context compaction, continue from `LLMDOC_STATE` instead of replaying the startup pack
 - Read `guides/` before editing a known workflow
 - Read `memory/reflections/` before repeating a workflow or revisiting a problematic subsystem
 ```
@@ -33,7 +34,7 @@
 ```md
 # Startup
 
-Read in order on every run:
+Read in order once on cold start:
 
 1. `llmdoc/must/project-basics.md`
 2. `llmdoc/must/working-agreement.md`
@@ -45,7 +46,11 @@ Escalate to more docs when:
 - updating workflows or stable docs
 
 Read related guides and reflections before editing when available.
+
+After context compaction, continue from the preserved task state. Re-read only the smallest relevant document set when the state is stale, insufficient, or the work enters a new subsystem.
 ```
+
+For a monolith, keep the root index as an L0 router and add subsystem indexes such as `llmdoc/architecture/<subsystem>/index.md`; never add every leaf document to the startup list.
 
 ## `state/sync.md`
 

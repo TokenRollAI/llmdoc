@@ -4,6 +4,7 @@
 - Load the `llmdoc` skill before broad exploration, planning, or documentation work.
 - Prefer docs first, code and config second.
 - The main assistant aligns with the user before non-trivial edits.
+- Treat `llmdoc/index.md` + `startup.md` + `must/` as a cold-start-only startup pack; after compaction continue from `LLMDOC_STATE` instead of replaying it.
 - Temporary investigation artifacts belong in `.llmdoc-tmp/`, not stable llmdoc docs.
 - `.llmdoc-tmp/` is only a local temporary context cache; validate scratch reports before reuse and never treat them as source of truth.
 - Use `/llmdoc:update` when a task changes workflow knowledge, architecture understanding, or recurring conventions.

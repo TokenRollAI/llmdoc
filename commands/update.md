@@ -133,6 +133,7 @@ Self-authored test: a commit is self-authored when its author email (`git log -1
    - Remove or correct stable-doc claims that no longer match the current code.
    - Split documents aggressively instead of appending to a large file.
    - Reconcile `llmdoc/memory/doc-gaps.md`: close resolved gaps, mark stale gaps, add only actionable new gaps with closure criteria.
+   - Keep the cold-start pack (`index.md` + `startup.md` + `must/`) under 24 KiB by default. In a monolith, preserve a small L0 root router and route leaf docs through subsystem indexes.
 
 7. Run the active-memory archive check.
    - After any new reflection is written, count active memory files under `llmdoc/memory/`, excluding `lessons-learned.md`, `doc-gaps.md`, and anything under `archive/` (`llmdoc/state/` is outside `memory/` and is not counted).
@@ -140,6 +141,7 @@ Self-authored test: a commit is self-authored when its author email (`git log -1
 
 8. Synchronize `llmdoc/index.md`.
    - Ensure new and changed docs are discoverable.
+   - Do not grow the root index into a monolith-wide leaf inventory; point it at subsystem indexes when direct enumeration would violate the startup budget.
    - Do not index `.llmdoc-tmp/`, and do not index `llmdoc/state/sync.md` as knowledge.
 
 9. Advance the watermark (recorder-owned terminal step).

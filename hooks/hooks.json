@@ -1,0 +1,37 @@
+{
+  "description": "Lifecycle-aware llmdoc startup and compact re-entry.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "^(startup|clear)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$PLUGIN_ROOT\"/skills/llmdoc/templates/session-start.sh cold",
+            "additionalContextLimit": 1200
+          }
+        ]
+      },
+      {
+        "matcher": "^resume$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$PLUGIN_ROOT\"/skills/llmdoc/templates/session-start.sh resume",
+            "additionalContextLimit": 1200
+          }
+        ]
+      },
+      {
+        "matcher": "^compact$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$PLUGIN_ROOT\"/skills/llmdoc/templates/session-start.sh compact",
+            "additionalContextLimit": 1200
+          }
+        ]
+      }
+    ]
+  }
+}

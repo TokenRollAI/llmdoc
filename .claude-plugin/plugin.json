@@ -1,7 +1,7 @@
 {
   "name": "llmdoc",
-  "description": "llmdoc Claude Code plugin with init, commit-watermark update detection, update modes, temporary investigation cache, and use",
-  "version": "2.2.0",
+  "description": "llmdoc plugin with bounded cold-start context, routed docs, init, commit-watermark updates, and use",
+  "version": "2.3.0",
   "author": {
     "name": "DJJ & Danniel"
   }

@@ -13,6 +13,8 @@ The default setup is simple:
 - `CLAUDE.md` and `AGENTS.md` only need one short rule: step one is loading the `llmdoc` skill
 - the core skill entry is short, while detailed rationale, protocols, and templates are split under `skills/llmdoc/references/`
 - the core skill defines proactive guide/reflection reading and proactive user discussion before non-trivial edits
+- the startup package is loaded once on cold start; Codex compaction resumes through a compact `LLMDOC_STATE` instead of replaying llmdoc
+- monoliths keep a bounded root router and use subsystem indexes instead of loading a repository-wide leaf catalog
 - the workflow restores the good pattern of proactively asking whether to run `/llmdoc:update` at the end of non-trivial tasks
 - `/llmdoc:update` supports lightweight and heavier modes, so immediate post-task doc updates do not always require a full multi-agent pipeline
 - helper Codex skills provide command-like entrypoints without pretending Codex has custom slash commands for this plugin
@@ -36,7 +38,7 @@ This refactor keeps the public interface small and moves the rest into one reusa
 - Claude Code plugin support: `.claude-plugin/`
 - Codex CLI plugin support: `.codex-plugin/plugin.json` and `.agents/plugins/marketplace.json`
 - Codex CLI subagents: `.codex/agents/*.toml`
-- Codex CLI hooks: `SessionStart`, `Stop` templates included
+- Codex CLI hooks: lifecycle-aware `SessionStart` bundled; `Stop` and compact-prompt templates included
 
 ## Workflow
 
@@ -92,13 +94,25 @@ The command:
 
 In normal use, the main assistant should proactively ask whether to run `/llmdoc:update` when the task produced durable knowledge or a useful reflection.
 
+## Context Lifecycle
+
+`llmdoc` distinguishes a cold start from compact re-entry:
+
+- `startup` and `clear` load the core skill, root index, startup list, and MUST pack once
+- `resume` reuses a valid `LLMDOC_STATE`, otherwise it performs one cold start
+- `compact` continues the same task without reloading the skill, startup pack, lessons, or already-loaded task docs
+
+The bundled Codex `SessionStart` hook fingerprints the startup pack and reports its byte size. Re-entry refreshes only the smallest relevant document set when the fingerprint changed, a relevant document changed, the task entered a new subsystem, or the compact state is insufficient.
+
+The default startup budget is 24 KiB for `index.md` + `startup.md` + `must/`. This is a deterministic proxy, not an exact model-token count. In a monolith, keep `llmdoc/index.md` as an L0 router, add subsystem indexes beside their docs, and load only the active subsystem route.
+
 ## llmdoc Layout
 
 ```text
 llmdoc/
 ├── index.md
 ├── startup.md
-├── must/                 # Small startup context package
+├── must/                 # Small cold-start context package
 ├── overview/             # Project and feature identity
 ├── architecture/         # Retrieval maps, invariants, ownership
 ├── guides/               # One workflow per document
@@ -112,8 +126,8 @@ llmdoc/
 └── investigations/       # Temporary scratch investigation reports
 ```
 
-`llmdoc/index.md` is the global doc map.
-`llmdoc/startup.md` is only the startup reading order.
+`llmdoc/index.md` is the bounded global router.
+`llmdoc/startup.md` is only the cold-start reading order.
 They should link to each other, but they should not repeat the same content.
 
 `.llmdoc-tmp/` is a local temporary context cache. Investigator reports can persist across nearby sessions and help avoid repeated research, but they are ignored by git, not indexed, and not a source of truth. Promote only durable conclusions into tracked `llmdoc/` docs.
@@ -178,11 +192,13 @@ This repository contains two separate Codex integration surfaces:
   - [`skills/llmdoc/`](skills/llmdoc/)
   - [`skills/llmdoc-init/`](skills/llmdoc-init/)
   - [`skills/llmdoc-update/`](skills/llmdoc-update/)
+  - [`hooks/hooks.json`](hooks/hooks.json) for the bundled lifecycle-aware `SessionStart` hook
   - [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json) as a repo-scoped local marketplace example
 - Repo-local Codex workflow files for this repository:
   - [`.codex/config.toml`](.codex/config.toml)
   - [`.codex/agents/`](.codex/agents)
   - [`skills/llmdoc/templates/codex-hooks.json`](skills/llmdoc/templates/codex-hooks.json)
+  - [`skills/llmdoc/templates/compact-prompt.md`](skills/llmdoc/templates/compact-prompt.md)
 
 #### Option 1: Install from GitHub (recommended)
 
@@ -198,7 +214,8 @@ Then:
 2. Run `/plugins` in Codex.
 3. Find `llmdoc` in the plugin list, select it to open the detail page.
 4. Install the plugin.
-5. Start a new thread in any repository and either:
+5. Review and trust the bundled lifecycle hook in `/hooks`.
+6. Start a new thread in any repository and either:
    - ask Codex to load the `llmdoc` skill first for normal work
    - choose `llmdoc-init` when you want the `/llmdoc:init` workflow
    - choose `llmdoc-update` when you want the `/llmdoc:update` workflow
@@ -219,7 +236,9 @@ Use this when you are working inside this repository — contributing to `llmdoc
    - choose `llmdoc-init` when you want the `/llmdoc:init` workflow
    - choose `llmdoc-update` when you want the `/llmdoc:update` workflow
    - or type `@` and choose the plugin or one of its bundled skills explicitly
-8. If you want hooks, copy [`skills/llmdoc/templates/codex-hooks.json`](skills/llmdoc/templates/codex-hooks.json) to `.codex/hooks.json` and adjust the script paths for your machine.
+8. Review and trust the bundled hook in `/hooks`. If you prefer repo-local hooks instead of the installed plugin hook, copy [`skills/llmdoc/templates/codex-hooks.json`](skills/llmdoc/templates/codex-hooks.json) to `.codex/hooks.json` and adjust the script paths for your machine; do not enable both copies.
+
+The compact-prompt template is optional because configuring `compact_prompt` or `experimental_compact_prompt_file` overrides Codex's built-in compaction prompt. Use it only when you want a stronger `LLMDOC_STATE` shape and are prepared to review it as Codex evolves.
 
 When you open this repository itself, Codex can also use the project-scoped agents under [`.codex/agents/`](.codex/agents) and the agent limits from [`.codex/config.toml`](.codex/config.toml).
 
@@ -229,6 +248,7 @@ The reusable skill lives at [`skills/llmdoc/SKILL.md`](skills/llmdoc/SKILL.md).
 The Codex helper entry skills live at [`skills/llmdoc-init/SKILL.md`](skills/llmdoc-init/SKILL.md) and [`skills/llmdoc-update/SKILL.md`](skills/llmdoc-update/SKILL.md).
 Detailed references live under [`skills/llmdoc/references/`](skills/llmdoc/references/).
 Codex hook templates live under [`skills/llmdoc/templates/`](skills/llmdoc/templates/).
+The plugin-bundled Codex hook lives at [`hooks/hooks.json`](hooks/hooks.json).
 
 ## Codex Subagents
 

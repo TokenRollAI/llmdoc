@@ -1,7 +1,7 @@
 {
   "name": "llmdoc",
-  "version": "2.2.0",
-  "description": "Doc-driven workflow with startup docs, commit-watermark update detection, update modes, temporary investigation cache, and reusable skills for Codex.",
+  "version": "2.3.0",
+  "description": "Doc-driven workflow with bounded cold-start context, compact re-entry, commit-watermark updates, and reusable skills for Codex.",
   "author": {
     "name": "DJJ & Danniel",
     "email": "shuaiqijianaho@qq.com",
@@ -13,10 +13,15 @@
   "interface": {
     "displayName": "llmdoc",
     "shortDescription": "Doc-driven coding workflow",
-    "longDescription": "Use startup docs, guides, commit-watermark update detection, update modes, temporary investigation cache, and focused reflections to improve coding quality and reduce repeated work.",
+    "longDescription": "Load a bounded startup package once, resume compacted tasks without replaying llmdoc, and use routed docs, commit-watermark updates, temporary investigation cache, and focused reflections.",
     "developerName": "TokenRoll",
     "category": "Productivity",
     "capabilities": ["Read", "Write"],
-    "websiteURL": "https://github.com/TokenRollAI/llmdoc"
+    "websiteURL": "https://github.com/TokenRollAI/llmdoc",
+    "defaultPrompt": [
+      "Load llmdoc and help me implement this task.",
+      "Initialize llmdoc for this repository.",
+      "Update llmdoc after my recent changes."
+    ]
   }
 }

@@ -1,7 +1,6 @@
 ---
 name: llmdoc-init
 description: "Codex-native entry skill for bootstrapping llmdoc. Use this when you want the /llmdoc:init workflow in Codex."
-disable-model-invocation: false
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, WebSearch, WebFetch
 ---
 
@@ -52,14 +51,16 @@ Then execute this workflow:
    - Create `llmdoc/index.md` as the global doc map.
    - Create `llmdoc/startup.md`.
    - Create a small set of MUST docs.
+   - Make the startup pack cold-start-only and keep `index.md` + `startup.md` + `must/` under 24 KiB by default.
+   - In a monolith, use the root index as an L0 router and add subsystem indexes instead of listing every leaf document.
    - Create `llmdoc/overview/project-overview.md`.
    - Create focused architecture and reference docs from the strongest investigation slices first.
 
 5. Synchronize `llmdoc/index.md`.
-   - Index stable docs.
+   - Index stable docs directly only when the repository is small; otherwise index subsystem routers that lead to leaf documents.
    - Keep `memory/reflections/` and `memory/decisions/` separate from stable docs.
    - Do not treat `.llmdoc-tmp/` as part of llmdoc.
 
 6. Summarize what was created and where the startup docs live.
 
-If the repository already contains `llmdoc/`, read `llmdoc/index.md`, `llmdoc/startup.md`, and the listed MUST docs before making broader changes.
+If the repository already contains `llmdoc/`, read `llmdoc/index.md`, `llmdoc/startup.md`, and the listed MUST docs once on cold start before making broader changes. After context compaction, resume from `LLMDOC_STATE` instead of replaying that package.

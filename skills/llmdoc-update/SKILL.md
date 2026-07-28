@@ -1,7 +1,6 @@
 ---
 name: llmdoc-update
 description: "Codex-native entry skill for keeping tracked llmdoc docs current with the repository using commit-based change detection. Use this when you want the /llmdoc:update workflow in Codex."
-disable-model-invocation: false
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, WebSearch, WebFetch
 ---
 
@@ -116,9 +115,9 @@ Self-authored test: a commit is self-authored when its author email (`git log -1
 3. Select the mode from range size × authorship × risk; honor the hard floors and backfill cap.
 4. Investigate only as needed, seeded with the resolved net-diff path list; scratch reports record the resolved `RANGE_BASE..H` range.
 5. Reflect only when there is a workflow failure, repeated mistake, missing signal, or durable process lesson. Do not force a reflection for routine `fast` updates.
-6. Update stable llmdoc docs against the batch-tip state: update only impacted docs, correct stale claims, split aggressively, reconcile `llmdoc/memory/doc-gaps.md`.
+6. Update stable llmdoc docs against the batch-tip state: update only impacted docs, correct stale claims, split aggressively, reconcile `llmdoc/memory/doc-gaps.md`, and keep the cold-start pack (`index.md` + `startup.md` + `must/`) under 24 KiB by default. In a monolith, keep the root index as an L0 router and use subsystem indexes for leaf docs.
 7. Run the active-memory archive check (count files under `llmdoc/memory/` excluding `lessons-learned.md`, `doc-gaps.md`, `archive/`; `llmdoc/state/` is not counted). If > 5, follow `skills/llmdoc/references/lessons-learned.md`.
-8. Synchronize `llmdoc/index.md`. Do not index `.llmdoc-tmp/`, and do not index `llmdoc/state/sync.md` as knowledge.
+8. Synchronize `llmdoc/index.md`. Keep new docs discoverable without turning the root into a monolith-wide leaf inventory. Do not index `.llmdoc-tmp/`, and do not index `llmdoc/state/sync.md` as knowledge.
 9. Advance the watermark (recorder-owned terminal step). Safe-to-advance gate — ALL must hold: the update completed successfully and consumed a committed range; HEAD is attached (`git symbolic-ref -q HEAD` succeeds); and no git operation is in progress — test by whether the resolved path EXISTS on disk (`git rev-parse --git-path` always prints a path and exits 0 regardless of existence, so check with `[ -f ]`/`[ -d ]`), none of `[ -f "$(git rev-parse --git-path MERGE_HEAD)" ]`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `[ -d "$(git rev-parse --git-path rebase-merge)" ]`, `rebase-apply` may exist. If the gate holds, advance `watermark-commit` to the captured `H` (or the highest unbroken-prefix tip). Rewrite ONLY these fields, keeping the exact `- watermark-commit: ` line prefix (the reader anchors on it — do not reformat): `watermark-commit` (new full commit SHA), `watermark-subject` (`git log -1 --format=%s <new-sha>`), `updated-at` (ISO-8601 UTC, `date -u +%Y-%m-%dT%H:%M:%SZ`), `updated-by` (`/llmdoc:update`). NEVER advance on a `--working-tree-only` run, a failed/partial run, a HEAD-behind-watermark run, or when the safe-to-advance gate fails.
 10. Report the mode used, resolved range(s)/batches and commit count, old → new watermark (or why it did not move), scratch/reflection paths, the archive action, and the stable docs that changed.
 

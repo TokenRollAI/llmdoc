@@ -55,6 +55,8 @@ Why:
    - Create `llmdoc/index.md` as the global documentation map.
    - Create `llmdoc/startup.md`.
    - Create a small set of MUST docs for recurring startup context.
+   - Treat the startup pack as a cold-start-only package; context compaction must resume from preserved task state instead of replaying it.
+   - Keep `index.md` + `startup.md` + `must/` under 24 KiB by default. For a monolith, make the root index an L0 router and add subsystem indexes rather than listing every leaf document.
    - Ensure `llmdoc/index.md` does not duplicate the ordered startup list in `llmdoc/startup.md`.
    - Ensure `llmdoc/startup.md` does not duplicate the global category catalog from `llmdoc/index.md`.
    - Create `llmdoc/overview/project-overview.md`.
@@ -63,7 +65,7 @@ Why:
    - Treat document length as a quality tradeoff, not a hard limit. If a core doc needs more space to preserve causal flow, invariants, and terminology, keep it cohesive before splitting.
 
 5. Synchronize `llmdoc/index.md`.
-   - Index all stable docs.
+   - In a small repository, index stable docs directly. In a monolith, index subsystem routers and let those indexes route to leaf documents.
    - Keep `memory/reflections/` and `memory/decisions/` separate from stable docs.
    - Do not treat `.llmdoc-tmp/` as part of llmdoc.
 

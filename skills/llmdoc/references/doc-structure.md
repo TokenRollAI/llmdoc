@@ -30,13 +30,26 @@ Use this split:
 `llmdoc/index.md` should contain:
 
 - the purpose of each top-level category
-- the major documents available in each category
+- the major documents or subsystem indexes available in each category
 - routing hints for `must/`, `overview/`, `architecture/`, `guides/`, `reference/`, and `memory/`
 
 `llmdoc/startup.md` should contain:
 
 - only the startup reading order
 - short escalation hints for what to read next
+
+## Context budgets and monolith routing
+
+The model-visible startup cost must remain bounded independently of the total number of llmdoc documents.
+
+- Keep the root `index.md` as an L0 router. In a monolith, point it at subsystem indexes instead of listing every leaf document.
+- Put L1 subsystem indexes beside the documents they route, for example `llmdoc/architecture/payments/index.md`.
+- Load only the L1 index for the active subsystem, then only the leaf documents needed for the task.
+- Do not add every subsystem index or leaf document to `startup.md`.
+- Keep the UTF-8 size of `index.md` + `startup.md` + `must/` under 24 KiB by default. A project may set a stricter `LLMDOC_STARTUP_MAX_BYTES`; exceeding the budget is a maintenance signal, not permission to omit required invariants silently.
+- Prefer no more than about eight task documents at once. If more appear necessary, route again by responsibility or runtime flow.
+
+The byte limit is a deterministic proxy rather than an exact model-token count. It exists to prevent unbounded growth across models and languages.
 
 ## Ownership
 
@@ -50,6 +63,7 @@ Use this split:
 - One workflow per guide.
 - One ownership boundary or invariant cluster per architecture doc.
 - Put repeated startup knowledge in `must/`, not in `overview/`.
+- In monoliths, add subsystem indexes instead of growing the root index into a leaf catalog.
 - Put mistakes and raw learnings in `memory/reflections/`, then promote only recurring stable lessons.
 - Keep temporary investigation reports in `.llmdoc-tmp/`, not in `llmdoc/memory/`.
 

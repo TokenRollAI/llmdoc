@@ -1,9 +1,9 @@
 # Codex CLI Hooks
 
-This repository now explicitly supports Codex CLI hooks for:
+This repository explicitly supports Codex CLI hooks for:
 
-- `SessionStart`
-- `Stop`
+- lifecycle-aware `SessionStart`
+- an optional `Stop` template
 
 Why these two first:
 
@@ -15,14 +15,29 @@ Why these two first:
 
 ### `SessionStart`
 
-Use it to inject lightweight context at the start of a session.
+Use separate matchers for each lifecycle source:
 
-Good uses:
+- `startup|clear`: cold start; load the skill and startup pack once
+- `resume`: reuse a valid `LLMDOC_STATE`, otherwise cold start
+- `compact`: warm re-entry; do not replay the skill or startup pack
 
-- remind Codex to load the `llmdoc` skill
-- remind Codex to read `llmdoc/index.md` and `llmdoc/startup.md`
-- remind Codex to proactively read guides and reflections
-- remind Codex to align with the user before non-trivial edits
+The compact branch should inject only the current startup-pack fingerprint, byte size, and targeted invalidation rules. A compact event alone is not evidence that project knowledge changed.
+
+The provided script fingerprints `llmdoc/index.md`, `llmdoc/startup.md`, and files under `llmdoc/must/`. It also reports their combined UTF-8 byte size against `LLMDOC_STARTUP_MAX_BYTES` (24 KiB by default).
+
+### Compact summary state
+
+`templates/compact-prompt.md` is an optional compaction-prompt override that preserves a structured `LLMDOC_STATE`. It stores paths and distilled task facts, not full document bodies.
+
+Use the lifecycle hook even without the override: it fixes the deterministic reload caused by treating `compact` as cold start. Use the prompt template when stronger summary-shape guarantees justify overriding Codex's built-in compaction prompt. Keep the override reviewed as Codex evolves; do not enable it automatically.
+
+To opt in, copy the template to a stable project path and point project `.codex/config.toml` at it:
+
+```toml
+experimental_compact_prompt_file = ".codex/llmdoc-compact-prompt.md"
+```
+
+The file-backed key is experimental. Remove the setting to return to Codex's built-in prompt.
 
 ### `Stop`
 
@@ -31,7 +46,7 @@ Use it for end-of-turn review or lightweight cleanup. Treat it as a best-effort 
 Good uses:
 
 - append a stop-hook record into `.llmdoc-tmp/`
-- add lightweight review context after a turn ends
+- show a lightweight UI reminder after a turn ends
 - capture raw hook payloads for troubleshooting
 - remind the assistant that active memory may need archiving
 
@@ -46,13 +61,18 @@ Codex hooks are configured in `hooks.json` files such as:
 - `~/.codex/hooks.json`
 - `<repo>/.codex/hooks.json`
 
-The official hooks reference says `SessionStart` can add context through `hookSpecificOutput.additionalContext`, while `Stop` can continue a turn with review feedback.
+The official hooks reference says `SessionStart` can add context through `hookSpecificOutput.additionalContext`. `Stop` can show `systemMessage` feedback or continue a turn with a blocking decision; the provided optional template only logs and shows a reminder.
 
 Recommended template files in this skill:
 
 - `templates/codex-hooks.json`
 - `templates/session-start.sh`
 - `templates/stop.sh`
+- `templates/compact-prompt.md`
+
+After changing lifecycle behavior, run `scripts/verify-lifecycle-hooks.sh <project-root>` to verify separated matchers, stable fingerprints, and the absence of cold-start instructions in compact output.
+
+The Codex plugin also ships `hooks/hooks.json`, which uses default plugin hook discovery and `$PLUGIN_ROOT`. Installed plugin hooks require the normal Codex trust review. The bundled hook includes only `SessionStart`; the more opinionated `Stop` behavior remains opt-in.
 
 ## Security
 
@@ -70,3 +90,4 @@ Official references:
 - https://developers.openai.com/codex/plugins
 - https://developers.openai.com/codex/plugins/build
 - https://developers.openai.com/codex/hooks
+- https://developers.openai.com/codex/config-reference

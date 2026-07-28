@@ -13,6 +13,8 @@
 - `CLAUDE.md` 和 `AGENTS.md` 里只保留一条短规则：step one 是加载 `llmdoc` skill
 - core skill 入口保持简短，详细的方法论、协议和模板拆到 `skills/llmdoc/references/`
 - core skill 还定义了主动阅读 guides/reflection，以及在非简单改动前主动和用户沟通
+- startup package 只在冷启动读取一次；Codex compact 后通过精简的 `LLMDOC_STATE` 恢复，而不是重放 llmdoc
+- 巨石仓库使用有固定预算的根路由和子系统索引，不加载覆盖全仓库的叶子文档清单
 - 整套工作流还恢复了一个好模式：在非简单任务结束时，主动询问是否运行 `/llmdoc:update`
 - `/llmdoc:update` 支持轻量和重型模式，所以刚完成实现后的文档更新不必每次都跑完整多 agent 流水线
 - Codex helper skills 提供了接近 command 的入口，但不会误导用户以为 Codex 已经支持这个插件的自定义 slash command
@@ -36,7 +38,7 @@
 - Claude Code plugin 支持：`.claude-plugin/`
 - Codex CLI plugin 支持：已提供 `.codex-plugin/plugin.json` 和 `.agents/plugins/marketplace.json`
 - Codex CLI subagents 支持：已提供 `.codex/agents/*.toml`
-- Codex CLI hooks：已提供 `SessionStart`、`Stop` 模板
+- Codex CLI hooks：插件内置生命周期感知的 `SessionStart`；另提供 `Stop` 与 compact-prompt 模板
 
 ## 工作流
 
@@ -92,13 +94,25 @@
 
 在日常使用里，如果任务产生了值得长期保留的知识或反思，主 assistant 应该主动询问是否现在运行 `/llmdoc:update`。
 
+## Context 生命周期
+
+`llmdoc` 区分冷启动和 compact 热恢复：
+
+- `startup`、`clear`：只加载一次 core skill、根 index、startup 列表和 MUST pack
+- `resume`：优先复用有效的 `LLMDOC_STATE`，没有有效状态时才执行一次冷启动
+- `compact`：继续同一任务，不重新加载 skill、startup pack、lessons 或已经加载的任务文档
+
+插件内置的 Codex `SessionStart` hook 会计算 startup pack 指纹和字节数。只有指纹变化、相关文档被修改、任务进入新子系统或 compact 状态不足时，才读取最小的相关文档集合。
+
+`index.md` + `startup.md` + `must/` 的默认预算是 24 KiB；这是确定性的近似约束，不是精确 token 数。巨石仓库应让 `llmdoc/index.md` 只做 L0 路由，在相关文档旁建立子系统索引，并且只加载当前子系统的路由。
+
 ## llmdoc 结构
 
 ```text
 llmdoc/
 ├── index.md
 ├── startup.md
-├── must/                 # 每次运行都应读取的小型启动上下文
+├── must/                 # 冷启动时读取一次的小型上下文
 ├── overview/             # 项目和特性的身份与边界
 ├── architecture/         # 检索地图、不变量、所有权边界
 ├── guides/               # 一篇文档只讲一个工作流
@@ -112,8 +126,8 @@ llmdoc/
 └── investigations/       # 临时调查草稿
 ```
 
-`llmdoc/index.md` 是全局文档地图。
-`llmdoc/startup.md` 只负责启动阅读顺序。
+`llmdoc/index.md` 是有固定预算的全局路由。
+`llmdoc/startup.md` 只负责冷启动阅读顺序。
 两者可以互相链接，但不应该重复同一批内容。
 
 `.llmdoc-tmp/` 是本地临时 context cache。investigator 报告可以跨相邻会话保留，帮助减少重复调研，但它被 git 忽略、不会进入 index，也不是 source of truth。只有稳定、可复用的结论才应该提升到 tracked `llmdoc/` 文档里。
@@ -178,11 +192,13 @@ codex
   - [`skills/llmdoc/`](skills/llmdoc/)
   - [`skills/llmdoc-init/`](skills/llmdoc-init/)
   - [`skills/llmdoc-update/`](skills/llmdoc-update/)
+  - [`hooks/hooks.json`](hooks/hooks.json)，插件内置的生命周期感知 `SessionStart` hook
   - [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json)，作为 repo 级本地 marketplace 示例
 - 这个仓库自己的 repo-local Codex 工作流文件：
   - [`.codex/config.toml`](.codex/config.toml)
   - [`.codex/agents/`](.codex/agents)
   - [`skills/llmdoc/templates/codex-hooks.json`](skills/llmdoc/templates/codex-hooks.json)
+  - [`skills/llmdoc/templates/compact-prompt.md`](skills/llmdoc/templates/compact-prompt.md)
 
 #### 方式一：从 GitHub 安装（推荐）
 
@@ -198,7 +214,8 @@ codex plugin marketplace add TokenRollAI/llmdoc
 2. 在 Codex 中执行 `/plugins`
 3. 在插件列表中找到 `llmdoc`，选中进入详情页
 4. 安装插件
-5. 在任意仓库里新开一个对话，然后按你的目标选择入口：
+5. 在 `/hooks` 中检查并信任插件内置的生命周期 hook
+6. 在任意仓库里新开一个对话，然后按你的目标选择入口：
    - 正常工作时，让 Codex 先加载 `llmdoc` skill
    - 要执行 `/llmdoc:init` 等价流程时，选择 `llmdoc-init`
    - 要执行 `/llmdoc:update` 等价流程时，选择 `llmdoc-update`
@@ -219,7 +236,9 @@ codex plugin marketplace add TokenRollAI/llmdoc
    - 要执行 `/llmdoc:init` 等价流程时，选择 `llmdoc-init`
    - 要执行 `/llmdoc:update` 等价流程时，选择 `llmdoc-update`
    - 或者输入 `@`，再显式选择这个插件或它打包进来的 skill
-8. 如果你需要 hooks，把 [`skills/llmdoc/templates/codex-hooks.json`](skills/llmdoc/templates/codex-hooks.json) 复制到 `.codex/hooks.json`，再按你的机器路径调整脚本路径
+8. 在 `/hooks` 中检查并信任插件内置 hook。如果你更希望使用 repo-local hook，可以把 [`skills/llmdoc/templates/codex-hooks.json`](skills/llmdoc/templates/codex-hooks.json) 复制到 `.codex/hooks.json`，再按机器路径调整脚本；不要同时启用两份
+
+compact-prompt 模板是可选增强，因为配置 `compact_prompt` 或 `experimental_compact_prompt_file` 会覆盖 Codex 内置 compaction prompt。只有在需要更强的 `LLMDOC_STATE` 结构保证，并愿意随 Codex 演进持续检查模板时才启用。
 
 当你打开的就是这个仓库时，Codex 还会同时使用 [`.codex/agents/`](.codex/agents) 里的 project-scoped agents，以及 [`.codex/config.toml`](.codex/config.toml) 里的 agent 限制配置。
 
@@ -229,6 +248,7 @@ codex plugin marketplace add TokenRollAI/llmdoc
 Codex helper 入口 skills 位于 [`skills/llmdoc-init/SKILL.md`](skills/llmdoc-init/SKILL.md) 和 [`skills/llmdoc-update/SKILL.md`](skills/llmdoc-update/SKILL.md)。
 详细参考文档位于 [`skills/llmdoc/references/`](skills/llmdoc/references/)。
 Codex CLI hooks 模板位于 [`skills/llmdoc/templates/`](skills/llmdoc/templates/)。
+插件内置的 Codex hook 位于 [`hooks/hooks.json`](hooks/hooks.json)。
 
 ## Codex Subagents
 

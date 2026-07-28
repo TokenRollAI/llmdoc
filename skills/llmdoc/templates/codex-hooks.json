@@ -2,11 +2,32 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup|resume|clear|compact",
+        "matcher": "^(startup|clear)$",
         "hooks": [
           {
             "type": "command",
-            "command": "\"$(git rev-parse --show-toplevel)\"/skills/llmdoc/templates/session-start.sh"
+            "command": "\"${PLUGIN_ROOT:-$(git rev-parse --show-toplevel)}\"/skills/llmdoc/templates/session-start.sh cold",
+            "additionalContextLimit": 1200
+          }
+        ]
+      },
+      {
+        "matcher": "^resume$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${PLUGIN_ROOT:-$(git rev-parse --show-toplevel)}\"/skills/llmdoc/templates/session-start.sh resume",
+            "additionalContextLimit": 1200
+          }
+        ]
+      },
+      {
+        "matcher": "^compact$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${PLUGIN_ROOT:-$(git rev-parse --show-toplevel)}\"/skills/llmdoc/templates/session-start.sh compact",
+            "additionalContextLimit": 1200
           }
         ]
       }
@@ -16,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$(git rev-parse --show-toplevel)\"/skills/llmdoc/templates/stop.sh"
+            "command": "\"${PLUGIN_ROOT:-$(git rev-parse --show-toplevel)}\"/skills/llmdoc/templates/stop.sh"
           }
         ]
       }
