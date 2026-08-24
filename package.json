@@ -8,7 +8,7 @@
     "lint": "npm --prefix cli run lint",
     "test": "npm --prefix cli test",
     "typecheck": "npm --prefix cli run typecheck",
-    "validate:dogfood": "npx --no-install @tokenroll/llmdoc validate",
+    "validate:dogfood": "node cli/dist/bin/llmdoc.js validate",
     "check:prompts": "node scripts/check-prompt-budget.mjs"
   },
   "devDependencies": {
