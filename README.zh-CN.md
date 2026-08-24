@@ -147,7 +147,7 @@ V3 不再保留 V2 的 startup pack、根路由文档、`worker`、`reflector` �
 
 ```bash
 /plugin marketplace add https://github.com/TokenRollAI/llmdoc
-/plugin install llmdoc@llmdoc-cc-plugin
+/plugin install llmdoc@llmdoc-plugin
 ```
 
 ### Codex

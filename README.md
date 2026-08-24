@@ -147,7 +147,7 @@ Repository-verified plugin installation entrypoint:
 
 ```bash
 /plugin marketplace add https://github.com/TokenRollAI/llmdoc
-/plugin install llmdoc@llmdoc-cc-plugin
+/plugin install llmdoc@llmdoc-plugin
 ```
 
 ### Codex

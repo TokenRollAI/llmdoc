@@ -3,6 +3,7 @@
 Claude Code 根插件是唯一手工维护的准源。Codex 表面由 ACPlugin 转换后，发布前逐项检查：
 
 - [ ] `.claude-plugin/plugin.json`、`.codex-plugin/plugin.json` 与 `cli/package.json` 版本一致。
+- [ ] `.claude-plugin/marketplace.json` 与 `.agents/plugins/marketplace.json` 的 marketplace 名均为 `llmdoc-plugin`，其中的插件名均为 `llmdoc`。
 - [ ] Claude 表面只有五个 skills：`llmdoc`（operating）与 `init`、`update`、`prune`、`upgrade` 四个显式工作流（`skills/*/SKILL.md`，不再有 `commands/` 目录）；Codex 有对应 skills。
 - [ ] 两个平台只暴露 `investigator` 与 `recorder` 两个角色契约。
 - [ ] Codex 的 `.agents/skills/llmdoc/SKILL.md` 包含 Claude operating skill 的完整正文。

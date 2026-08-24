@@ -33,8 +33,21 @@ if (plugin) {
   if (!fs.existsSync(path.join(root, skillsDir))) errors.push(`plugin.json: skills 目录不存在: ${skillsDir}`);
 }
 
-// 2) .agents/plugins/marketplace.json(entry 需 name/source/policy.installation/policy.authentication)
+// 2) Claude/Codex marketplace 身份一致；Codex entry 需 name/source/policy.installation/policy.authentication
+const claudeMarketplace = readJson(".claude-plugin/marketplace.json");
 const marketplace = readJson(".agents/plugins/marketplace.json");
+if (claudeMarketplace && marketplace) {
+  const expectedMarketplaceName = "llmdoc-plugin";
+  if (claudeMarketplace.name !== expectedMarketplaceName) {
+    errors.push(`.claude-plugin/marketplace.json: name 必须是 ${expectedMarketplaceName}`);
+  }
+  if (marketplace.name !== expectedMarketplaceName) {
+    errors.push(`.agents/plugins/marketplace.json: name 必须是 ${expectedMarketplaceName}`);
+  }
+  if (claudeMarketplace.name !== marketplace.name) {
+    errors.push("Claude 与 Codex marketplace name 必须一致");
+  }
+}
 if (marketplace) {
   for (const entry of marketplace.plugins ?? []) {
     const label = `marketplace.json[${entry.name ?? "?"}]`;

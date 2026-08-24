@@ -1,10 +1,10 @@
 {
-  "name": "llmdoc-cc-plugin",
+  "name": "llmdoc-plugin",
   "owner": {
     "name": "TokenRoll",
     "email": "shuaiqijianaho@qq.com"
   },
-  "description": "Marketplace for the llmdoc Claude Code workflow",
+  "description": "Marketplace for the llmdoc engineering context workflow",
   "plugins": [
     {
       "name": "llmdoc",
