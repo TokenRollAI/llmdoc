@@ -478,6 +478,7 @@
         "baseline",
         "head",
         "commitsBehindHead",
+        "relevantCommitsBehindHead",
         "degradedReason",
         "documents",
         "unmapped",
@@ -497,6 +498,13 @@
           ]
         },
         "commitsBehindHead": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "relevantCommitsBehindHead": {
           "type": [
             "integer",
             "null"
@@ -849,6 +857,30 @@
         "created": {
           "type": "string",
           "minLength": 1
+        }
+      }
+    },
+    "adopt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adopted",
+        "alreadyRegistered"
+      ],
+      "properties": {
+        "adopted": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "alreadyRegistered": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },

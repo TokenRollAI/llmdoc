@@ -99,6 +99,35 @@ export function readChangedPathsSince(rootDir: string, revision: string, headRev
   return readPathList(rootDir, ["diff", "--name-only", "--no-renames", `${revision}..${headRevision}`]);
 }
 
+// 逐 commit 列出 baseline..HEAD 中每个提交触碰的路径,供"有效源码落后"计数:
+// \x01 前缀作 commit 分隔哨兵,避免 40 位 hex 路径名的歧义;merge commit 默认不列文件,视为无自身变更。
+export function readCommitsWithChangedPathsSince(
+  rootDir: string,
+  revision: string,
+  headRevision: string
+): Array<{ revision: string; paths: string[] }> | null {
+  if (!gitCommitExists(rootDir, revision)) {
+    return null;
+  }
+  const output = runGitSafe(rootDir, ["log", "--format=%x01%H", "--name-only", "--no-renames", `${revision}..${headRevision}`]);
+  if (output === null) {
+    return null;
+  }
+  const commits: Array<{ revision: string; paths: string[] }> = [];
+  for (const line of output.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      continue;
+    }
+    if (trimmed.startsWith("\u0001")) {
+      commits.push({ revision: trimmed.slice(1), paths: [] });
+    } else if (commits.length > 0) {
+      commits[commits.length - 1]!.paths.push(trimmed);
+    }
+  }
+  return commits;
+}
+
 export function canAdvanceRevisions(gitState: GitState): { ok: true } | { ok: false; reason: string } {
   if (!gitState.available || !gitState.headRevision) {
     return { ok: false, reason: gitState.degradedReason ?? "git 状态不可用。" };

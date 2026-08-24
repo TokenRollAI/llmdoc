@@ -84,6 +84,7 @@ tracked 有效性记录在 `llmdoc/meta.json`：
 | `npx @tokenroll/llmdoc validate` | 校验 schema、结构、关系、链接与 code paths |
 | `npx @tokenroll/llmdoc fingerprint --update <path...> \| --all` | 刷新 `llmdoc/meta.json` 中的 validated revisions |
 | `npx @tokenroll/llmdoc new <path> --kind <kind>` | 脚手架生成新的 V3 文档 |
+| `npx @tokenroll/llmdoc adopt <path...>` | 无损登记已有文档到 `llmdoc/meta.json`(不改正文) |
 | `npx @tokenroll/llmdoc mv <from> <to>` | 移动文档并更新引用 |
 | `npx @tokenroll/llmdoc prune --report` | 输出收敛报告但不写文档 |
 | `npx @tokenroll/llmdoc upgrade` | 显式的 V2 到 V3 迁移入口 |

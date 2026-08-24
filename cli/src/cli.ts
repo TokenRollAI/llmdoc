@@ -67,7 +67,7 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
       "按用途速查:",
       "  检索(只读)   tree → index / search / context → show",
       "  状态诊断     status · delta · validate",
-      "  结构改写     new · mv · fingerprint · init-state · commit",
+      "  结构改写     new · adopt · mv · fingerprint · init-state · commit",
       "  维护诊断     prune · upgrade",
       "  集成         hook · serve",
       "",
@@ -243,6 +243,16 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
           globalOptions.json
         )
       );
+    });
+
+  program
+    .command("adopt")
+    .description("无损登记已存在的 .mdx 到 meta.json(validatedRevision: null,不改正文,幂等)")
+    .argument("<path...>", "已存在的 llmdoc/ 下相对路径,可多个")
+    .action(async (paths) => {
+      const { runAdopt } = await import("./commands/adopt.js");
+      const rootDir = findProjectRoot(cwd);
+      output.push(writeOutput("adopt", runAdopt({ ...globalOptions, cwd: rootDir, paths }), globalOptions.json));
     });
 
   program

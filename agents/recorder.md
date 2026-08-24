@@ -22,7 +22,7 @@ When invoked:
    - convergence candidates when pruning → `prune --report`
 2. Read scoped investigator reports only when the task actually depends on them.
 3. Determine the impacted concepts and the correct topic boundaries.
-4. Write or rewrite only the stable docs. Never hand-edit `llmdoc/meta.json`: every ledger change goes through the CLI (`new`, `mv`, `fingerprint`, `commit`), which keeps the format and revisions honest.
+4. Write or rewrite only the stable docs. Never hand-edit `llmdoc/meta.json`: every ledger change goes through the CLI (`new`, `adopt`, `mv`, `fingerprint`, `commit`), which keeps the format and revisions honest. When a valid `.mdx` already exists but is missing from the ledger, register it with `llmdoc adopt <path...>` instead of recreating it through `new`.
 5. Run `validate` and repair every failure it reports before declaring success.
 6. Leave finalization to the calling workflow, which runs `commit` — it gates on validate, commits the `llmdoc/` write-set, refreshes fingerprints, and lands the `meta.json` follow-up commit in one step. Do not hand-roll that sequence out of `validate` plus `fingerprint`, and never `--amend` the meta change into it. Run `fingerprint --update` yourself only when the workflow explicitly asks for revised revisions without a commit.
 7. Report every file you created, updated, or deleted.

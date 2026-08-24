@@ -84,6 +84,7 @@ Temporary process records live under `.llmdoc-tmp/` and are not part of tracked 
 | `npx @tokenroll/llmdoc validate` | schema, structure, relation, link, and code-path validation |
 | `npx @tokenroll/llmdoc fingerprint --update <path...> \| --all` | refresh validated revisions in `llmdoc/meta.json` |
 | `npx @tokenroll/llmdoc new <path> --kind <kind>` | scaffold a new V3 doc |
+| `npx @tokenroll/llmdoc adopt <path...>` | register existing docs into `llmdoc/meta.json` without rewriting bodies |
 | `npx @tokenroll/llmdoc mv <from> <to>` | move a doc and update references |
 | `npx @tokenroll/llmdoc prune --report` | convergence report without writing docs |
 | `npx @tokenroll/llmdoc upgrade` | explicit V2 to V3 migration entrypoint |

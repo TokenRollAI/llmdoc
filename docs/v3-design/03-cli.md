@@ -54,6 +54,7 @@ Fail policy:hook 执行失败不阻塞开发;hook 永不写 `llmdoc/`;写命令�
 | 命令 | 作用 |
 |---|---|
 | `llmdoc new <path> --kind <k>` | 脚手架:生成带合法 front matter 的空文档 |
+| `llmdoc adopt <path...>` | 无损登记:把已存在的合法 `.mdx` 登记进 `meta.json`(`validatedRevision: null`,不改正文,幂等) |
 | `llmdoc mv <from> <to>` | 重命名/移动:`git mv` + 批量更新引用与 ledger key |
 | `llmdoc prune --report` | growth 报告:当前规模 vs convergence baseline、重复/碎片候选(只报告,收敛动作由 Recorder 做) |
 | `llmdoc upgrade` | 盘点 legacy/V2 到 V3 的迁移需求(惰性加载:不被其他命令引用,正常上下文零出现) |

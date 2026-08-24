@@ -205,11 +205,13 @@ export function computeGrowthState(workspace: WorkspaceData): GrowthState {
   };
 }
 
-export function updateMetaRevisions(input: {
+// fingerprint 推进的全部前置条件(git 可推进 + 关联源码无 dirty),
+// 供 updateMetaRevisions 执行前使用,也供 commit 在创建任何 commit 前 preflight,失败时 fail-closed。
+export function assertRevisionAdvancePreconditions(input: {
   workspace: WorkspaceData;
   llmdocPaths: string[];
   updateAll: boolean;
-}): { meta: MetaLedger; updatedPaths: string[] } {
+}): { git: GitState; targetPaths: string[] } {
   const { workspace, llmdocPaths, updateAll } = input;
   if (!workspace.meta) {
     throw new Error("缺少 meta.json");
@@ -238,8 +240,18 @@ export function updateMetaRevisions(input: {
         : `以下文档关联代码存在 dirty 变更，不能伪造 revision: ${blocked.join(", ")}`
     );
   }
+  return { git, targetPaths };
+}
 
-  const nextMeta: MetaLedger = structuredClone(workspace.meta);
+export function updateMetaRevisions(input: {
+  workspace: WorkspaceData;
+  llmdocPaths: string[];
+  updateAll: boolean;
+}): { meta: MetaLedger; updatedPaths: string[] } {
+  const { workspace, updateAll } = input;
+  const { git, targetPaths } = assertRevisionAdvancePreconditions(input);
+
+  const nextMeta: MetaLedger = structuredClone(workspace.meta!);
   // 文档已被删除的孤儿 ledger 条目在此顺带清理:
   // recorder 不允许手编辑 meta.json,删除文档后的 ledger 收敛只能由 CLI 完成。
   for (const docPath of Object.keys(nextMeta.documents)) {
@@ -323,7 +335,7 @@ export function loadIgnorePatterns(rootDir: string): string[] {
   return patterns;
 }
 
-function isImplementationSurfacePath(repoRelativePath: string, ignorePatterns: string[] = []): boolean {
+export function isImplementationSurfacePath(repoRelativePath: string, ignorePatterns: string[] = []): boolean {
   if (repoRelativePath.startsWith("llmdoc/") || repoRelativePath.startsWith(".llmdoc-tmp/")) {
     return false;
   }

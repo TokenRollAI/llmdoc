@@ -21,6 +21,7 @@ export type OutputSchemaName =
   | "prune"
   | "upgrade"
   | "new"
+  | "adopt"
   | "mv"
   | "hook"
   | "initState"

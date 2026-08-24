@@ -848,6 +848,85 @@ code:
     // .llmdocignore 本身是 untracked 的,不在忽略清单里则会出现——把它也忽略掉不是默认行为
   });
 
+  test("commit fails closed before creating any commit when mapped source is dirty", async () => {
+    const rootDir = createFixture();
+    // 被 code.paths 映射的源码保持未提交,llmdoc 写集有变更 → fingerprint 预检必须在任何 commit 前拒绝
+    fs.appendFileSync(path.join(rootDir, "src", "api", "retry.ts"), "// dirty change\n");
+    fs.appendFileSync(path.join(rootDir, "llmdoc", "api-client", "retry-policy.mdx"), "\n新增一段。\n");
+
+    const { spawnSync } = await import("node:child_process");
+    const headBefore = spawnSync("git", ["rev-parse", "HEAD"], { cwd: rootDir, encoding: "utf8" }).stdout.trim();
+
+    const result = await runCli(["commit", "--all", "-m", "repro: llmdoc partial commit"], rootDir);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).toContain("未创建任何 commit");
+
+    const headAfter = spawnSync("git", ["rev-parse", "HEAD"], { cwd: rootDir, encoding: "utf8" }).stdout.trim();
+    expect(headAfter).toBe(headBefore);
+    // llmdoc 写集仍 dirty,修复源码后可直接重跑 commit
+    const porcelain = spawnSync("git", ["status", "--porcelain", "--", "llmdoc"], { cwd: rootDir, encoding: "utf8" }).stdout;
+    expect(porcelain.trim()).not.toBe("");
+  });
+
+  test("adopt registers existing mdx into meta.json losslessly and idempotently", async () => {
+    const rootDir = createFixture();
+    const docPath = path.join(rootDir, "llmdoc", "api-client", "adopt-repro.mdx");
+    const body = "---\ndescription: 已由外部流程写好的合法文档。\nkind: reference\n---\n\n# Adopt repro\n\n正文内容。\n";
+    fs.writeFileSync(docPath, body);
+
+    const invalid = await runCli(["validate"], rootDir);
+    expect(invalid.exitCode).toBe(1);
+    expect(invalid.stdout).toContain("meta.entry.missing");
+    expect(invalid.stdout).toContain("llmdoc adopt");
+
+    const result = await runCli(["--json", "adopt", "api-client/adopt-repro.mdx"], rootDir);
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout) as { adopted: string[]; alreadyRegistered: string[] };
+    expect(payload.adopted).toEqual(["api-client/adopt-repro.mdx"]);
+    expect(fs.readFileSync(docPath, "utf8")).toBe(body);
+    const meta = readMeta(rootDir);
+    expect(meta.documents["api-client/adopt-repro.mdx"].validatedRevision).toBeNull();
+
+    const valid = await runCli(["validate"], rootDir);
+    expect(valid.exitCode).toBe(0);
+
+    const again = await runCli(["--json", "adopt", "api-client/adopt-repro.mdx"], rootDir);
+    expect(again.exitCode).toBe(0);
+    const againPayload = JSON.parse(again.stdout) as { adopted: string[]; alreadyRegistered: string[] };
+    expect(againPayload.adopted).toEqual([]);
+    expect(againPayload.alreadyRegistered).toEqual(["api-client/adopt-repro.mdx"]);
+
+    const missing = await runCli(["adopt", "api-client/not-there.mdx"], rootDir);
+    expect(missing.exitCode).toBe(1);
+    expect(missing.stdout).toContain("目标不存在");
+  });
+
+  test("status distinguishes metadata-only commits behind baseline from relevant source commits", async () => {
+    const rootDir = createFixture();
+    fs.appendFileSync(path.join(rootDir, "llmdoc", "api-client", "retry-policy.mdx"), "\n补充一段稳定知识。\n");
+    const finalize = await runCli(["--json", "commit", "--all", "-m", "docs(llmdoc): update"], rootDir);
+    expect(finalize.exitCode).toBe(0);
+
+    // 收尾成功后 baseline 只落后自己的 meta follow-up commit,不代表知识过期
+    const status = await runCli(["--json", "status"], rootDir);
+    const payload = JSON.parse(status.stdout) as { commitsBehindHead: number; relevantCommitsBehindHead: number };
+    expect(payload.commitsBehindHead).toBe(1);
+    expect(payload.relevantCommitsBehindHead).toBe(0);
+
+    const text = await runCli(["status"], rootDir);
+    expect(text.stdout).toContain("metadata-only; knowledge clean");
+
+    writeRepoFile(rootDir, "src/api/retry.ts", "export function isRetryable() { return false; }\n");
+    commitAll(rootDir, "change source");
+    const statusAfterSource = await runCli(["--json", "status"], rootDir);
+    const payloadAfterSource = JSON.parse(statusAfterSource.stdout) as {
+      commitsBehindHead: number;
+      relevantCommitsBehindHead: number;
+    };
+    expect(payloadAfterSource.commitsBehindHead).toBe(2);
+    expect(payloadAfterSource.relevantCommitsBehindHead).toBe(1);
+  });
+
   test("validate warns on wikilink syntax", async () => {
     const rootDir = createFixture();
     fs.appendFileSync(path.join(rootDir, "llmdoc", "api-client", "retry-policy.mdx"), "\n另见 [[api-client/error-model]]。\n");

@@ -360,7 +360,7 @@ export function validateWorkspace(workspace: WorkspaceData): ValidationIssue[] {
           severity: "error",
           code: "meta.entry.missing",
           path: `llmdoc/${docPath}`,
-          message: "meta.json 缺少对应 documents entry。"
+          message: "meta.json 缺少对应 documents entry。可用 `llmdoc adopt <path>` 无损登记。"
         });
       }
     }

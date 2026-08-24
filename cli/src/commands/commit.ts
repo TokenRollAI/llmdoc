@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 
 import { CliError } from "../lib/errors.js";
 import { findProjectRoot } from "../lib/fs.js";
-import { updateMetaRevisions, writeMeta } from "../lib/state.js";
+import { assertRevisionAdvancePreconditions, updateMetaRevisions, writeMeta } from "../lib/state.js";
 import { loadWorkspace, validateWorkspace } from "../lib/workspace.js";
 
 interface CommitOptions {
@@ -18,7 +18,8 @@ interface CommitOptions {
 export function runCommit(options: CommitOptions): unknown {
   const rootDir = findProjectRoot(options.cwd);
 
-  const issues = validateWorkspace(loadWorkspace(rootDir));
+  const preflightWorkspace = loadWorkspace(rootDir);
+  const issues = validateWorkspace(preflightWorkspace);
   const errors = issues.filter((issue) => issue.severity === "error");
   if (errors.length > 0) {
     throw new CliError(`validate 未通过,拒绝提交:\n${errors.map((issue) => `  ${issue.code} (${issue.path})`).join("\n")}`);
@@ -36,6 +37,21 @@ export function runCommit(options: CommitOptions): unknown {
     .filter((filePath) => filePath.startsWith("llmdoc/") && filePath.endsWith(".mdx"));
 
   const verifyFlags = options.noVerify ? ["--no-verify"] : [];
+  // 在创建任何 commit 前预检 fingerprint 的全部前置条件(git 可推进、关联源码无 dirty):
+  // 预检失败时 fail-closed,工作树保持调用前状态,避免留下 docs 已提交但 meta 未刷新的半完成状态。
+  const preflightDocPaths = changedDocPaths
+    .map((filePath) => filePath.slice("llmdoc/".length))
+    .filter((llmdocPath) => preflightWorkspace.documentsByLlmdocPath.has(llmdocPath));
+  try {
+    assertRevisionAdvancePreconditions({
+      workspace: preflightWorkspace,
+      llmdocPaths: preflightDocPaths,
+      updateAll: options.all ?? false
+    });
+  } catch (error) {
+    throw new CliError(`fingerprint 预检未通过,未创建任何 commit: ${(error as Error).message}`, 70);
+  }
+
   runGit(rootDir, ["add", "--", "llmdoc"]);
   runGit(rootDir, ["commit", ...verifyFlags, "-m", options.message ?? "docs(llmdoc): update knowledge", "--", "llmdoc"]);
   const docsCommit = runGit(rootDir, ["rev-parse", "HEAD"]).trim();
