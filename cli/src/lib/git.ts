@@ -35,6 +35,11 @@ export function gitCommitExists(rootDir: string, revision: string): boolean {
   return result.status === 0;
 }
 
+// shallow clone(CI 常态)里历史 commit 不可达,revision 校验需要据此降级而不是误报陈旧。
+export function isShallowRepository(rootDir: string): boolean {
+  return runGitSafe(rootDir, ["rev-parse", "--is-shallow-repository"]) === "true";
+}
+
 export function readGitState(rootDir: string, baselineRevision: string | null): GitState {
   if (!isGitRepository(rootDir)) {
     return {

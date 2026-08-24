@@ -8,7 +8,7 @@ import { CliError } from "./errors.js";
 import { estimateTokens, extractCodeRefs, extractLinks, extractTitle, resolveDocLink, stripMarkdownLiterals, validateCodeRefTags } from "./markdown.js";
 import { assertDocKindMatchesShape, parseDocTargetShape } from "./doc-shape.js";
 import { normalizeRepoRelativePath, repoPath, resolveInsideRoot } from "./fs.js";
-import { gitCommitExists } from "./git.js";
+import { gitCommitExists, isShallowRepository } from "./git.js";
 import { validateDocFrontmatter, validateMeta } from "./schema.js";
 
 export function loadWorkspace(rootDir: string): WorkspaceData {
@@ -338,12 +338,17 @@ export function validateWorkspace(workspace: WorkspaceData): ValidationIssue[] {
   }
 
   if (workspace.meta) {
+    // shallow clone 中历史 commit 天然不可达:revision 缺失降级为 warning,
+    // 否则任何 fetch-depth:1 的 CI 都会误报陈旧。
+    const shallow = isShallowRepository(workspace.rootDir);
+    const revisionSeverity = shallow ? ("warning" as const) : ("error" as const);
+    const shallowHint = shallow ? "(shallow clone;完整校验请用 fetch-depth: 0 或 git fetch --unshallow)" : "";
     if (!gitCommitExists(workspace.rootDir, workspace.meta.baseline.revision)) {
       issues.push({
-        severity: "error",
+        severity: revisionSeverity,
         code: "meta.baseline.revision.missing",
         path: "llmdoc/meta.json",
-        message: `baseline.revision 不存在于当前 git 历史: ${workspace.meta.baseline.revision}`
+        message: `baseline.revision 不存在于当前 git 历史: ${workspace.meta.baseline.revision}${shallowHint}`
       });
     }
     const metaPaths = Object.keys(workspace.meta.documents).sort();
@@ -372,10 +377,10 @@ export function validateWorkspace(workspace: WorkspaceData): ValidationIssue[] {
       const revision = workspace.meta.documents[metaPath]?.validatedRevision;
       if (revision && !gitCommitExists(workspace.rootDir, revision)) {
         issues.push({
-          severity: "error",
+          severity: revisionSeverity,
           code: "meta.document.revision.missing",
           path: `llmdoc/${metaPath}`,
-          message: `validatedRevision 不存在于当前 git 历史: ${revision}`
+          message: `validatedRevision 不存在于当前 git 历史: ${revision}${shallowHint}`
         });
       }
     }
