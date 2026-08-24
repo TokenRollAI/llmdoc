@@ -1,5 +1,5 @@
 {
-  "name": "@tokenrollai/llmdoc-repository",
+  "name": "@tokenroll/llmdoc-repository",
   "version": "3.0.0",
   "private": true,
   "description": "Development workspace for the llmdoc V3 CLI and plugin surfaces",
@@ -12,7 +12,7 @@
     "check:prompts": "node scripts/check-prompt-budget.mjs"
   },
   "devDependencies": {
-    "llmdoc-cli": "file:./cli"
+    "@tokenroll/llmdoc": "file:./cli"
   },
   "overrides": {
     "vite": "6.4.3"

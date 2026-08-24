@@ -7,16 +7,18 @@
 ## 强制依赖
 
 - Node.js 18 或更新版本
-- 先安装 `llmdoc-cli`，再运行 `npx llmdoc`
+- 先安装 `@tokenroll/llmdoc`，再运行 `npx llmdoc`
 - git 作为有效性、delta 与回滚语义的基础
 
 推荐把 CLI 装进项目依赖，例如：
 
 ```bash
-npm install --save-dev llmdoc-cli
+npm install --save-dev @tokenroll/llmdoc
 ```
 
 V3 假定 CLI 始终存在。导航、检索、校验、delta 检测、hook 信号和工作流入口都来自 `npx llmdoc`。
+
+> 警告：`npx llmdoc` 解析的是 `@tokenroll/llmdoc` 安装到本地的 bin。不要在未安装该包的项目里裸跑——npx 会转而下载并执行 npm 上恰好叫 `llmdoc` 的无关第三方包。本插件中所有 agent 提示词与 hooks 均使用 `npx --no-install llmdoc`，正是为了杜绝这一点。
 
 ## 公开接口
 

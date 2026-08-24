@@ -19,7 +19,7 @@ interface FixtureOptions {
 }
 
 export function createFixture(options: FixtureOptions = {}): string {
-  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "llmdoc-cli-"));
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "llmdoc-fixture-"));
   fs.mkdirSync(path.join(rootDir, "src", "api"), { recursive: true });
   fs.writeFileSync(path.join(rootDir, "src", "api", "retry.ts"), "export function isRetryable() { return true; }\n");
   fs.writeFileSync(path.join(rootDir, "src", "api", "errors.ts"), "export const RETRYABLE = ['timeout'];\n");

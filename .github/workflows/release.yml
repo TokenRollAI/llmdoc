@@ -65,7 +65,7 @@ jobs:
           echo "npm_tarball=${npm_tarball}" >> "${GITHUB_OUTPUT}"
           echo "plugin_tarball=${plugin_tarball}" >> "${GITHUB_OUTPUT}"
 
-      - name: Publish llmdoc-cli to npm
+      - name: Publish @tokenroll/llmdoc to npm
         run: npm publish "${{ steps.artifacts.outputs.npm_tarball }}" --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

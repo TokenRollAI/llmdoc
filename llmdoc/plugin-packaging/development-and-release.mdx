@@ -15,7 +15,7 @@ code:
 
 ## 包结构
 
-- `cli/package.json` 定义公开 npm 包 `llmdoc-cli`，Node 要求 `>=18`，唯一 bin 是 `llmdoc`
+- `cli/package.json` 定义公开 npm 包 `@tokenroll/llmdoc`，Node 要求 `>=18`，唯一 bin 是 `llmdoc`
 - 仓库根 `package.json` 是私有开发工作区，主要把 `./cli` 挂成 devDependency，并转发 `build`、`lint`、`test`、`typecheck`、`validate:dogfood`、`check:prompts`
 
 ## 本地验证
@@ -29,6 +29,6 @@ code:
 
 - `ci.yml`：在 Node 18 / 20 / 22 上执行安装、lint、typecheck、test、build、dogfood validate、prompt budget 检查，并做一次打包后消费者安装 smoke test
 - `codex-plugin-scanner.yml`：在 push / PR 时扫描 `.codex-plugin/**`、`skills/**`、`.mcp.json`
-- `release.yml`：在 `v*` tag 上复跑验证、核对 CLI/Claude/Codex 三处版本、发布 `llmdoc-cli` 到 npm，并上传 npm tarball 与插件 tarball 到 GitHub Release
+- `release.yml`：在 `v*` tag 上复跑验证、核对 CLI/Claude/Codex 三处版本、发布 `@tokenroll/llmdoc` 到 npm，并上传 npm tarball 与插件 tarball 到 GitHub Release
 
 发布与 CI 已落地；维护时要让 README、命令表面、生成后的 Codex 表面与这些自动化同步演进。

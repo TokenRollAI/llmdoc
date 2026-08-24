@@ -12,7 +12,7 @@ This skill is the operating protocol for V3 `llmdoc` projects.
 
 ## Core Rules
 
-- Require the package `llmdoc-cli` to be installed locally so the `llmdoc` bin already exists.
+- Require the package `@tokenroll/llmdoc` to be installed locally so the `llmdoc` bin already exists.
 - Prefer CLI retrieval over broad file-system search.
 - Read only enough llmdoc content to answer the current task.
 - Preserve and reuse `LLMDOC_STATE` across continuation; do not replay prior reads unless evidence changed or the task moved.

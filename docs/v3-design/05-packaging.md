@@ -18,7 +18,7 @@ llmdoc-repository/                  # 根 = 标准 Claude Code plugin
 ├── agents/                         # investigator.md / recorder.md(角色契约)
 ├── hooks/
 │   └── hooks.json                  # SessionStart/Stop/PreCompact → npx llmdoc hook *
-├── cli/                            # npm 包 llmdoc-cli,暴露 bin llmdoc(Runtime 实体)
+├── cli/                            # npm 包 @tokenroll/llmdoc,暴露 bin llmdoc(Runtime 实体)
 │   ├── src/
 │   ├── schemas/                    # front matter / meta.json 的 JSON Schema(事实源)
 │   ├── templates/                  # new/init 脚手架模板
@@ -60,7 +60,7 @@ llmdoc-repository/                  # 根 = 标准 Claude Code plugin
 - lint + CLI 单元/集成测试;
 - `llmdoc validate` 跑本仓库 dogfood `llmdoc/`;
 - prompt 预算检查:operating skill、各命令 SOP、hook 输出的 token 上限(超限 fail);
-- 发布:npm 发布 `llmdoc-cli`,插件随 tag 打包。
+- 发布:npm 发布 `@tokenroll/llmdoc`,插件随 tag 打包。
 
 ## 4. 实施阶段
 
@@ -68,6 +68,6 @@ llmdoc-repository/                  # 根 = 标准 Claude Code plugin
 2. **状态面**:`meta.json` + `status / delta / fingerprint` + 三个 hook 子命令;
 3. **Prompt 重写**:operating + init/update SOP + 两个 agent 契约,在本仓库 dogfood(init 自举);
 4. **收敛与迁移**:`prune --report` + growth gate;`upgrade` V2→V3;
-5. **打包发布**:npm 发布 `llmdoc-cli` + Claude 插件表面定稿 + ACPlugin 转换 Codex 表面 + CI + parity checklist。
+5. **打包发布**:npm 发布 `@tokenroll/llmdoc` + Claude 插件表面定稿 + ACPlugin 转换 Codex 表面 + CI + parity checklist。
 
 每阶段结束用本仓库 dogfood 验证后再进下一阶段。

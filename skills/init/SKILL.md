@@ -26,7 +26,7 @@ Stop instead of improvising when:
 
 - `git status -- llmdoc/` must be clean before the first formal write.
 - Rollback for init means deleting the newly created `llmdoc/` surface (it did not exist before this run); never leave a half-bootstrapped tree behind.
-- If `npx llmdoc validate` fails after writes, revert the init write-set before reporting failure.
+- If `npx --no-install llmdoc validate` fails after writes, revert the init write-set before reporting failure.
 
 ## Workflow
 
@@ -42,9 +42,9 @@ Stop instead of improvising when:
    - Create the V3 root singleton plus one-level topic directories; topics are plain directories with no `index.mdx` entry node.
 
 3. Validate before reporting success.
-   - Run `npx llmdoc validate`.
+   - Run `npx --no-install llmdoc validate`.
    - Fix all schema, routing, and reference failures before finishing.
-   - Commit the bootstrap as one `llmdoc/` commit, then seed fingerprints with `npx llmdoc fingerprint --all` and amend the `meta.json` change into that commit.
+   - Commit the bootstrap as one `llmdoc/` commit, then seed fingerprints with `npx --no-install llmdoc fingerprint --all` and amend the `meta.json` change into that commit.
    - On a validation failure that cannot be repaired in-run, roll back the init write-set.
 
 ## State Invariants
@@ -66,5 +66,5 @@ Always report:
 - whether init ran or was refused
 - the investigation report path or paths used
 - the topics and stable docs created
-- the `npx llmdoc validate` result
+- the `npx --no-install llmdoc validate` result
 - any material gaps left for later `/llmdoc:update`

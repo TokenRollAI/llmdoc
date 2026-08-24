@@ -7,16 +7,18 @@
 ## Requirements
 
 - Node.js 18 or newer
-- install `llmdoc-cli` before running `npx llmdoc`
+- install `@tokenroll/llmdoc` before running `npx llmdoc`
 - git for validity, delta, and rollback semantics
 
 Recommended project-local install:
 
 ```bash
-npm install --save-dev llmdoc-cli
+npm install --save-dev @tokenroll/llmdoc
 ```
 
 V3 assumes the CLI is always present. Navigation, search, validation, delta detection, hook signals, and workflow entrypoints come from `npx llmdoc`.
+
+> Warning: `npx llmdoc` resolves the **local** bin installed by `@tokenroll/llmdoc`. Do not run it in a project that has not installed the package — npx would then download and execute an unrelated third-party package that happens to be named `llmdoc` on npm. Agent-facing prompts and hooks in this plugin use `npx --no-install llmdoc` for exactly this reason.
 
 ## Public Surface
 

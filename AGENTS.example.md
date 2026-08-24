@@ -4,7 +4,7 @@ Before broad code exploration, planning, or documentation work, load the `llmdoc
 
 This project uses llmdoc V3.
 
-- `llmdoc-cli` is a required dependency. Install it in the project first, then use `npx llmdoc ...`.
+- `@tokenroll/llmdoc` is a required dependency. Install it in the project first, then use `npx llmdoc ...`.
 - Prefer the CLI as the entrypoint:
   - `npx llmdoc tree`
   - `npx llmdoc index --topic ...`

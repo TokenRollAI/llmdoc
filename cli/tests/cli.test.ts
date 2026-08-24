@@ -456,7 +456,7 @@ describe("llmdoc cli", () => {
       };
       packageJson.dependencies = {
         ...(packageJson.dependencies ?? {}),
-        "llmdoc-cli": `file:${packageDir}`
+        "@tokenroll/llmdoc": `file:${packageDir}`
       };
       fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
       const install = spawnSync("npm", ["install"], { cwd: consumerDir, encoding: "utf8" });
@@ -465,7 +465,7 @@ describe("llmdoc cli", () => {
       expect(fs.existsSync(binPath)).toBe(true);
       const mode = fs.statSync(binPath).mode & 0o111;
       expect(mode).not.toBe(0);
-      const installedPackageJson = JSON.parse(fs.readFileSync(path.join(consumerDir, "node_modules", "llmdoc-cli", "package.json"), "utf8")) as {
+      const installedPackageJson = JSON.parse(fs.readFileSync(path.join(consumerDir, "node_modules", "@tokenroll/llmdoc", "package.json"), "utf8")) as {
         version: string;
       };
       expect(installedPackageJson.version).toBe("3.0.0");
