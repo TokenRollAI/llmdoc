@@ -24,10 +24,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Use Node.js 20
+      - name: Use Node.js 24
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20
+          # Trusted publishing(OIDC)需要 npm >= 11.5.1;Node 24 内置 npm 11
+          node-version: 24
           registry-url: https://registry.npmjs.org
           cache: npm
 
@@ -70,8 +71,10 @@ jobs:
           echo "npm_tarball=${npm_tarball}" >> "${GITHUB_OUTPUT}"
           echo "plugin_tarball=${plugin_tarball}" >> "${GITHUB_OUTPUT}"
 
-      - name: Publish @tokenroll/llmdoc to npm
+      - name: Publish @tokenroll/llmdoc to npm (trusted publishing)
         shell: bash
+        # 无 token:npmjs.com 上将本仓库的 release.yml 配置为 trusted publisher,
+        # npm 通过 OIDC(顶部 id-token: write)换取短期凭证;provenance 自动附带。
         run: |
           set -euo pipefail
           expected="${GITHUB_REF_NAME#v}"
@@ -79,10 +82,8 @@ jobs:
           if npm view "@tokenroll/llmdoc@${expected}" version >/dev/null 2>&1; then
             echo "@tokenroll/llmdoc@${expected} already published — skipping"
           else
-            npm publish "${{ steps.artifacts.outputs.npm_tarball }}" --access public --provenance
+            npm publish "${{ steps.artifacts.outputs.npm_tarball }}" --access public
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Build release notes
         id: notes
