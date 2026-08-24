@@ -6,13 +6,13 @@
   },
   "documents": {
     "architecture.mdx": {
-      "validatedRevision": "067e4d2e8e514079c3cc899c0c273c058b46a0e0"
+      "validatedRevision": "832e1995109962a1d6567f19685104f4640a4d8b"
     },
     "cli-runtime/state-and-validation.mdx": {
-      "validatedRevision": "067e4d2e8e514079c3cc899c0c273c058b46a0e0"
+      "validatedRevision": "832e1995109962a1d6567f19685104f4640a4d8b"
     },
     "cli-runtime/retrieval-and-mutation.mdx": {
-      "validatedRevision": "067e4d2e8e514079c3cc899c0c273c058b46a0e0"
+      "validatedRevision": "832e1995109962a1d6567f19685104f4640a4d8b"
     },
     "plugin-packaging/claude-and-codex.mdx": {
       "validatedRevision": "067e4d2e8e514079c3cc899c0c273c058b46a0e0"
