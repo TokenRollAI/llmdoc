@@ -47,11 +47,16 @@ jobs:
           set -euo pipefail
           expected="${GITHUB_REF_NAME#v}"
           cli_version="$(node -p "require('./cli/package.json').version")"
+          root_version="$(node -p "require('./package.json').version")"
           claude_version="$(node -p "require('./.claude-plugin/plugin.json').version")"
           codex_version="$(node -p "require('./.codex-plugin/plugin.json').version")"
+          # acplugin 以 marketplace.json 的 plugins[].version 为插件版本来源,漏 bump 曾导致生成物版本漂移
+          marketplace_version="$(node -p "require('./.claude-plugin/marketplace.json').plugins[0].version")"
           test "${cli_version}" = "${expected}"
+          test "${root_version}" = "${expected}"
           test "${claude_version}" = "${expected}"
           test "${codex_version}" = "${expected}"
+          test "${marketplace_version}" = "${expected}"
 
       - name: Pack npm and plugin artifacts
         id: artifacts
@@ -66,7 +71,16 @@ jobs:
           echo "plugin_tarball=${plugin_tarball}" >> "${GITHUB_OUTPUT}"
 
       - name: Publish @tokenroll/llmdoc to npm
-        run: npm publish "${{ steps.artifacts.outputs.npm_tarball }}" --access public --provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${GITHUB_REF_NAME#v}"
+          # 幂等:tag 重跑时该版本可能已在 registry,跳过而不是 409 失败
+          if npm view "@tokenroll/llmdoc@${expected}" version >/dev/null 2>&1; then
+            echo "@tokenroll/llmdoc@${expected} already published — skipping"
+          else
+            npm publish "${{ steps.artifacts.outputs.npm_tarball }}" --access public --provenance
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
