@@ -12,10 +12,12 @@ This skill is the operating protocol for V3 `llmdoc` projects.
 
 ## Retrieval Gate
 
-Require the local `@tokenroll/llmdoc` package and invoke it as
-`npx --no-install @tokenroll/llmdoc ...`. If it is unavailable, do not install
-it implicitly; report the degraded path and continue with narrowly scoped
-native tools.
+Treat `@tokenroll/llmdoc` as external tooling and invoke it as
+`npx -y @tokenroll/llmdoc ...`. A missing package may be fetched into the npm
+cache, but it must never be added to the consumer repository's `package.json`
+or lockfile. Pin the version in the npx package spec when reproducibility
+requires it. If the CLI remains unavailable, report the degraded path and
+continue with narrowly scoped native tools.
 
 Before the first discovery action for a task—and again whenever the
 investigation expands into a new subsystem—choose the matching entry point:

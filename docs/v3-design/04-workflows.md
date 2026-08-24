@@ -34,7 +34,7 @@ SessionStart hook → 一行状态信号
 → llmdoc show <少量文档>                            # 只读确有价值的正文
 ```
 
-每一层都允许停止。没有固定 startup pack;读多少由任务决定。CLI 是强制依赖,`tree` 就是根入口——不存在"先找 index.md"这一步。
+每一层都允许停止。没有固定 startup pack;读多少由任务决定。CLI 是强制外部工具,`tree` 就是根入口——不存在"先找 index.md"这一步。
 
 ### 3.2 Compact continuation
 

@@ -15,7 +15,7 @@ llmdoc/
 规则:
 
 - 层级固定两层:根单例 + topic folder。**topic folder 内不允许再建子目录**;需要嵌套说明应该拆一个新 topic。
-- **没有任何静态 index**:全局地图由 `llmdoc tree` 动态生成,topic 摘要由 CLI 从文档 front matter 聚合(CLI 是强制依赖,见 03)。手写的目录/清单必然腐烂,V3 不维护任何一份;`index.mdx` 文件名在任何位置都被 validate 拒绝。
+- **没有任何静态 index**:全局地图由 `llmdoc tree` 动态生成,topic 摘要由 CLI 从文档 front matter 聚合(CLI 是强制外部工具,见 03)。手写的目录/清单必然腐烂,V3 不维护任何一份;`index.mdx` 文件名在任何位置都被 validate 拒绝。
 - topic 的 purpose/boundary 需要成文时,写进该 topic 的 `architecture.mdx` 推荐槽位;只有零散短事实的 topic 直接靠文档 description route。
 - 根单例(如 `architecture.mdx`)是 init 模板的推荐槽位,schema 不强制——小项目不被逼着写空文件。
 - kind 只在 front matter 表达,目录不承载 kind 语义(topic 内平铺)。

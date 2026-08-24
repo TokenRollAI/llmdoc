@@ -4,21 +4,30 @@
 
 `llmdoc` 是代码仓库的持久化外置上下文：把 AI 不该每次会话都重新恢复的架构、约束和工作知识放进可检索、可验证、可演进的文档层。
 
-## 强制依赖
+## 运行要求
 
 - Node.js 18 或更新版本
-- 先安装 `@tokenroll/llmdoc`，再运行 `npx @tokenroll/llmdoc`
+- 通过 npx 把 `@tokenroll/llmdoc` 作为项目外部工具运行
 - git 作为有效性、delta 与回滚语义的基础
 
-推荐把 CLI 装进项目依赖，例如：
+无需向项目添加任何依赖，直接运行：
 
 ```bash
-npm install --save-dev @tokenroll/llmdoc
+npx -y @tokenroll/llmdoc tree
 ```
+
+如果希望把 CLI 明确下载到本机，请安装到全局环境，而不是加入某个业务项目：
+
+```bash
+npm install --global @tokenroll/llmdoc
+llmdoc tree
+```
+
+这个可选的本机安装方式不会修改业务项目的 `package.json` 或 lockfile。需要固定版本时直接追加版本号，例如 `npm install --global @tokenroll/llmdoc@3.1.1`。
 
 V3 假定 CLI 始终存在。导航、检索、校验、delta 检测、hook 信号和工作流入口都来自 `npx @tokenroll/llmdoc`。
 
-> 一律使用完整 scoped 名调用：`npx @tokenroll/llmdoc <cmd>`，永远不要用裸的 `npx llmdoc`——在未安装本包的环境里，裸名会解析到 npm 上一个无关的第三方包。使用 scoped 名则不存在任何错包风险：npx 会运行本地已安装副本，缺失时自动获取正确的包。hooks 使用 `npx -y @tokenroll/llmdoc`，缺包时无需交互确认即可获取；若要保证版本确定且离线可用，仍应把 CLI 安装为项目本地依赖。
+> 一律使用完整 scoped 名调用：`npx @tokenroll/llmdoc <cmd>`，永远不要用裸的 `npx llmdoc`——后者会解析到 npm 上一个无关的第三方包。`npx -y` 会把缺失的 CLI 获取到 npm 缓存，不会修改业务项目的 `package.json` 或 lockfile。需要固定版本时直接写在包名后，例如 `npx -y @tokenroll/llmdoc@3.1.1 tree`；不要把 llmdoc 安装为项目依赖。
 
 
 ## 公开接口
@@ -208,15 +217,16 @@ npm run check:prompts
 
 ## 其他平台
 
-Claude Code 与 Codex 用户由插件承担这一切（hooks、operating skill、工作流命令）。没有原生插件系统的工具，安装 `@tokenroll/llmdoc` 后把下面这份配方贴进项目的 `AGENTS.md` 即可：
+Claude Code 与 Codex 用户由插件承担这一切（hooks、operating skill、工作流命令）。没有原生插件系统的工具，通过 npx 按需调用 `@tokenroll/llmdoc`，并把下面这份配方贴进项目的 `AGENTS.md` 即可：
 
 ```markdown
 # llmdoc
 
 本项目使用 llmdoc V3 作为持久化工程上下文。
 
-- 必须在本地安装 `@tokenroll/llmdoc`；一律以
-  `npx --no-install @tokenroll/llmdoc ...` 调用，不要隐式安装。
+- 把 `@tokenroll/llmdoc` 当作项目外部工具，以
+  `npx -y @tokenroll/llmdoc ...` 调用；绝不将它写入本项目的 `package.json`
+  或 lockfile。需要时在 npx 包名中固定版本。
 - 第一次发现式检索前，以及每次进入新子系统时，按意图选择入口：概念、
   契约或“X 在哪里”→ `search`；具体源码文件 → `context --files`；范围不明 →
   `tree`；已知 topic/kind → `index`；已定位的文档正文 → `show`。

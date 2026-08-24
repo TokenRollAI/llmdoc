@@ -7,18 +7,27 @@
 ## Requirements
 
 - Node.js 18 or newer
-- install `@tokenroll/llmdoc` before running `npx @tokenroll/llmdoc`
+- run `@tokenroll/llmdoc` as external tooling through npx
 - git for validity, delta, and rollback semantics
 
-Recommended project-local install:
+Start without adding anything to the project's dependencies:
 
 ```bash
-npm install --save-dev @tokenroll/llmdoc
+npx -y @tokenroll/llmdoc tree
 ```
+
+If you prefer to download the CLI to your machine explicitly, install it globally rather than adding it to a project:
+
+```bash
+npm install --global @tokenroll/llmdoc
+llmdoc tree
+```
+
+This optional machine-wide install does not modify the consumer repository's `package.json` or lockfile. Append an exact version to the package name when needed, for example `npm install --global @tokenroll/llmdoc@3.1.1`.
 
 V3 assumes the CLI is always present. Navigation, search, validation, delta detection, hook signals, and workflow entrypoints come from `npx @tokenroll/llmdoc`.
 
-> Always invoke with the full scoped name `npx @tokenroll/llmdoc <cmd>` — never a bare `npx llmdoc`, which would resolve to an unrelated third-party npm package in environments where this package is not installed. With the scoped name there is no wrong-package risk: npx runs the locally installed copy, or fetches the correct package if missing. Hooks use `npx -y @tokenroll/llmdoc` so a missing package can be fetched without an interactive prompt. Install the CLI locally for deterministic, offline-capable runs.
+> Always invoke with the full scoped name `npx @tokenroll/llmdoc <cmd>` — never a bare `npx llmdoc`, which would resolve to an unrelated third-party npm package. `npx -y` fetches a missing CLI into the npm cache without modifying the consumer repository's `package.json` or lockfile. When a workflow needs a fixed version, pin it in the package spec, for example `npx -y @tokenroll/llmdoc@3.1.1 tree`; do not install llmdoc as a project dependency.
 
 
 ## Public Surface
@@ -208,15 +217,16 @@ Install from the repository root so the local `llmdoc` bin is linked before vali
 
 ## Other Platforms
 
-Claude Code and Codex users get all of this from the plugin (hooks, operating skill, workflow commands). For tools without a native plugin system, install `@tokenroll/llmdoc` and paste this recipe into the project's `AGENTS.md`:
+Claude Code and Codex users get all of this from the plugin (hooks, operating skill, workflow commands). For tools without a native plugin system, invoke `@tokenroll/llmdoc` on demand through npx and paste this recipe into the project's `AGENTS.md`:
 
 ```markdown
 # llmdoc
 
 This project uses llmdoc V3 as persistent engineering context.
 
-- `@tokenroll/llmdoc` must be installed locally; call it as
-  `npx --no-install @tokenroll/llmdoc ...`. Do not install it implicitly.
+- Treat `@tokenroll/llmdoc` as external tooling: call it as
+  `npx -y @tokenroll/llmdoc ...`; never add it to this project's `package.json`
+  or lockfile. Pin the version in the npx package spec when needed.
 - Before the first discovery action, and again when entering a new subsystem,
   choose the matching entry point: concept/contract/“where is X?” → `search`;
   concrete source files → `context --files`; unclear scope → `tree`; known
