@@ -18,7 +18,7 @@ npm install --save-dev @tokenroll/llmdoc
 
 V3 assumes the CLI is always present. Navigation, search, validation, delta detection, hook signals, and workflow entrypoints come from `npx @tokenroll/llmdoc`.
 
-> Always invoke with the full scoped name `npx @tokenroll/llmdoc <cmd>` — never a bare `npx llmdoc`, which would resolve to an unrelated third-party npm package in environments where this package is not installed. With the scoped name there is no wrong-package risk: npx runs the locally installed copy, or fetches the correct package if missing. Hooks use `npx --no-install @tokenroll/llmdoc` so they stay offline-safe and fail open.
+> Always invoke with the full scoped name `npx @tokenroll/llmdoc <cmd>` — never a bare `npx llmdoc`, which would resolve to an unrelated third-party npm package in environments where this package is not installed. With the scoped name there is no wrong-package risk: npx runs the locally installed copy, or fetches the correct package if missing. Hooks use `npx -y @tokenroll/llmdoc` so a missing package can be fetched without an interactive prompt. Install the CLI locally for deterministic, offline-capable runs.
 
 
 ## Public Surface

@@ -3,6 +3,7 @@ description: Workspace 扫描、schema 校验与影响面规则。文档 ID 即 
 kind: architecture
 code:
   paths:
+    - cli/src/lib/fs.ts
     - cli/src/lib/workspace.ts
     - cli/src/lib/state.ts
     - cli/src/lib/git.ts
@@ -13,12 +14,17 @@ code:
     - cli/src/commands/delta.ts
     - cli/src/commands/fingerprint.ts
     - cli/src/commands/hook.ts
+    - cli/tests/cli.test.ts
     - cli/schemas/doc-frontmatter.schema.json
     - cli/schemas/meta.schema.json
     - cli/schemas/output.schema.json
 ---
 
 # 状态面与校验面
+
+## 项目根发现边界
+
+`cli/src/lib/fs.ts` 会先定位离当前目录最近的 Git 根，并且只接受该 Git 根直属的 `llmdoc/`。一旦存在 Git 边界，发现过程就不会继续向上，避免把同一工作区中名为 `llmdoc` 的同级仓库误认成当前项目的知识面；仅在完全没有 Git 边界时，才为初始化前的临时目录保留向上查找 `llmdoc/` 的兼容回退。
 
 ## 文档树如何被装载
 

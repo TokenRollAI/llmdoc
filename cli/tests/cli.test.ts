@@ -715,6 +715,23 @@ code:
     const compact = await runCli(["hook", "compact"], bareDir);
     expect(compact.exitCode).toBe(0);
     expect(JSON.parse(compact.stdout)).toEqual({ continue: true });
+
+    // 回归:不得越过当前 Git 根目录，把同级名为 llmdoc 的仓库误认为知识目录。
+    const workspaceParent = fs.mkdtempSync(path.join(os.tmpdir(), "llmdoc-sibling-"));
+    const siblingRepository = path.join(workspaceParent, "llmdoc");
+    const unrelatedRepository = path.join(workspaceParent, "website");
+    fs.mkdirSync(siblingRepository);
+    fs.mkdirSync(path.join(unrelatedRepository, ".git"), { recursive: true });
+
+    const isolatedSessionStart = await runCli(["hook", "session-start"], unrelatedRepository);
+    expect(isolatedSessionStart.exitCode).toBe(0);
+    expect(isolatedSessionStart.stdout).toBe("");
+
+    const enabledRepository = createFixture();
+    const nestedDirectory = path.join(enabledRepository, "src", "api");
+    const nestedSessionStart = await runCli(["hook", "session-start"], nestedDirectory);
+    expect(nestedSessionStart.exitCode).toBe(0);
+    expect(nestedSessionStart.stdout).toContain("llmdoc yes");
   });
 
   test("new escapes hostile descriptions into valid front matter", async () => {

@@ -18,7 +18,7 @@ npm install --save-dev @tokenroll/llmdoc
 
 V3 假定 CLI 始终存在。导航、检索、校验、delta 检测、hook 信号和工作流入口都来自 `npx @tokenroll/llmdoc`。
 
-> 一律使用完整 scoped 名调用：`npx @tokenroll/llmdoc <cmd>`，永远不要用裸的 `npx llmdoc`——在未安装本包的环境里，裸名会解析到 npm 上一个无关的第三方包。使用 scoped 名则不存在任何错包风险：npx 会运行本地已安装副本，缺失时自动获取正确的包。hooks 使用 `npx --no-install @tokenroll/llmdoc`，保证离线安全且 fail-open。
+> 一律使用完整 scoped 名调用：`npx @tokenroll/llmdoc <cmd>`，永远不要用裸的 `npx llmdoc`——在未安装本包的环境里，裸名会解析到 npm 上一个无关的第三方包。使用 scoped 名则不存在任何错包风险：npx 会运行本地已安装副本，缺失时自动获取正确的包。hooks 使用 `npx -y @tokenroll/llmdoc`，缺包时无需交互确认即可获取；若要保证版本确定且离线可用，仍应把 CLI 安装为项目本地依赖。
 
 
 ## 公开接口

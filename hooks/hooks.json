@@ -1,12 +1,12 @@
 {
-  "description": "V3 llmdoc hooks delegated to the installed llmdoc CLI. SessionStart may return plain text; Stop and PreCompact must return valid JSON on success.",
+  "description": "V3 llmdoc hooks delegated to the scoped llmdoc CLI. Missing packages are installed non-interactively; SessionStart may return plain text, while Stop and PreCompact return JSON on success.",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no-install @tokenroll/llmdoc hook session-start",
+            "command": "npx -y @tokenroll/llmdoc hook session-start",
             "additionalContextLimit": 1200
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no-install @tokenroll/llmdoc hook stop"
+            "command": "npx -y @tokenroll/llmdoc hook stop"
           }
         ]
       }
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no-install @tokenroll/llmdoc hook compact"
+            "command": "npx -y @tokenroll/llmdoc hook compact"
           }
         ]
       }

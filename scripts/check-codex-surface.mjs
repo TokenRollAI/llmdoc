@@ -79,14 +79,14 @@ if (fs.existsSync(skillsRoot)) {
   }
 }
 
-// 4) hooks.json:合法 JSON 且所有命令使用 scoped 包名 + --no-install
+// 4) hooks.json:合法 JSON 且所有命令使用 scoped 包名 + 非交互安装确认
 const hooks = readJson("hooks/hooks.json");
 if (hooks) {
   const commands = JSON.stringify(hooks).match(/"command":"([^"]+)"/g) ?? [];
   for (const raw of commands) {
     const command = raw.slice(11, -1);
-    if (!command.startsWith("npx --no-install @tokenroll/llmdoc")) {
-      errors.push(`hooks.json: 命令必须以 'npx --no-install @tokenroll/llmdoc' 开头: ${command}`);
+    if (!command.startsWith("npx -y @tokenroll/llmdoc")) {
+      errors.push(`hooks.json: 命令必须以 'npx -y @tokenroll/llmdoc' 开头: ${command}`);
     }
   }
 }

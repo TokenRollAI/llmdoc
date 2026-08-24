@@ -12,10 +12,18 @@ export function findProjectRoot(startDir: string): string {
 }
 
 export function findProjectRootOrNull(startDir: string): string | null {
-  let current = path.resolve(startDir);
+  const start = path.resolve(startDir);
+  const gitRoot = findNearestGitRootOrNull(start);
 
+  if (gitRoot) {
+    return isDirectory(path.join(gitRoot, "llmdoc")) ? gitRoot : null;
+  }
+
+  // Git 是 llmdoc 有效性与 delta 语义的基础；这里只为仓库初始化前的
+  // 临时目录保留兼容回退。存在 Git 边界时绝不能越界命中同级仓库。
+  let current = start;
   while (true) {
-    if (fs.existsSync(path.join(current, "llmdoc")) && fs.statSync(path.join(current, "llmdoc")).isDirectory()) {
+    if (isDirectory(path.join(current, "llmdoc"))) {
       return current;
     }
 
@@ -24,6 +32,28 @@ export function findProjectRootOrNull(startDir: string): string | null {
       return null;
     }
     current = parent;
+  }
+}
+
+function findNearestGitRootOrNull(startDir: string): string | null {
+  let current = startDir;
+  while (true) {
+    if (fs.existsSync(path.join(current, ".git"))) {
+      return current;
+    }
+    const parent = path.dirname(current);
+    if (parent === current) {
+      return null;
+    }
+    current = parent;
+  }
+}
+
+function isDirectory(candidate: string): boolean {
+  try {
+    return fs.statSync(candidate).isDirectory();
+  } catch {
+    return false;
   }
 }
 

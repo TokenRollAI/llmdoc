@@ -27,7 +27,7 @@ code:
 - `.claude-plugin/*.json` 提供插件元数据与 marketplace 入口
 - `skills/init|update|prune|upgrade/SKILL.md` 是四个显式工作流的薄壳 SOP
 - `agents/investigator.md` 与 `agents/recorder.md` 是角色契约
-- 根 `hooks/hooks.json` 只负责把生命周期事件转给 `npx @tokenroll/llmdoc hook ...`
+- 根 `hooks/hooks.json` 只负责把生命周期事件转给 `npx -y @tokenroll/llmdoc hook ...`
 
 这些文件描述“何时、为什么、授权到哪里”，而不是重写 CLI 的算法。
 
@@ -59,7 +59,7 @@ acplugin 转换注意（重生成后需人工核对）：`model: inherit` 硬编
 
 `scripts/check-codex-surface.mjs` 会自动拒绝任一 marketplace 名不是 `llmdoc-plugin` 或两侧名称不一致；`tests/parity-checklist.md` 则要求发布前人工确认两侧 marketplace 名与插件名分别为 `llmdoc-plugin` 和 `llmdoc`。
 
-根 `hooks/hooks.json` 不靠 ACPlugin 复制；Claude 与 Codex 都直接共用这份根 hook 壳，并统一调用同一个 CLI hook 子命令。
+根 `hooks/hooks.json` 不靠 ACPlugin 复制；Claude 与 Codex 都直接共用这份根 hook 壳，并统一通过 `npx -y @tokenroll/llmdoc` 调用 CLI hook 子命令。`-y` 允许缺包时非交互获取正确的 scoped 包；本地安装仍是确定版本和离线运行的首选。
 
 维护时要遵守两点：
 
