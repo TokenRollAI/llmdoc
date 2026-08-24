@@ -215,10 +215,15 @@ Claude Code 与 Codex 用户由插件承担这一切（hooks、operating skill�
 
 本项目使用 llmdoc V3 作为持久化工程上下文。
 
-- 必须已安装 `@tokenroll/llmdoc`；一律以 `npx @tokenroll/llmdoc ...` 调用。
-- 大范围探索前先 `npx @tokenroll/llmdoc tree`，再按需 `index --topic`、
-  `context --files`、`search`，最后才用 `show` 读正文。
-- 只读当前任务需要的内容；相关性由文档 description 判断。
+- 必须在本地安装 `@tokenroll/llmdoc`；一律以
+  `npx --no-install @tokenroll/llmdoc ...` 调用，不要隐式安装。
+- 第一次发现式检索前，以及每次进入新子系统时，按意图选择入口：概念、
+  契约或“X 在哪里”→ `search`；具体源码文件 → `context --files`；范围不明 →
+  `tree`；已知 topic/kind → `index`；已定位的文档正文 → `show`。
+- 广泛原生探索指递归或跨目录搜索 llmdoc 尚未圈定的工作集；执行前必须重新
+  应用上面的路由。
+- llmdoc 圈定工作集后，可以用原生工具核对源码、行号、测试、计数、git 状态
+  等实时事实。不要把所有检索命令跑成固定序列；上下文足够就停。
 - `init` / `update` / `prune` / `upgrade` 是显式工作流：可以建议、须经用户
   确认后执行；永不主动建议 `upgrade`。
 - 稳定知识在 `llmdoc/`；不要手工编辑 `llmdoc/meta.json`（用 `fingerprint` /

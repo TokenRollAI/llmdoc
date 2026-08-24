@@ -215,10 +215,17 @@ Claude Code and Codex users get all of this from the plugin (hooks, operating sk
 
 This project uses llmdoc V3 as persistent engineering context.
 
-- `@tokenroll/llmdoc` must be installed; call the CLI as `npx @tokenroll/llmdoc ...`.
-- Before broad exploration, start from `npx @tokenroll/llmdoc tree`, then
-  `index --topic`, `context --files`, `search`, and read bodies last with `show`.
-- Read only what the current task needs; document descriptions decide relevance.
+- `@tokenroll/llmdoc` must be installed locally; call it as
+  `npx --no-install @tokenroll/llmdoc ...`. Do not install it implicitly.
+- Before the first discovery action, and again when entering a new subsystem,
+  choose the matching entry point: concept/contract/“where is X?” → `search`;
+  concrete source files → `context --files`; unclear scope → `tree`; known
+  topic/kind → `index`; identified document bodies → `show`.
+- Broad native discovery means recursive or cross-directory exploration outside
+  the working set identified by llmdoc. Apply the routing above before doing it.
+- Once llmdoc narrows the working set, use native tools for exact source text,
+  line numbers, tests, counts, git state, and other live facts. Do not run every
+  retrieval command as a fixed sequence; stop when the task has enough context.
 - `init` / `update` / `prune` / `upgrade` are explicit workflows: suggest them
   when relevant, run only after user confirmation; never suggest `upgrade`.
 - Stable knowledge lives in `llmdoc/`; never hand-edit `llmdoc/meta.json`

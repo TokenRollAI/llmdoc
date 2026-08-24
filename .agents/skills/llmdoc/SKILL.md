@@ -1,8 +1,8 @@
 ---
 name: llmdoc
 description: >-
-  Default V3 operating skill for llmdoc-enabled projects. Use the CLI retrieval
-  surface instead of replaying large startup docs.
+  Default V3 operating skill for llmdoc-enabled projects. Route broad or
+  cross-subsystem discovery through the CLI retrieval surface.
 allowed-tools: 'Read, Glob, Grep, Bash, Write, Edit, WebSearch, WebFetch'
 ---
 
@@ -10,29 +10,45 @@ allowed-tools: 'Read, Glob, Grep, Bash, Write, Edit, WebSearch, WebFetch'
 
 This skill is the operating protocol for V3 `llmdoc` projects.
 
-## Core Rules
+## Retrieval Gate
 
-- Require the package `@tokenroll/llmdoc` to be installed locally so the `llmdoc` bin already exists.
-- Prefer CLI retrieval over broad file-system search.
-- Read only enough llmdoc content to answer the current task.
+Require the local `@tokenroll/llmdoc` package and invoke it as
+`npx --no-install @tokenroll/llmdoc ...`. If it is unavailable, do not install
+it implicitly; report the degraded path and continue with narrowly scoped
+native tools.
+
+Before the first discovery action for a task—and again whenever the
+investigation expands into a new subsystem—choose the matching entry point:
+
+- Concept, contract, term, or “where is X?” → `search <query>`.
+- Background or impact of concrete source files → `context --files <path...>`.
+- Cold start or unclear scope → `tree`.
+- Known topic or document kind → `index --topic <topic>` / `--kind <kind>`.
+- Body of already identified llmdoc documents → `show <path...>`.
+- Exact source text, line numbers, tests, counts, git state, or other live facts
+  inside an established working set → native source and shell tools.
+
+Broad native discovery means recursive or cross-directory exploration outside
+the working set already identified by llmdoc. Before doing that with Read,
+Grep, Glob, or shell commands, apply this gate.
+
+Once llmdoc has narrowed the working set, use native tools for exact source
+verification. Do not run every retrieval command as a fixed sequence. Read
+only enough to answer the task. “Stop as soon as you have enough context”
+applies after selecting the entry point; it does not authorize skipping this
+gate.
+
+`status` and `delta` are not retrieval. Use them only when assessing staleness
+or preparing `/llmdoc:update`; `delta` decides light vs deep.
+
+## Operating Rules
+
 - Preserve and reuse `LLMDOC_STATE` across continuation; do not replay prior reads unless evidence changed or the task moved.
 - Temporary investigation notes belong in `.llmdoc-tmp/`, not in stable docs.
 - Stable llmdoc writes belong to `recorder`.
 - Before non-trivial edits, the main assistant should align with the user.
 - If `llmdoc/` does not exist, suggest `/llmdoc:init`; do not fabricate the knowledge surface ad hoc.
 - When a task produces durable knowledge changes, suggest `/llmdoc:update` at the end.
-
-## Progressive Retrieval
-
-Pick the entry point that matches the task; do not run these as a fixed sequence, and stop as soon as you have enough context:
-
-- Cold start or unclear scope → `npx @tokenroll/llmdoc tree` for the global map, then descend.
-- The task names concrete source files → `npx @tokenroll/llmdoc context --files <path...>` (you may skip `tree`).
-- The task names a concept, contract, or term → `npx @tokenroll/llmdoc search <query>`.
-- Browsing a known topic or kind → `npx @tokenroll/llmdoc index --topic <topic>` / `--kind <kind>`.
-- Read bodies last, and only the few that still matter → `npx @tokenroll/llmdoc show <path...>`.
-
-`status` and `delta` are not retrieval: use them only when assessing staleness or preparing `/llmdoc:update` (`delta` decides light vs deep).
 
 ## Continuation State
 
