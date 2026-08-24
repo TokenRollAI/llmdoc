@@ -32,7 +32,7 @@ code:
 
 V3 的重要分工是“提示词只做判断，CLI 负责机械”。命令文档会决定何时走 `init`、`update`、`prune`、`upgrade`，真正的目录扫描、JSON schema 校验、git revision 检查、delta 计算和 hook 输出都落在 `cli/src/`。
 
-当前仓库已经按 V3 的公开接口改写：README、示例 AGENTS/CLAUDE 文件、命令面、hook 面与 CI/release 都把 `npx llmdoc` 当成正常入口；不再把 V2 的根 `index.md`、`startup.md`、`sync.md`、`worker`、`reflector` 当成有效契约。
+当前仓库已经按 V3 的公开接口改写：README（含给无插件平台的内嵌 AGENTS.md 配方）、命令面、hook 面与 CI/release 都把 `npx llmdoc` 当成正常入口；不再把 V2 的根 `index.md`、`startup.md`、`sync.md`、`worker`、`reflector` 当成有效契约。
 
 按主题继续阅读（topic 无入口节点，用 `llmdoc index --topic <t>` 看各文档描述）：
 
