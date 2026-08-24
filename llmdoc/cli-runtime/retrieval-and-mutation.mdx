@@ -1,0 +1,61 @@
+---
+description: 读取面、改写面与 prune/upgrade。
+kind: reference
+relations:
+  related:
+    - workflows/prune-and-upgrade.mdx
+code:
+  paths:
+    - cli/src/cli.ts
+    - cli/src/lib/output-schema.ts
+    - cli/src/commands/tree.ts
+    - cli/src/commands/index.ts
+    - cli/src/commands/show.ts
+    - cli/src/commands/search.ts
+    - cli/src/commands/context.ts
+    - cli/src/commands/new.ts
+    - cli/src/commands/mv.ts
+    - cli/src/commands/prune.ts
+    - cli/src/commands/upgrade.ts
+    - cli/src/commands/serve.ts
+    - cli/assets/viewer.html
+    - cli/schemas/output.schema.json
+---
+
+# 检索面与轻量改写面
+
+## 渐进读取命令
+
+- `tree`：列出根 singleton 和 topic；不带 `--docs` 时停在 topic 层，topic 摘要由文档名聚合（无入口节点）。
+- `index`：输出 front matter 投影，用于不读正文时判断相关性。
+- `show`：按路径读取正文，受预算分页约束。
+- `search`：按 front matter、标题和正文检索，返回 snippet。
+- `context --files`：按 `code.paths` 反查文档，再补 `relations.requires` 闭包。
+
+这些命令返回投影，不暴露内部解析对象。`tree` 两种 `--json` 形态及其余命令 payload 由 `cli/schemas/output.schema.json` 定义，并在 `cli/src/lib/output-schema.ts` 中于 stringify 前用 Ajv 2020 校验；`tree`、`index`、`search`、`context`、`delta` 按输出投影估分页，`show` 因含正文而按带 `body` 的输出估算。
+
+## 结构性改写命令
+
+- `new`：只会在 `llmdoc/` 下生成 `.mdx` 脚手架，模板来自 `cli/templates/doc.mdx`
+- `mv`：用 `git mv` 移动文件或整个 topic，并重写 `relations`、正文链接和 `meta.json.documents` key
+
+`new` 和 `mv` 都会先过仓库内 realpath 校验；若目标越界或经符号链接逃逸，CLI 会拒绝继续。`new` 可直接在新 topic 下建文档（目录自动创建），但拒绝 `index.mdx` 文件名。
+
+`mv` 只重写 `llmdoc/` 内部引用，不碰源码，并保证三件事：
+
+- 拒绝覆盖已存在目标；目标 topic 不存在时自动创建目录
+- 改写 Markdown 链接时会保留 query / anchor 后缀，并跳过 fenced code 与 inline code 里的示例文本
+- 引用重写阶段失败会自动回滚 `llmdoc/` 到移动前状态
+
+## 维护子命令边界
+
+`prune` 和 `upgrade` 仍是“读诊断、由 recorder 执行语义改写”的形态：
+
+- `prune` 只有 `--report` 模式，会输出 growth、重复候选和小文档合并候选；不直接写文档。
+- `upgrade` 会盘点 legacy/V2 标记，如 `index.md`、`startup.md`、`must/`、`overview/`、`memory/`、`state/sync.md`，并报告目标 V3 结构；它不会自动迁移正文，也不应被普通 update/prune 流程隐式触发。
+
+因此，真正的收敛与 V2→V3 迁移仍要由工作流层调用 `recorder` 完成。
+
+## Web Viewer（`serve`）
+
+`serve` 启动只绑定 127.0.0.1 的前台 HTTP 服务（`cli/src/commands/serve.ts` + `cli/assets/viewer.html`），面向人展示文档列表、requires/related/link 关系图和每份文档的新鲜度；`/api/state` 每次请求实时重算 workspace、delta 与 validate，不落任何持久化状态。`/api/doc` 只按已索引 llmdocPath 查表，天然免疫路径遍历。正文渲染依赖 `marked`，缺失时降级为原文展示。

@@ -1,0 +1,36 @@
+{
+  "schema": "llmdoc.meta/v3",
+  "baseline": {
+    "revision": "7dc000b52d654fed7c87ee3efc6c5806b9c92ce5",
+    "verifiedAt": "2026-08-24T12:20:30.324Z"
+  },
+  "documents": {
+    "architecture.mdx": {
+      "validatedRevision": "7dc000b52d654fed7c87ee3efc6c5806b9c92ce5"
+    },
+    "cli-runtime/state-and-validation.mdx": {
+      "validatedRevision": "7dc000b52d654fed7c87ee3efc6c5806b9c92ce5"
+    },
+    "cli-runtime/retrieval-and-mutation.mdx": {
+      "validatedRevision": "7dc000b52d654fed7c87ee3efc6c5806b9c92ce5"
+    },
+    "plugin-packaging/claude-and-codex.mdx": {
+      "validatedRevision": "7dc000b52d654fed7c87ee3efc6c5806b9c92ce5"
+    },
+    "plugin-packaging/development-and-release.mdx": {
+      "validatedRevision": "7dc000b52d654fed7c87ee3efc6c5806b9c92ce5"
+    },
+    "workflows/init-and-update.mdx": {
+      "validatedRevision": "7dc000b52d654fed7c87ee3efc6c5806b9c92ce5"
+    },
+    "workflows/prune-and-upgrade.mdx": {
+      "validatedRevision": "7dc000b52d654fed7c87ee3efc6c5806b9c92ce5"
+    }
+  },
+  "convergence": {
+    "capturedAt": "2026-08-24T08:46:26Z",
+    "source": "init",
+    "documentCount": 7,
+    "totalEstimatedTokens": 2003
+  }
+}

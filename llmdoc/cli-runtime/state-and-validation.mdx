@@ -1,0 +1,79 @@
+---
+description: Workspace 扫描、schema 校验与影响面规则。文档 ID 即 llmdoc/ 下相对路径，topic 名即第一层目录名。
+kind: architecture
+code:
+  paths:
+    - cli/src/lib/workspace.ts
+    - cli/src/lib/state.ts
+    - cli/src/lib/git.ts
+    - cli/src/lib/output-schema.ts
+    - cli/src/lib/schema.ts
+    - cli/src/commands/validate.ts
+    - cli/src/commands/status.ts
+    - cli/src/commands/delta.ts
+    - cli/src/commands/fingerprint.ts
+    - cli/src/commands/hook.ts
+    - cli/schemas/doc-frontmatter.schema.json
+    - cli/schemas/meta.schema.json
+    - cli/schemas/output.schema.json
+---
+
+# 状态面与校验面
+
+## 文档树如何被装载
+
+`cli/src/lib/workspace.ts` 会递归扫描 `llmdoc/`，只接受 `.mdx` 与唯一的 `meta.json`。每份文档会被解析出 front matter、标题、正文链接、`CodeRef` 与 topic 归属。
+
+- 根：`llmdoc/*.mdx`
+- topic：`llmdoc/topic-name/*.mdx`
+
+任何位置的 `index.mdx` 都被显式禁止（V3 不设入口节点，topic 描述由 `tree` 从文档聚合），topic 下继续嵌套子目录也会报错。
+
+## validate 保证什么
+
+`validate` 会检查：
+
+- front matter 只能出现 `description`、`kind`、`relations`、`code.paths`
+- `kind` 只允许 `architecture`、`guide`、`reference`
+- 任何位置不允许 `index.mdx` 文件名
+- 正文只能是纯 Markdown，加自闭合 `<CodeRef ... />`
+- `relations` 与正文 Markdown 链接都必须指向现存 `.mdx`
+- `code.paths` 与 `CodeRef path` 必须留在仓库内，且非 glob 路径必须存在
+- `baseline.verifiedAt` 与 `convergence.capturedAt` 必须是合法 UTC 日历时间，而不只是形似 RFC3339 的字符串
+- `meta.json` 的 baseline 与 per-document `validatedRevision` 必须都是真实 commit
+- `meta.json.documents` 与当前文件树必须一一对应
+
+`meta.json` 只保存 revision 台账，不复制树结构。装载前还会做 `llmdoc/` 根 realpath 边界检查；若符号链接逃逸到仓库外，CLI 会直接拒绝。
+
+## revision 与 delta 语义
+
+`cli/src/lib/state.ts` 以 git 为唯一锚点：
+
+- 每个文档优先用自己的 `validatedRevision`
+- 没有 per-document 记录时回落到 `baseline.revision`
+- `status` 通过 `git rev-list --count baseline..HEAD` 计算 baseline 落后多少 commit
+- `delta` 通过 `git diff --name-only validatedRevision..HEAD` 找到命中的 `code.paths`
+
+dirty worktree 不会伪造 revision。`staged`、`unstaged`、`untracked` 只会变成 dirty 信号，只针对 `llmdoc/` 之外的实现文件。若文档缺少 `validatedRevision`，或该 revision 已不在当前历史，CLI 会保守地把它记为 impacted，并把建议模式抬到 `deep`。
+
+## 影响面扩展
+
+直接命中 `code.paths` 的文档会被记为 impacted。之后只沿 `relations.requires` 反向扩展一跳，把依赖这些文档的页面标成 needs-review。
+
+若存在未映射代码路径、requires 反向需复核、受影响文档过多、dirty 关联代码、缺失/无效的 `validatedRevision`，或 baseline 失效，`delta` 会把建议模式抬到 `deep`。
+
+## fingerprint 与 hook
+
+`fingerprint --update` 会把目标文档的 `validatedRevision` 写成当前 HEAD；`--all` 还会同步推进 `baseline.revision` 和 `baseline.verifiedAt`。它会拒绝三类情况：
+
+- 非 git 或无法解析 HEAD
+- detached HEAD 或 merge/rebase/cherry-pick 中
+- 目标文档关联的实现代码仍然 dirty
+
+其中 `--all` 更严格：只要任意实现路径仍 dirty，就会拒绝推进 baseline，不要求那条路径先映射到某篇文档。
+
+公开 `--json` 输出会先按 `cli/schemas/output.schema.json` 过 Ajv 2020 校验；`hook stop` 与 `hook compact` 还会先解析并校验 hook payload。三类 hook 都是只读信号：
+
+- `session-start` 输出短文本摘要
+- `stop` 与 `compact` 成功时输出 `{ continue: true, systemMessage? }`
+- 任何异常都 fail-open，不阻塞开发

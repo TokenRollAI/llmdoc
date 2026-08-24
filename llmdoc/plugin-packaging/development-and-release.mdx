@@ -1,0 +1,34 @@
+---
+description: 开发与发布：包结构、根脚本与 GitHub workflows。
+kind: reference
+code:
+  paths:
+    - package.json
+    - cli/package.json
+    - .github/workflows/codex-plugin-scanner.yml
+    - .github/workflows/release.yml
+    - README.md
+    - README.zh-CN.md
+---
+
+# 开发、验证与发布
+
+## 包结构
+
+- `cli/package.json` 定义公开 npm 包 `llmdoc-cli`，Node 要求 `>=18`，唯一 bin 是 `llmdoc`
+- 仓库根 `package.json` 是私有开发工作区，主要把 `./cli` 挂成 devDependency，并转发 `build`、`lint`、`test`、`typecheck`、`validate:dogfood`、`check:prompts`
+
+## 本地验证
+
+- 本地开发通常先在仓库根安装依赖并跑根脚本，脚本会转发到 `cli/`
+- 之后补一层 dogfood `validate`，确认当前 `llmdoc/` 通过校验
+
+测试已覆盖 validate、读取/状态面、fingerprint、hook、prune、upgrade、分页预算与发布 smoke；文档或命令表面若未同步，会先暴露。
+
+## GitHub 自动化
+
+- `ci.yml`：在 Node 18 / 20 / 22 上执行安装、lint、typecheck、test、build、dogfood validate、prompt budget 检查，并做一次打包后消费者安装 smoke test
+- `codex-plugin-scanner.yml`：在 push / PR 时扫描 `.codex-plugin/**`、`skills/**`、`.mcp.json`
+- `release.yml`：在 `v*` tag 上复跑验证、核对 CLI/Claude/Codex 三处版本、发布 `llmdoc-cli` 到 npm，并上传 npm tarball 与插件 tarball 到 GitHub Release
+
+发布与 CI 已落地；维护时要让 README、命令表面、生成后的 Codex 表面与这些自动化同步演进。

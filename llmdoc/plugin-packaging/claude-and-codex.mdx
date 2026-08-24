@@ -1,0 +1,57 @@
+---
+description: Claude 与 Codex 表面的分工：Claude 根表面是手工维护源，CLI 承担机械逻辑，Codex 兼容表面需要与 Claude 契约保持一致。
+kind: architecture
+code:
+  paths:
+    - .claude-plugin/plugin.json
+    - .claude-plugin/marketplace.json
+    - .codex-plugin/plugin.json
+    - .agents/skills/*/SKILL.md
+    - .codex/agents/*.toml
+    - skills/*/SKILL.md
+    - agents/*.md
+    - hooks/hooks.json
+    - AGENTS.example.md
+    - CLAUDE.example.md
+    - README.md
+    - README.zh-CN.md
+---
+
+# Claude 与 Codex 表面
+
+## Claude 是当前手工维护源
+
+仓库根已经按 Claude 插件形态组织：
+
+- `.claude-plugin/*.json` 提供插件元数据与 marketplace 入口
+- `skills/init|update|prune|upgrade/SKILL.md` 是四个显式工作流的薄壳 SOP
+- `agents/investigator.md` 与 `agents/recorder.md` 是角色契约
+- 根 `hooks/hooks.json` 只负责把生命周期事件转给 `npx --no-install llmdoc hook ...`
+
+这些文件描述“何时、为什么、授权到哪里”，而不是重写 CLI 的算法。
+
+## CLI 是共同 runtime
+
+不管宿主是 Claude 还是 Codex，机械能力都收敛到 `llmdoc-cli`：
+
+- 检索与路由
+- state/delta/fingerprint
+- hook 信号
+- 轻量结构改写
+
+因此包装层变更时，先检查命令文档是否只保留判断性内容；不要把 diff、schema 校验或 git 逻辑重新写进 prompt。
+
+## Codex 兼容面的实际要求
+
+README 与示例文件都已经把方向收敛到“Claude canonical，Codex 兼容/转换表面”。当前实现里，ACPlugin 生成的是：
+
+- `.codex-plugin/plugin.json` manifest
+- `.agents/skills/` 下的 operating skill 与四个命令 skills
+- `.codex/agents/` 下的 project-scoped `investigator` / `recorder` TOML
+
+根 `hooks/hooks.json` 不靠 ACPlugin 复制；Claude 与 Codex 都直接共用这份根 hook 壳，并统一调用同一个 CLI hook 子命令。
+
+维护时要遵守两点：
+
+- `.codex-plugin/plugin.json`、`.agents/skills/`、`.codex/agents/*.toml` 必须继续反映与 Claude 相同的公开契约，至少在命令集、授权语义和 hook 行为上保持一致。
+- 不手工维护第二份 Codex 角色文本；Codex 角色文件是从两个 Claude 角色契约再生成的兼容表面，而不是独立真相源。

@@ -1,0 +1,41 @@
+---
+description: llmdoc 仓库的整体形态：CLI 负责机械能力，Claude 根表面负责工作流与角色契约，仓库自身用同一套 V3 文档 dogfood。
+kind: architecture
+relations:
+  related:
+    - cli-runtime/state-and-validation.mdx
+    - workflows/init-and-update.mdx
+    - plugin-packaging/claude-and-codex.mdx
+code:
+  paths:
+    - cli/src/cli.ts
+    - skills/*/SKILL.md
+    - agents/*.md
+    - .agents/skills/*/SKILL.md
+    - .codex/agents/*.toml
+    - hooks/hooks.json
+    - .claude-plugin/*.json
+    - .codex-plugin/*.json
+    - package.json
+    - README.md
+    - README.zh-CN.md
+---
+
+# llmdoc 仓库整体架构
+
+这个仓库把 `llmdoc` 拆成四层相互配合的能力：
+
+- `cli/` 是运行时实体，负责扫描 `llmdoc/`、校验 front matter 与 `meta.json`、做检索与影响面分析，并暴露 hook 与维护命令。
+- 仓库根的 Claude 表面负责判断性 SOP：`skills/` 下五个 SKILL.md（`llmdoc` operating skill 加 `init/update/prune/upgrade` 四个显式工作流）描述工作流，`agents/investigator.md` 与 `agents/recorder.md` 描述两个角色，`hooks/hooks.json` 只负责把生命周期事件转发到 CLI。
+- ACPlugin 生成的 Codex 兼容表面位于 `.agents/skills/`、`.codex/agents/` 与 `.codex-plugin/plugin.json`，它们承接 Claude 根表面的命令、operating skill、角色契约与 manifest。
+- `llmdoc/` 是仓库自身的 dogfood 知识面，用 V3 两层目录反过来解释这套实现本身。
+
+V3 的重要分工是“提示词只做判断，CLI 负责机械”。命令文档会决定何时走 `init`、`update`、`prune`、`upgrade`，真正的目录扫描、JSON schema 校验、git revision 检查、delta 计算和 hook 输出都落在 `cli/src/`。
+
+当前仓库已经按 V3 的公开接口改写：README、示例 AGENTS/CLAUDE 文件、命令面、hook 面与 CI/release 都把 `npx llmdoc` 当成正常入口；不再把 V2 的根 `index.md`、`startup.md`、`sync.md`、`worker`、`reflector` 当成有效契约。
+
+按主题继续阅读（topic 无入口节点，用 `llmdoc index --topic <t>` 看各文档描述）：
+
+- `cli-runtime/`：文档树扫描、状态与校验读 `state-and-validation.mdx`；命令面读 `retrieval-and-mutation.mdx`。
+- `workflows/`：init/update 契约读 `init-and-update.mdx`；prune/upgrade 读 `prune-and-upgrade.mdx`。
+- `plugin-packaging/`：提示词与双平台表面读 `claude-and-codex.mdx`；开发发布读 `development-and-release.mdx`。

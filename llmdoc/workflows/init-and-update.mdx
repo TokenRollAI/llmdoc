@@ -1,0 +1,60 @@
+---
+description: init 与 update 的当前契约：何时允许运行、何时需要 investigator、何时只做 recorder 直改，以及成功前必须经过哪些校验与 fingerprint 步骤。
+kind: guide
+relations:
+  related:
+    - cli-runtime/state-and-validation.mdx
+code:
+  paths:
+    - skills/init/SKILL.md
+    - skills/update/SKILL.md
+    - agents/investigator.md
+    - agents/recorder.md
+    - cli/src/commands/status.ts
+    - cli/src/commands/delta.ts
+    - cli/src/commands/fingerprint.ts
+---
+
+# Init 与 Update
+
+## 共通前置条件
+
+两条命令都要求在第一次正式写入前先满足 `git status -- llmdoc/` clean。写完后必须跑 `validate`；如果校验失败且当次无法修复，命令文档要求回滚写入后再汇报失败。
+
+## init 什么时候该跑
+
+`init` 只用于“仓库还没有有效 V3 `llmdoc/`”的情况。当前命令契约明确拒绝两类情况：
+
+- 已经存在有效 V3：应转去 `update`
+- 发现 legacy 布局：应转去 `upgrade`
+
+成功的 init 需要完成三件事：调查仓库表面、由 `recorder` 写出第一版 V3 知识面、再用 `validate` 收口。
+
+## update 如何选择 light 或 deep
+
+`update` 的入口是 `status` 和 `delta`：
+
+- light：受影响文档已映射、事实边界清楚，直接让 `recorder` 从 CLI 证据同步文档
+- deep：出现 unmapped files、结构边界变化、事实冲突、影响过广，或有文档缺少/失去有效 `validatedRevision`，先由 `investigator` 产出 scoped 报告，再交给 `recorder`
+
+命令文档把源码编辑排除在授权之外；update 只同步 `llmdoc/` 与 `meta.json`。
+
+## dirty worktree 的完成语义
+
+当前仓库常见的一种状态是：稳定文档已经反映了工作树实现，但相关源码尚未提交。此时 `baseline.revision` 与各文档 `validatedRevision` 仍必须锚定真实 HEAD，而不能伪造“工作树 revision”。
+
+结果是：
+
+- `status` / `delta` 会诚实地把这些文档标成 dirty 或 impacted
+- update 可以完成文档同步，但不能把这类状态包装成“已提交且已 fingerprint 的 clean revision”
+- 真正清除 dirty/impacted 信号，要等用户提交相关实现后再运行 fingerprint
+
+## 结束条件
+
+update 成功前至少要有：
+
+- 受影响文档已经改写完
+- `npx llmdoc validate` 通过
+- 按 scope 运行 `fingerprint --update` 或 `--all`
+
+结果状态固定只有五个：`success`、`no_change`、`dry_run`、`incomplete`、`failed`。不要在 stable docs 里发明第六种“半成功”。

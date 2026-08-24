@@ -1,0 +1,42 @@
+---
+description: prune 与 upgrade 的当前真实能力边界：命令文档已经定义完整授权，但 CLI 仍以报告和诊断为主，真正的收敛与迁移需要 recorder 跟进。
+kind: guide
+relations:
+  related:
+    - cli-runtime/retrieval-and-mutation.mdx
+code:
+  paths:
+    - skills/prune/SKILL.md
+    - skills/upgrade/SKILL.md
+    - cli/src/commands/prune.ts
+    - cli/src/commands/upgrade.ts
+---
+
+# Prune 与 Upgrade
+
+## prune 的当前状态
+
+命令文档已经把 `prune` 定义成显式 convergence pass，并允许改写、合并或删除 `llmdoc/`。但当前 CLI 实现只支持 `npx llmdoc prune --report`：
+
+- 会输出 growth 概况
+- 会给出 duplicate candidates
+- 会给出同 topic 小文档 merge candidates
+- 返回的是只读 `dry_run` 语义，而不是自动写文档
+
+所以现在的正确用法是：先拿报告，再由 `recorder` 执行收敛计划，最后自己跑 `validate` 和后续 fingerprint。
+
+## upgrade 的当前状态
+
+`upgrade` 仍是显式命令，且永不应被主动建议。当前 CLI 做的是 legacy 盘点：
+
+- 如果已经是纯 V3 结构，返回 `no_change`
+- 如果 `llmdoc/` 根本不存在，提示应该走 `init`
+- 如果检测到 V2 标记或混合结构，返回 `dry_run`，列出 legacy paths、目标 V3 结构，以及是否需要 recorder 做 semantic migration
+
+这意味着当前 CLI 不会自动把 V2 文本搬进 V3，也不会自动删除 legacy 文件。迁移仍然是“CLI 给诊断，recorder 做正式改写”的两段式流程。
+
+## 文档维护时要特别注意
+
+命令文档描述的是最终工作流契约，CLI 则是当前可执行边界。两者暂时不完全等价时，稳定文档必须把这个差异写清楚，避免把尚未自动化的收敛或迁移描述成“命令一跑就完成”。
+
+对外叙述还要保持 upgrade 的授权边界：它是独立的显式命令，不属于 update 自动升级路径，也不应被 prune、hook 或普通日常提示词悄悄带出。
