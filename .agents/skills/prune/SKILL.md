@@ -1,7 +1,9 @@
 ---
-description: 'Command: prune (imported from Claude Code)'
+name: prune
+description: >-
+  Explicit V3 convergence pass that removes duplicated or fragmented llmdoc
+  knowledge.
 argument-hint: '[--scope <topic|path...>] [summary]'
-name: cmd-prune
 ---
 
 # /llmdoc:prune
@@ -23,6 +25,7 @@ This command does not authorize source-code edits.
 ## Preconditions
 
 - `git status -- llmdoc/` must be clean before the first formal write.
+- Rollback means `git checkout -- llmdoc/` (plus deleting any newly created files under `llmdoc/`); never hand-edit files back.
 - If `npx --no-install llmdoc validate` fails after pruning writes and cannot be repaired in-run, roll back the prune write-set before reporting failure.
 
 ## Workflow
@@ -39,6 +42,7 @@ This command does not authorize source-code edits.
    - Run `npx --no-install llmdoc validate`.
    - Re-run `npx --no-install llmdoc prune --report` and compare document/token scale with the first report.
    - Confirm the surviving union of `code.paths` has not lost covered implementation paths.
+   - Finalize with `npx --no-install llmdoc commit -m "<message>"`, which fingerprints the surviving docs and lands the `meta.json` follow-up commit automatically.
    - Report `success` and refresh convergence only when scale actually declines without coverage loss; otherwise repair, roll back, or report `no_change` as appropriate.
 
 ## State Invariants
@@ -51,7 +55,7 @@ This command does not authorize source-code edits.
 
 - `success`: convergence work completed, validated, and convergence state updated.
 - `no_change`: the declared scope was fully verified and no justified convergence action remained.
-- `dry_run`: `prune --report` or a convergence plan was produced without writing `llmdoc/`; do not advance state.
+- `dry_run`: the user asked for a dry run, or only `prune --report`/planning output was produced without writing `llmdoc/`; do not advance state.
 - `incomplete`: evidence was insufficient, user input is required, or the request belongs to a different explicit workflow; roll back writes and do not advance state.
 - `failed`: prune failed and writes were rolled back.
 

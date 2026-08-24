@@ -1,7 +1,7 @@
 ---
-description: 'Command: upgrade (imported from Claude Code)'
+name: upgrade
+description: Explicit V2 to V3 migration surface. Never suggest this command implicitly.
 disable-model-invocation: true
-name: cmd-upgrade
 ---
 
 # /llmdoc:upgrade
@@ -24,6 +24,7 @@ This command should run against a rollback-safe git state.
 ## Preconditions
 
 - `git status -- llmdoc/` must be clean before the first formal write.
+- Rollback means `git checkout -- llmdoc/` plus deleting newly created files, restoring the pre-migration legacy surface; never hand-edit files back.
 - Confirm the legacy surface has a recoverable git backup, and keep the migration isolated so it can be reverted as one change.
 - Run the CLI migration surface directly; do not hand-simulate the deterministic migration logic in prompt text.
 - If validation fails after migration writes and cannot be repaired in-run, roll back the migration write-set before reporting failure.

@@ -1,6 +1,8 @@
 ---
-description: 'Command: init (imported from Claude Code)'
-name: cmd-init
+name: init
+description: >-
+  Explicit V3 bootstrap for repositories that do not already have valid llmdoc
+  knowledge.
 ---
 
 # /llmdoc:init
@@ -25,6 +27,7 @@ Stop instead of improvising when:
 ## Preconditions
 
 - `git status -- llmdoc/` must be clean before the first formal write.
+- Rollback for init means deleting the newly created `llmdoc/` surface (it did not exist before this run); never leave a half-bootstrapped tree behind.
 - If `npx --no-install llmdoc validate` fails after writes, revert the init write-set before reporting failure.
 
 ## Workflow
@@ -38,11 +41,11 @@ Stop instead of improvising when:
    - Define topic boundaries before drafting leaf docs.
    - Prefer a small number of high-value docs over broad shallow coverage.
    - Keep stable knowledge in `llmdoc/` and validity state in `llmdoc/meta.json`.
-   - Create the V3 root singleton plus one-level topic directories with mandatory `topic/index.mdx`.
+   - Create the V3 root singleton plus one-level topic directories; topics are plain directories with no `index.mdx` entry node.
 
 3. Validate before reporting success.
-   - Run `npx --no-install llmdoc validate`.
-   - Fix all schema, routing, and reference failures before finishing.
+   - Seed the ledger with `npx --no-install llmdoc init-state` (writes meta.json with null revisions), then run `npx --no-install llmdoc validate` and fix all schema, routing, and reference failures.
+   - Finalize with `npx --no-install llmdoc commit --all -m "docs: bootstrap llmdoc"` — it commits the surface, brands fingerprints, and lands the meta follow-up commit in one step.
    - On a validation failure that cannot be repaired in-run, roll back the init write-set.
 
 ## State Invariants
@@ -54,9 +57,9 @@ Stop instead of improvising when:
 ## Result Contract
 
 - `success`: V3 surface created, validated, and baseline initialized.
-- `no_change`: the declared scope was fully checked and no write was needed, including when valid V3 knowledge already exists.
+- `no_change`: the declared scope was fully checked and no write was needed.
 - `dry_run`: investigation or planning completed without writing `llmdoc/`; do not advance state.
-- `incomplete`: evidence was insufficient or legacy migration/user input is required; roll back writes and do not advance state.
+- `incomplete`: init was refused (valid V3 already exists, legacy migration is required) or evidence/user input was insufficient; roll back writes and do not advance state.
 - `failed`: bootstrap failed and writes were rolled back.
 
 Always report:

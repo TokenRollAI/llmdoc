@@ -1,0 +1,19 @@
+{
+  "name": "llmdoc-cc-plugin",
+  "interface": {
+    "displayName": "llmdoc-cc-plugin"
+  },
+  "plugins": [
+    {
+      "name": "llmdoc",
+      "source": {
+        "source": "local",
+        "path": "./plugins/llmdoc"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      }
+    }
+  ]
+}

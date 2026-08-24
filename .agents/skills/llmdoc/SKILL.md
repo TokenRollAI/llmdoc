@@ -24,28 +24,15 @@ This skill is the operating protocol for V3 `llmdoc` projects.
 
 ## Progressive Retrieval
 
-When `llmdoc/` exists, use this order and stop as soon as you have enough context:
+Pick the entry point that matches the task; do not run these as a fixed sequence, and stop as soon as you have enough context:
 
-1. `npx --no-install llmdoc tree`
-   - Get the root map and candidate topics.
+- Cold start or unclear scope → `npx --no-install llmdoc tree` for the global map, then descend.
+- The task names concrete source files → `npx --no-install llmdoc context --files <path...>` (you may skip `tree`).
+- The task names a concept, contract, or term → `npx --no-install llmdoc search <query>`.
+- Browsing a known topic or kind → `npx --no-install llmdoc index --topic <topic>` / `--kind <kind>`.
+- Read bodies last, and only the few that still matter → `npx --no-install llmdoc show <path...>`.
 
-2. `npx --no-install llmdoc index --topic <topic>` or `npx --no-install llmdoc index --kind <kind>`
-   - Inspect document metadata before opening bodies.
-
-3. `npx --no-install llmdoc context --files <path...>`
-   - Use when the task is tied to concrete source files.
-
-4. `npx --no-install llmdoc search <query>`
-   - Use when the task is phrased as a concept, contract, or term.
-
-5. `npx --no-install llmdoc show <path...>`
-   - Read only the selected documents that still look necessary.
-
-6. `npx --no-install llmdoc status`
-   - Check whether the knowledge surface looks stale or needs follow-up sync.
-
-7. `npx --no-install llmdoc delta`
-   - Use before `/llmdoc:update` to decide whether a light or deep sync is required.
+`status` and `delta` are not retrieval: use them only when assessing staleness or preparing `/llmdoc:update` (`delta` decides light vs deep).
 
 ## Continuation State
 
@@ -63,14 +50,4 @@ If that state is still sufficient, continue without re-running `tree`, `index`, 
 ## Roles
 
 - `investigator`: current-state research, scoped evidence gathering, scratch reports
-- `recorder`: stable llmdoc updates and `llmdoc/meta.json`
-
-## Hooks
-
-The hook shell is intentionally thin.
-
-- `SessionStart` should call `npx --no-install llmdoc hook session-start`; the CLI may emit compact plain text.
-- `Stop` should call `npx --no-install llmdoc hook stop`; the CLI must emit valid JSON when it exits successfully.
-- `PreCompact` should call `npx --no-install llmdoc hook compact`; the CLI must emit valid JSON when it exits successfully.
-
-Mechanical hook output shape belongs to the CLI, not to the prompt shell.
+- `recorder`: stable llmdoc updates; `llmdoc/meta.json` changes go through the CLI only
