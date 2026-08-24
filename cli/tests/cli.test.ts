@@ -731,7 +731,7 @@ code:
     const nestedDirectory = path.join(enabledRepository, "src", "api");
     const nestedSessionStart = await runCli(["hook", "session-start"], nestedDirectory);
     expect(nestedSessionStart.exitCode).toBe(0);
-    expect(nestedSessionStart.stdout).toContain("llmdoc yes");
+    expect(nestedSessionStart.stdout).toContain("llmdoc cold start");
   });
 
   test("new escapes hostile descriptions into valid front matter", async () => {

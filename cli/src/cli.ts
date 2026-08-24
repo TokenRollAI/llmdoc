@@ -48,12 +48,43 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
     throw error;
   }
 
-  program.name("llmdoc").version(readPackageVersion(), "--version", "输出 CLI 版本").showHelpAfterError();
-  program.option("--json", "输出 JSON").option("--cursor <cursor>").option("--budget <budget>", "预算 token", parseInteger).option("--limit <limit>", "返回条数", parseInteger);
+  program
+    .name("llmdoc")
+    .description("面向 LLM 的项目知识库 CLI:渐进检索 llmdoc/ 文档,维护 revision 台账")
+    .version(readPackageVersion(), "--version", "输出 CLI 版本")
+    .helpOption("-h, --help", "显示帮助")
+    .helpCommand("help [command]", "显示指定命令的帮助")
+    .showHelpAfterError("(用 --help 查看用法)");
+  program
+    .option("--json", "以 JSON 输出(经 schema 校验)")
+    .option("--cursor <cursor>", "上次输出截断处的游标,从该处继续")
+    .option("--budget <tokens>", "输出 token 预算,超出即截断并返回 cursor", parseInteger)
+    .option("--limit <n>", "最多返回条数", parseInteger);
+  program.addHelpText(
+    "after",
+    [
+      "",
+      "按用途速查:",
+      "  检索(只读)   tree → index / search / context → show",
+      "  状态诊断     status · delta · validate",
+      "  结构改写     new · mv · fingerprint · init-state · commit",
+      "  维护诊断     prune · upgrade",
+      "  集成         hook · serve",
+      "",
+      "常用示例:",
+      "  llmdoc tree --docs                        全局地图,展开到文档级",
+      "  llmdoc search \"重试策略\" --limit 5         词法检索文档",
+      "  llmdoc context --files src/api/retry.ts   按源码反查应读文档",
+      "  llmdoc show api-client/retry-policy.mdx   读取正文",
+      "  llmdoc commit -m \"docs: ...\"              校验并提交 llmdoc 写集",
+      "",
+      "所有检索命令支持 --json / --budget / --limit;输出被截断时带 --cursor 继续。"
+    ].join("\n")
+  );
 
   program
     .command("tree")
-    .description("输出 llmdoc 全局地图")
+    .description("输出 llmdoc 全局地图(默认停在 topic 层)")
     .option("--docs", "展开到文档级")
     .action((commandOptions) => {
       const rootDir = findProjectRoot(cwd);
@@ -63,9 +94,9 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
 
   program
     .command("index")
-    .description("列出文档元数据索引")
-    .option("--topic <topic>")
-    .option("--kind <kind>")
+    .description("列出文档元数据索引(不读正文即可判断相关性)")
+    .option("--topic <topic>", "只列指定 topic 下的文档")
+    .option("--kind <kind>", "只列指定类型: architecture | guide | reference")
     .action((commandOptions) => {
       const rootDir = findProjectRoot(cwd);
       output.push(writeOutput("index", runIndex({ ...globalOptions, ...commandOptions, cwd: rootDir }), globalOptions.json));
@@ -74,7 +105,7 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
   program
     .command("show")
     .description("读取一个或多个文档正文")
-    .argument("<path...>")
+    .argument("<path...>", "llmdoc/ 下的相对路径,如 api-client/retry-policy.mdx")
     .action((paths) => {
       const rootDir = findProjectRoot(cwd);
       output.push(writeOutput("show", runShow({ ...globalOptions, cwd: rootDir, paths }), globalOptions.json));
@@ -82,10 +113,10 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
 
   program
     .command("search")
-    .description("按词法检索 llmdoc 文档")
-    .argument("<query>")
-    .option("--topic <topic>")
-    .option("--kind <kind>")
+    .description("按词法检索 llmdoc 文档(front matter、标题与正文,返回 snippet)")
+    .argument("<query>", "检索词")
+    .option("--topic <topic>", "限定 topic")
+    .option("--kind <kind>", "限定类型: architecture | guide | reference")
     .action((query, commandOptions) => {
       const rootDir = findProjectRoot(cwd);
       output.push(writeOutput("search", runSearch({ ...globalOptions, ...commandOptions, cwd: rootDir, query }), globalOptions.json));
@@ -93,8 +124,8 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
 
   program
     .command("context")
-    .description("按源码文件反查应读文档")
-    .requiredOption("--files <files...>")
+    .description("按源码文件反查应读文档(含 requires 前置闭包)")
+    .requiredOption("--files <files...>", "源码文件路径,可多个")
     .action((commandOptions) => {
       const rootDir = findProjectRoot(cwd);
       output.push(
@@ -130,8 +161,8 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
 
   program
     .command("delta")
-    .description("查看代码变化对应的文档影响面")
-    .option("--scope <scope...>")
+    .description("查看代码变化对应的文档影响面(决定 update 走 light 还是 deep)")
+    .option("--scope <scope...>", "限定参与比对的代码路径")
     .action((commandOptions) => {
       const rootDir = findProjectRoot(cwd);
       output.push(writeOutput("delta", runDelta({ ...globalOptions, ...commandOptions, cwd: rootDir }), globalOptions.json));
@@ -139,9 +170,9 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
 
   program
     .command("fingerprint")
-    .description("刷新文档 validatedRevision 或 baseline")
-    .option("--update <path...>")
-    .option("--all", "更新全部文档并推进 baseline")
+    .description("把文档 validatedRevision 刷新到当前 HEAD")
+    .option("--update <path...>", "只刷新指定文档")
+    .option("--all", "刷新全部文档并推进 baseline")
     .action((commandOptions) => {
       const rootDir = findProjectRoot(cwd);
       output.push(
@@ -192,8 +223,41 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
     });
 
   program
+    .command("new")
+    .description("在 llmdoc/ 下生成文档脚手架")
+    .argument("<path>", "目标相对路径,如 api-client/retry-policy.mdx")
+    .requiredOption("--kind <kind>", "文档类型: architecture | guide | reference")
+    .option("--description <description>", "front matter 一句话描述")
+    .action((targetPath, commandOptions) => {
+      const rootDir = findProjectRoot(cwd);
+      output.push(
+        writeOutput(
+          "new",
+          runNew({
+            ...globalOptions,
+            cwd: rootDir,
+            path: targetPath,
+            kind: commandOptions.kind,
+            description: commandOptions.description
+          }),
+          globalOptions.json
+        )
+      );
+    });
+
+  program
+    .command("mv")
+    .description("移动/重命名文档或整个 topic,并重写内部引用")
+    .argument("<from>", "源路径")
+    .argument("<to>", "目标路径")
+    .action((from, to) => {
+      const rootDir = findProjectRoot(cwd);
+      output.push(writeOutput("mv", runMove({ ...globalOptions, cwd: rootDir, from, to }), globalOptions.json));
+    });
+
+  program
     .command("prune")
-    .description("输出只读收敛候选报告")
+    .description("输出只读收敛报告(增长趋势、重复候选、小文档合并候选)")
     .option("--report", "输出只读收敛报告")
     .action((commandOptions) => {
       const rootDir = findProjectRoot(cwd);
@@ -209,7 +273,7 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
       output.push(writeOutput("upgrade", await runUpgrade({ ...globalOptions, ...commandOptions, cwd: rootDir }), globalOptions.json));
     });
 
-  const hookCommand = program.command("hook");
+  const hookCommand = program.command("hook").description("供编辑器/Agent hooks 调用的只读信号(异常时 fail-open)");
   hookCommand
     .command("session-start")
     .description("输出 SessionStart 短状态信号")
@@ -240,37 +304,6 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
       const { runServe } = await import("./commands/serve.js");
       const rootDir = findProjectRoot(cwd);
       output.push(await runServe({ cwd: rootDir, port: commandOptions.port }));
-    });
-
-  program
-    .command("new")
-    .argument("<path>")
-    .requiredOption("--kind <kind>")
-    .option("--description <description>")
-    .action((targetPath, commandOptions) => {
-      const rootDir = findProjectRoot(cwd);
-      output.push(
-        writeOutput(
-          "new",
-          runNew({
-            ...globalOptions,
-            cwd: rootDir,
-            path: targetPath,
-            kind: commandOptions.kind,
-            description: commandOptions.description
-          }),
-          globalOptions.json
-        )
-      );
-    });
-
-  program
-    .command("mv")
-    .argument("<from>")
-    .argument("<to>")
-    .action((from, to) => {
-      const rootDir = findProjectRoot(cwd);
-      output.push(writeOutput("mv", runMove({ ...globalOptions, cwd: rootDir, from, to }), globalOptions.json));
     });
 
   try {

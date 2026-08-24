@@ -41,15 +41,21 @@ export function runHook(options: HookOptions): string {
 
 function runSessionStart(cwd: string, stdin: string): string {
   const source = inferSource(stdin);
+  const lifecycle = source === "compact" ? "compact re-entry" : "cold start";
   try {
     const workspace = loadWorkspace(cwd);
     const delta = analyzeDelta(workspace);
-    const lifecycle = source === "compact" ? "compact re-entry" : "cold start";
-    const baseline = workspace.meta?.baseline.revision ? workspace.meta.baseline.revision.slice(0, 7) : "missing";
-    const stale = delta.git.baselineBehindHead === null ? "unknown" : `${delta.git.baselineBehindHead} behind`;
-    return `${lifecycle}; llmdoc yes; baseline ${baseline} (${stale}); impacted ${delta.impacts.length}; needs-review ${delta.needsReview.length}`;
+    const baseline = workspace.meta?.baseline.revision ? workspace.meta.baseline.revision.slice(0, 7) : "缺失";
+    const freshness = delta.git.baselineBehindHead === null ? "落后未知" : delta.git.baselineBehindHead === 0 ? "与 HEAD 同步" : `落后 HEAD ${delta.git.baselineBehindHead} commit`;
+    const parts = [`llmdoc ${lifecycle}`, `baseline ${baseline}(${freshness})`];
+    if (delta.impacts.length === 0 && delta.needsReview.length === 0) {
+      parts.push("文档无待处理影响");
+    } else {
+      parts.push(`受影响 ${delta.impacts.length} 篇, 待复核 ${delta.needsReview.length} 篇 → 建议先看 npx @tokenroll/llmdoc delta`);
+    }
+    return parts.join("; ");
   } catch {
-    return `${source === "compact" ? "compact re-entry" : "cold start"}; llmdoc unavailable`;
+    return `llmdoc ${lifecycle}; 状态读取失败,检索不受影响`;
   }
 }
 
@@ -57,10 +63,21 @@ function runStop(cwd: string): object {
   try {
     const workspace = loadWorkspace(cwd);
     const delta = analyzeDelta(workspace);
-    const shouldUpdate = delta.impacts.length > 0 || delta.unmappedCommittedPaths.length > 0 || delta.unmappedDirtyPaths.length > 0;
+    const unmappedCount = delta.unmappedCommittedPaths.length + delta.unmappedDirtyPaths.length;
+    const shouldUpdate = delta.impacts.length > 0 || unmappedCount > 0;
+    if (!shouldUpdate) {
+      return { continue: true };
+    }
+    const summary = [
+      delta.impacts.length > 0 ? `${delta.impacts.length} 篇文档受代码变更影响` : null,
+      unmappedCount > 0 ? `${unmappedCount} 个代码路径未映射到任何文档` : null
+    ]
+      .filter(Boolean)
+      .join(", ");
+    const reasons = delta.reasons.length > 0 ? `信号: ${delta.reasons.join("; ")}` : "";
     return {
       continue: true,
-      ...(shouldUpdate ? { systemMessage: `llmdoc: 可能需要 update。${delta.reasons.length > 0 ? ` 信号: ${delta.reasons.join("; ")}` : ""}` } : {})
+      systemMessage: `llmdoc: ${summary},建议运行 /llmdoc:update(先用 npx @tokenroll/llmdoc delta 查看影响面)。${reasons}`
     };
   } catch (error) {
     return {
@@ -73,7 +90,8 @@ function runStop(cwd: string): object {
 function runCompact(): object {
   return {
     continue: true,
-    systemMessage: "在 compact summary 中保留 active goal、loaded docs、key conclusions、next step，并写入 LLMDOC_STATE。"
+    systemMessage:
+      "即将 compact:请在 summary 中写入 LLMDOC_STATE(active goal、已读 llmdoc 文档、关键结论与不变量、用户决策、next step、open risks)。恢复后若该状态仍充分,直接继续,不要重放 tree/show。"
   };
 }
 
