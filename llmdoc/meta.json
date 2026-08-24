@@ -6,19 +6,19 @@
   },
   "documents": {
     "architecture.mdx": {
-      "validatedRevision": "dc98378e5308aa21f09e78aef23e806d94f889d4"
+      "validatedRevision": "49ea44d8a5b7ab1bd21579c8ef481057e272f747"
     },
     "cli-runtime/state-and-validation.mdx": {
-      "validatedRevision": "a982208863b2c9a3e0495eee88e28b99ecf79a2e"
+      "validatedRevision": "49ea44d8a5b7ab1bd21579c8ef481057e272f747"
     },
     "cli-runtime/retrieval-and-mutation.mdx": {
       "validatedRevision": "a982208863b2c9a3e0495eee88e28b99ecf79a2e"
     },
     "plugin-packaging/claude-and-codex.mdx": {
-      "validatedRevision": "dc98378e5308aa21f09e78aef23e806d94f889d4"
+      "validatedRevision": "49ea44d8a5b7ab1bd21579c8ef481057e272f747"
     },
     "plugin-packaging/development-and-release.mdx": {
-      "validatedRevision": "a982208863b2c9a3e0495eee88e28b99ecf79a2e"
+      "validatedRevision": "49ea44d8a5b7ab1bd21579c8ef481057e272f747"
     },
     "workflows/init-and-update.mdx": {
       "validatedRevision": "a982208863b2c9a3e0495eee88e28b99ecf79a2e"
