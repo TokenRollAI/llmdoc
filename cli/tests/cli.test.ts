@@ -733,7 +733,8 @@ code:
     expect(doc?.description).toBe(hostile);
   });
 
-  test("viewer server serves app shell, state, and doc detail", async () => {
+  // CI runner 上 server 启动 + fixture git init + 6 次请求会超默认 5s
+  test("viewer server serves app shell, state, and doc detail", { timeout: 20000 }, async () => {
     const rootDir = createFixture();
     const { startViewerServer } = await import("../src/commands/serve.js");
     const server = await startViewerServer(rootDir, 0);
