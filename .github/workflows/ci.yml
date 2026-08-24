@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.2.2
+
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Validate dogfood knowledge
+        run: npm run validate:dogfood
+
+      - name: Check prompt and hook budgets
+        run: npm run check:prompts
+
+  package-smoke:
+    name: Published-package smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.2.2
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install and build
+        run: npm ci && npm run build
+
+      - name: Pack and install as a consumer
+        shell: bash
+        run: |
+          set -euo pipefail
+          tarball="$(cd cli && npm pack --silent)"
+          consumer="${RUNNER_TEMP}/llmdoc-consumer"
+          mkdir -p "${consumer}"
+          cd "${consumer}"
+          npm init --yes >/dev/null
+          npm install "${GITHUB_WORKSPACE}/cli/${tarball}" >/dev/null
+          npx --no-install llmdoc --help

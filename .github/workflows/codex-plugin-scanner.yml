@@ -5,13 +5,17 @@ on:
     branches: [main]
     paths:
       - '.codex-plugin/**'
-      - 'skills/**'
+      - '.agents/**'
+      - '.codex/agents/**'
+      - 'hooks/**'
       - '.mcp.json'
   pull_request:
     branches: [main]
     paths:
       - '.codex-plugin/**'
-      - 'skills/**'
+      - '.agents/**'
+      - '.codex/agents/**'
+      - 'hooks/**'
       - '.mcp.json'
 
 permissions:

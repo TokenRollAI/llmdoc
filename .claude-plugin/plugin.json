@@ -1,7 +1,7 @@
 {
   "name": "llmdoc",
-  "description": "llmdoc plugin with bounded cold-start context, routed docs, init, commit-watermark updates, and use",
-  "version": "2.3.0",
+  "description": "Persistent engineering context powered by the llmdoc CLI and progressive MDX knowledge retrieval",
+  "version": "3.0.0",
   "author": {
     "name": "DJJ & Danniel"
   }

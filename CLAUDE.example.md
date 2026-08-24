@@ -1,17 +1,9 @@
-Always answer in 简体中文
+Load the `llmdoc` skill before broad code exploration, planning, doc updates, or non-trivial edits.
 
-</system-reminder>
-Load the `llmdoc` skill before broad code exploration, planning, document updates, or non-trivial code edits.
+This project uses llmdoc V3.
 
-Load it once on cold start. After context compaction, continue from `LLMDOC_STATE` and do not replay the skill or startup pack unless the state is stale or insufficient.
-
-The main assistant should align with the user before non-trivial plans or edits.
-
-Use available `llmdoc` subagents when they fit the task. Prefer `investigator` for context exploration, current-state research, unfamiliar subsystems, and reusable scratch reports; use `recorder` for stable doc updates, `worker` for scoped implementation, and `reflector` for process lessons.
-
-At the end of a non-trivial task, the main assistant should evaluate whether to ask the user to run `/llmdoc:update`.
-
-Treat `.llmdoc-tmp/` as a local temporary context cache only. Validate scratch reports before reuse; tracked `llmdoc/` docs are the project knowledge source.
-
-Keep detailed workflow rules, templates, hook behavior, and doc-structure guidance in the `llmdoc` skill.
-<system-reminder>
+- `llmdoc-cli` is required: install it in the project, then use `npx llmdoc ...` as the normal entrypoint (start from `npx llmdoc tree`).
+- The full operating protocol (progressive retrieval, `LLMDOC_STATE`, roles) lives in the `llmdoc` skill — follow it, do not improvise a parallel workflow.
+- `init` / `update` / `prune` are explicit workflows: suggest them when relevant, run them only after user confirmation. Never suggest `upgrade` proactively.
+- After work that creates durable architecture, contract, or workflow knowledge, suggest `/llmdoc:update`.
+- Treat `.llmdoc-tmp/` as temporary local context, not source-of-truth knowledge.

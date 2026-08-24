@@ -9,7 +9,8 @@
     {
       "name": "llmdoc",
       "source": "./",
-      "description": "llmdoc workflow for Claude Code: bounded cold-start context, routed docs, init, commit-watermark updates, and use"
+      "description": "Persistent engineering context powered by the llmdoc CLI and progressive MDX knowledge retrieval",
+      "version": "3.0.0"
     }
   ]
 }

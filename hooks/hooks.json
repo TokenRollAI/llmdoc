@@ -1,34 +1,33 @@
 {
-  "description": "Lifecycle-aware llmdoc startup and compact re-entry.",
+  "description": "V3 llmdoc hooks delegated to the installed llmdoc CLI. SessionStart may return plain text; Stop and PreCompact must return valid JSON on success.",
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "^(startup|clear)$",
         "hooks": [
           {
             "type": "command",
-            "command": "\"$PLUGIN_ROOT\"/skills/llmdoc/templates/session-start.sh cold",
+            "command": "npx --no-install llmdoc hook session-start",
             "additionalContextLimit": 1200
           }
         ]
-      },
+      }
+    ],
+    "Stop": [
       {
-        "matcher": "^resume$",
         "hooks": [
           {
             "type": "command",
-            "command": "\"$PLUGIN_ROOT\"/skills/llmdoc/templates/session-start.sh resume",
-            "additionalContextLimit": 1200
+            "command": "npx --no-install llmdoc hook stop"
           }
         ]
-      },
+      }
+    ],
+    "PreCompact": [
       {
-        "matcher": "^compact$",
         "hooks": [
           {
             "type": "command",
-            "command": "\"$PLUGIN_ROOT\"/skills/llmdoc/templates/session-start.sh compact",
-            "additionalContextLimit": 1200
+            "command": "npx --no-install llmdoc hook compact"
           }
         ]
       }

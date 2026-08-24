@@ -1,72 +1,70 @@
 ---
-description: "Initialize or re-bootstrap llmdoc using the minimal init workflow."
+name: init
+description: "Explicit V3 bootstrap for repositories that do not already have valid llmdoc knowledge."
 ---
 
 # /llmdoc:init
 
-Use this command to initialize `llmdoc/` for a project, or to re-bootstrap an incomplete llmdoc tree.
+Use this command only when the repository does not already have valid V3 `llmdoc/`.
 
-Before executing the workflow, load the `llmdoc` skill.
+Load the `llmdoc` skill before broad exploration.
 
-Why:
+## Authorization
 
-- the skill defines the docs-first operating model
-- the skill explains the recommended llmdoc structure and templates
-- this command should focus on orchestration, not duplicate the full methodology
+An explicit `/llmdoc:init` invocation authorizes this run to:
 
-## Actions
+- create `llmdoc/`, `.llmdoc-tmp/`, and `llmdoc/meta.json`
+- write stable docs only through `recorder`
+- write temporary investigation reports under `.llmdoc-tmp/investigations/`
 
-1. Inspect the project root.
-   - Read top-level manifests and README files.
-   - Avoid dependency and build directories.
+Stop instead of improvising when:
 
-2. Create or repair the llmdoc skeleton.
-   - Ensure these directories exist:
-     - `llmdoc/startup.md`
-     - `llmdoc/must/`
-     - `llmdoc/overview/`
-     - `llmdoc/architecture/`
-     - `llmdoc/guides/`
-     - `llmdoc/reference/`
-     - `llmdoc/memory/reflections/`
-     - `llmdoc/memory/decisions/`
-     - `llmdoc/state/sync.md`
-     - `.llmdoc-tmp/investigations/`
-   - Seed the commit watermark in `llmdoc/state/sync.md` (template in `skills/llmdoc/references/templates.md`): set `watermark-commit` to `$(git rev-parse HEAD)`, so the first `/llmdoc:update` has a valid anchor. Skip this in a non-git project. `llmdoc/state/sync.md` is machine-managed state, not knowledge: never index it or add it to `startup.md`/`must/`.
+- V3 `llmdoc/` already exists: tell the user to run `/llmdoc:update`
+- a legacy layout already exists: stop and require the dedicated legacy-migration command
 
-3. Run investigation.
-   - Use `investigator` for evidence gathering.
-   - Default to multiple focused investigators instead of one broad investigator pass.
-   - On most non-trivial repositories, start with 3-5 parallel investigators.
-   - Bias toward coverage, not just speed. `init` should leave a reusable retrieval map, not only enough facts to draft a first document set.
-   - Split by theme, not by random directories. Good slices include repo shape and entrypoints, runtime architecture, feature areas, tests and quality signals, and delivery or ops surfaces when present.
-   - Explicitly cover the major repo surfaces that exist. At minimum, consider public interface docs, command contracts, agent prompts, runtime or tool configuration, quality signals, and integration surfaces.
-   - Prefer `depth=deep` for the core investigation slices. Use `depth=quick` only for clearly secondary slices.
-   - Persist reports under `.llmdoc-tmp/investigations/`.
-   - Do not wait for the repository to be "large enough" before splitting. Split whenever doing so will produce better coverage or clearer retrieval maps.
-   - After the first wave, run at least one follow-up investigation pass to resolve gaps, conflicts, and cross-cutting relationships discovered by the initial investigators.
-   - Before handing off to `recorder`, consolidate what was covered, what was intentionally skipped, and what remains uncertain. Missing evidence should become an explicit gap, not a silent omission.
-   - Treat these reports as scratch artifacts for bootstrapping, not stable project memory.
+## Preconditions
 
-4. Generate the initial stable docs with `recorder`.
-   - `recorder` should directly read the relevant raw investigation reports under `.llmdoc-tmp/investigations/` before writing stable docs. Do not rely only on second-hand summaries from the coordinating assistant.
-   - Synthesize across all investigation reports, not just the first one that looks complete.
-   - Treat uncovered major areas as documentation gaps to record, not as proof that those areas do not matter.
-   - Create `llmdoc/index.md` as the global documentation map.
-   - Create `llmdoc/startup.md`.
-   - Create a small set of MUST docs for recurring startup context.
-   - Treat the startup pack as a cold-start-only package; context compaction must resume from preserved task state instead of replaying it.
-   - Keep `index.md` + `startup.md` + `must/` under 24 KiB by default. For a monolith, make the root index an L0 router and add subsystem indexes rather than listing every leaf document.
-   - Ensure `llmdoc/index.md` does not duplicate the ordered startup list in `llmdoc/startup.md`.
-   - Ensure `llmdoc/startup.md` does not duplicate the global category catalog from `llmdoc/index.md`.
-   - Create `llmdoc/overview/project-overview.md`.
-   - In the first stable pass, prioritize 2-3 core architecture or reference docs that capture the system's deepest invariants, flows, and contracts. Do not spread the first pass across many shallow documents.
-   - Create focused architecture and reference docs based on the investigation reports, then expand into additional smaller docs only after the core docs are deep enough to stand on their own.
-   - Treat document length as a quality tradeoff, not a hard limit. If a core doc needs more space to preserve causal flow, invariants, and terminology, keep it cohesive before splitting.
+- `git status -- llmdoc/` must be clean before the first formal write.
+- Rollback for init means deleting the newly created `llmdoc/` surface (it did not exist before this run); never leave a half-bootstrapped tree behind.
+- If `npx llmdoc validate` fails after writes, revert the init write-set before reporting failure.
 
-5. Synchronize `llmdoc/index.md`.
-   - In a small repository, index stable docs directly. In a monolith, index subsystem routers and let those indexes route to leaf documents.
-   - Keep `memory/reflections/` and `memory/decisions/` separate from stable docs.
-   - Do not treat `.llmdoc-tmp/` as part of llmdoc.
+## Workflow
 
-6. Summarize what was created and where the main startup docs live.
+1. Inventory the repository surface.
+   - Read top-level manifests, README files, entrypoints, test surfaces, and release/config files.
+   - Use one or more `investigator` subagents for complementary evidence scopes when the repository is large enough to benefit; keep their write ownership in `.llmdoc-tmp/`.
+   - Check coverage and resolve conflicting evidence before handing the result to `recorder`.
+
+2. Build the first V3 knowledge surface with `recorder`.
+   - Define topic boundaries before drafting leaf docs.
+   - Prefer a small number of high-value docs over broad shallow coverage.
+   - Keep stable knowledge in `llmdoc/` and validity state in `llmdoc/meta.json`.
+   - Create the V3 root singleton plus one-level topic directories; topics are plain directories with no `index.mdx` entry node.
+
+3. Validate before reporting success.
+   - Run `npx llmdoc validate`.
+   - Fix all schema, routing, and reference failures before finishing.
+   - Commit the bootstrap as one `llmdoc/` commit, then seed fingerprints with `npx llmdoc fingerprint --all` and amend the `meta.json` change into that commit.
+   - On a validation failure that cannot be repaired in-run, roll back the init write-set.
+
+## State Invariants
+
+- Init seeds the baseline only for a successful full bootstrap.
+- Per-document fingerprint updates happen only after successful writes and validation.
+- A successful bootstrap seeds the initial convergence snapshot with `source: init`; failed, incomplete, and dry-run paths never change it.
+
+## Result Contract
+
+- `success`: V3 surface created, validated, and baseline initialized.
+- `no_change`: the declared scope was fully checked and no write was needed.
+- `dry_run`: investigation or planning completed without writing `llmdoc/`; do not advance state.
+- `incomplete`: init was refused (valid V3 already exists, legacy migration is required) or evidence/user input was insufficient; roll back writes and do not advance state.
+- `failed`: bootstrap failed and writes were rolled back.
+
+Always report:
+
+- whether init ran or was refused
+- the investigation report path or paths used
+- the topics and stable docs created
+- the `npx llmdoc validate` result
+- any material gaps left for later `/llmdoc:update`

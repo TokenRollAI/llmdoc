@@ -1,27 +1,6 @@
 {
   "name": "llmdoc",
-  "version": "2.3.0",
-  "description": "Doc-driven workflow with bounded cold-start context, compact re-entry, commit-watermark updates, and reusable skills for Codex.",
-  "author": {
-    "name": "DJJ & Danniel",
-    "email": "shuaiqijianaho@qq.com",
-    "url": "https://github.com/TokenRollAI/llmdoc"
-  },
-  "homepage": "https://github.com/TokenRollAI/llmdoc",
-  "repository": "https://github.com/TokenRollAI/llmdoc",
-  "skills": "./skills/",
-  "interface": {
-    "displayName": "llmdoc",
-    "shortDescription": "Doc-driven coding workflow",
-    "longDescription": "Load a bounded startup package once, resume compacted tasks without replaying llmdoc, and use routed docs, commit-watermark updates, temporary investigation cache, and focused reflections.",
-    "developerName": "TokenRoll",
-    "category": "Productivity",
-    "capabilities": ["Read", "Write"],
-    "websiteURL": "https://github.com/TokenRollAI/llmdoc",
-    "defaultPrompt": [
-      "Load llmdoc and help me implement this task.",
-      "Initialize llmdoc for this repository.",
-      "Update llmdoc after my recent changes."
-    ]
-  }
+  "version": "3.0.0",
+  "description": "Persistent engineering context powered by the llmdoc CLI and progressive MDX knowledge retrieval",
+  "skills": "./.agents/skills/"
 }

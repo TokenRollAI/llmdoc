@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 concurrency:
   group: release-${{ github.ref }}
@@ -14,7 +15,7 @@ concurrency:
 
 jobs:
   release:
-    name: Publish GitHub Release
+    name: Publish npm package and GitHub release
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -22,6 +23,52 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.2.2
         with:
           fetch-depth: 0
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - name: Install and verify
+        run: |
+          npm ci
+          npm run typecheck
+          npm run lint
+          npm test
+          npm run build
+          npm run validate:dogfood
+          npm run check:prompts
+
+      - name: Verify release versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${GITHUB_REF_NAME#v}"
+          cli_version="$(node -p "require('./cli/package.json').version")"
+          claude_version="$(node -p "require('./.claude-plugin/plugin.json').version")"
+          codex_version="$(node -p "require('./.codex-plugin/plugin.json').version")"
+          test "${cli_version}" = "${expected}"
+          test "${claude_version}" = "${expected}"
+          test "${codex_version}" = "${expected}"
+
+      - name: Pack npm and plugin artifacts
+        id: artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm_tarball="$(cd cli && npm pack --silent)"
+          mv "cli/${npm_tarball}" "${npm_tarball}"
+          plugin_tarball="llmdoc-plugin-${GITHUB_REF_NAME}.tar.gz"
+          git archive --format=tar.gz --output="${plugin_tarball}" "${GITHUB_REF_NAME}"
+          echo "npm_tarball=${npm_tarball}" >> "${GITHUB_OUTPUT}"
+          echo "plugin_tarball=${plugin_tarball}" >> "${GITHUB_OUTPUT}"
+
+      - name: Publish llmdoc-cli to npm
+        run: npm publish "${{ steps.artifacts.outputs.npm_tarball }}" --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Build release notes
         id: notes
@@ -54,3 +101,6 @@ jobs:
         uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2.3.3
         with:
           body_path: release-notes.md
+          files: |
+            ${{ steps.artifacts.outputs.npm_tarball }}
+            ${{ steps.artifacts.outputs.plugin_tarball }}

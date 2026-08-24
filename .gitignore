@@ -1,1 +1,6 @@
 .llmdoc-tmp/
+node_modules/
+cli/dist/
+cli/coverage/
+cli/*.tgz
+*.tsbuildinfo

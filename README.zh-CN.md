@@ -1,280 +1,218 @@
-# llmdoc for Claude Code 和 Codex
+# llmdoc V3
 
 [English](README.md)
 
-`llmdoc` 是一个同时面向 Claude Code 和 Codex 的文档驱动工作流。
+`llmdoc` 是代码仓库的持久化外置上下文：把 AI 不该每次会话都重新恢复的架构、约束和工作知识放进可检索、可验证、可演进的文档层。
 
-- Core skill: `llmdoc`
-- Claude Code commands: `/llmdoc:init`、`/llmdoc:update`
-- Codex helper skills: `llmdoc-init`、`llmdoc-update`
+## 强制依赖
 
-推荐的默认配置很简单：
+- Node.js 18 或更新版本
+- 先安装 `llmdoc-cli`，再运行 `npx llmdoc`
+- git 作为有效性、delta 与回滚语义的基础
 
-- `CLAUDE.md` 和 `AGENTS.md` 里只保留一条短规则：step one 是加载 `llmdoc` skill
-- core skill 入口保持简短，详细的方法论、协议和模板拆到 `skills/llmdoc/references/`
-- core skill 还定义了主动阅读 guides/reflection，以及在非简单改动前主动和用户沟通
-- startup package 只在冷启动读取一次；Codex compact 后通过精简的 `LLMDOC_STATE` 恢复，而不是重放 llmdoc
-- 巨石仓库使用有固定预算的根路由和子系统索引，不加载覆盖全仓库的叶子文档清单
-- 整套工作流还恢复了一个好模式：在非简单任务结束时，主动询问是否运行 `/llmdoc:update`
-- `/llmdoc:update` 支持轻量和重型模式，所以刚完成实现后的文档更新不必每次都跑完整多 agent 流水线
-- Codex helper skills 提供了接近 command 的入口，但不会误导用户以为 Codex 已经支持这个插件的自定义 slash command
-- agent 和 command contract 只负责执行，不再各自复制一大段说明
+推荐把 CLI 装进项目依赖，例如：
 
-## 为什么这么改
+```bash
+npm install --save-dev llmdoc-cli
+```
 
-旧设计暴露了太多内部步骤：
-
-- 读文档、调研、文档工作流都做成了独立 skill
-- `scout` 和 `investigator` 角色高度重叠
-- 默认输出倾向于行级引用，不利于文件级检索
-
-这次改动把外部接口缩到最小，把详细协议统一收敛到一个可复用的核心 skill，加上少量 Codex helper skills 入口。
+V3 假定 CLI 始终存在。导航、检索、校验、delta 检测、hook 信号和工作流入口都来自 `npx llmdoc`。
 
 ## 公开接口
 
-- Core skill: `llmdoc`
-- Claude Code commands: `/llmdoc:init`、`/llmdoc:update`
-- Codex helper skills: `llmdoc-init`、`llmdoc-update`
-- Claude Code plugin 支持：`.claude-plugin/`
-- Codex CLI plugin 支持：已提供 `.codex-plugin/plugin.json` 和 `.agents/plugins/marketplace.json`
-- Codex CLI subagents 支持：已提供 `.codex/agents/*.toml`
-- Codex CLI hooks：插件内置生命周期感知的 `SessionStart`；另提供 `Stop` 与 compact-prompt 模板
+- Claude Code 的 canonical 插件表面位于仓库根：
+  - `.claude-plugin/`
+  - `skills/` (operating skill + explicit workflow skills)
+  - `agents/`
+  - `hooks/hooks.json`
+- CLI runtime：`npx llmdoc <command>`
+- 显式工作流：
+  - `init`
+  - `update`
+  - `prune`
+  - `upgrade`
+- 两个角色：
+  - `investigator`：把证据调查写入 `.llmdoc-tmp/investigations/`
+  - `recorder`：唯一允许写入 tracked `llmdoc/` 知识和 `llmdoc/meta.json` 的角色
 
-## 工作流
+Claude 是唯一手工维护的准源。Codex 插件表面由它通过 ACPlugin 转换生成。其他平台只需要一份精简 `AGENTS.md` 加 `npx llmdoc`。
 
-### `use`
+## 知识模型
 
-`use` 不是命令。
+V3 使用 `.mdx` 文档，内容是纯 Markdown、YAML front matter，以及一个可选的最小增强 `<CodeRef>`。
 
-它是由 `llmdoc` skill 定义的默认工作模式。推荐做法是在系统提示词里先要求模型加载这个 skill，再按 skill 里的规则工作。
+- 路径就是文档 ID
+- `kind` 只存在于 front matter，不体现在目录名里
+- tracked 知识树固定为两层：
+  - 根级单例文档，例如 `llmdoc/architecture.mdx`
+  - 一层 topic 文件夹，例如 `llmdoc/api-client/retry-policy.mdx`
+- topic 就是纯目录：没有 `index.mdx` 入口节点，topic 摘要由 `llmdoc tree` 聚合
+- 不允许 topic 嵌套
+- 根级地图由 `llmdoc tree` 动态生成，V2 那种根 `index.md` 已移除
 
-### `/llmdoc:init`
+tracked 有效性记录在 `llmdoc/meta.json`：
 
-用 `/llmdoc:init` 初始化或修复 `llmdoc` 结构。
+- `validatedRevision` 基于 git revision
+- dirty worktree 只是附加信号，不是第二套真相系统
+- 写入遵循 git-based 协议：修改后校验，失败时通过 git 回退
 
-在 Claude Code 里，它是 command。
-在 Codex 里，用 helper skill `llmdoc-init` 走等价工作流。
+临时过程记录放在 `.llmdoc-tmp/`，不属于 tracked knowledge。
 
-这个命令会：
+## CLI 命令表
 
-1. 检查仓库结构
-2. 创建 llmdoc 目录骨架
-3. 启动多个 investigator 生成临时调查草稿，显式检查覆盖面，并补做一轮查缺补漏
-4. 生成初始 MUST、overview、architecture、reference 文档
-5. 同步 `llmdoc/index.md`
+| 命令 | 作用 |
+|---|---|
+| `npx llmdoc tree` | 动态根地图，列出根单例和 topics |
+| `npx llmdoc index [--topic ...] [--kind ...]` | 输出文档发现用的 front matter 投影 |
+| `npx llmdoc show <path...>` | 读取指定文档正文 |
+| `npx llmdoc search <query>` | 在知识层做词法检索 |
+| `npx llmdoc context --files <src...>` | 从源码文件反查推荐阅读文档 |
+| `npx llmdoc status` | 输出当前有效性、baseline、dirty 与 growth 信号 |
+| `npx llmdoc delta` | 从代码变更推导受影响文档闭包 |
+| `npx llmdoc validate` | 校验 schema、结构、关系、链接与 code paths |
+| `npx llmdoc fingerprint --update <path...> \| --all` | 刷新 `llmdoc/meta.json` 中的 validated revisions |
+| `npx llmdoc new <path> --kind <kind>` | 脚手架生成新的 V3 文档 |
+| `npx llmdoc mv <from> <to>` | 移动文档并更新引用 |
+| `npx llmdoc prune --report` | 输出收敛报告但不写文档 |
+| `npx llmdoc upgrade` | 显式的 V2 到 V3 迁移入口 |
+| `npx llmdoc hook session-start` | 给宿主提供启动信号 |
+| `npx llmdoc hook stop` | 给宿主提供停止时提醒信号 |
+| `npx llmdoc hook compact` | 输出 compact 状态 |
 
-### `/llmdoc:update`
+## 工作流语义
 
-在一次有价值的任务完成后，用 `/llmdoc:update` 持久化新知识。
+### `init`
 
-在 Claude Code 里，它是 command。
-在 Codex 里，用 helper skill `llmdoc-update` 走等价工作流。
+为一个还没有 llmdoc 的仓库创建第一版 V3 知识。
 
-这个命令会让 tracked `llmdoc/` 文档和当前仓库保持一致。稳定文档应该保持紧凑：要么比它描述的源码更小，要么能解释源码搜索无法快速提供的架构、实现意图、边界和稳定契约。
+- 当仓库缺少 llmdoc 时，assistant 可以建议执行
+- 用户一旦调用，就授权本次初始化范围
+- 如果仓库里已有 V2 知识，应改用 `upgrade`
 
-变更检测是**基于 commit** 的。一个被 git 跟踪的水位线 `llmdoc/state/sync.md` 记录 `llmdoc/` 已反映到的最后一个 source commit。默认对 `水位线..HEAD` 做 diff（自上次同步以来所有提交的净变更），成功后推进水位线。未提交的工作树变更作为附加输入纳入，但永不移动水位线。
+### `update`
 
-它可以在一次运行里吞掉多批 commit —— `--range A..B`（可重复）、`--commits SHA,…`、`--since REF`、`--from SHA`、`--working-tree-only` —— 并在非 git 项目、shallow clone、首次运行无水位线、rebase/孤儿水位线等情况下优雅降级。
+把 tracked knowledge 同步到当前仓库状态。
 
-这个命令会选择能保证文档正确的最轻模式，触发器是 范围大小 × 作者归属 × 风险：
+- assistant 应该在出现可持久化的新知识后建议执行，但必须先得到一次确认
+- 确认后，除非 scope 实质性扩张，否则流程可以完整跑完而不重复确认
+- 命令会根据 CLI 信号选择最轻但足够的路径：
+  - 影响明确时直接由 recorder 更新
+  - 影响不清或涉及结构变化时走 investigator + recorder
 
-- `fast`：小范围、自己作者、受影响文档可点名
-- `analysis`：较大范围、含任一他人提交、或恢复/首次运行的 baseline —— 一次聚焦证据 pass
-- `full`：大范围或高风险、多批回填、或历史重写恢复 —— 独立的调研、反思与记录
+### `prune`
 
-这个命令会：
+在 update 之后收敛重复或膨胀的知识。
 
-1. 读水位线并计算 commit 范围（外加任何批次 flag 与工作树）
-2. 主动阅读相关 guides 和 reflection
-3. 基于范围大小、作者归属、风险选择 update mode
-4. 只在所选模式需要时调研受影响的概念
-5. 只有出现工作流教训或缺失文档信号时，才在 `llmdoc/memory/reflections/` 下写 reflection
-6. 更新稳定文档，并清账 `llmdoc/memory/doc-gaps.md`
-7. 同步 `llmdoc/index.md`，并在成功后推进水位线
+- 只允许显式调用
+- 命中 growth gate 时可以被建议
+- 执行前需要一次确认
 
-在日常使用里，如果任务产生了值得长期保留的知识或反思，主 assistant 应该主动询问是否现在运行 `/llmdoc:update`。
+### `upgrade`
 
-## Context 生命周期
+把仓库从 V2 迁移到 V3。
 
-`llmdoc` 区分冷启动和 compact 热恢复：
+- 只允许显式调用
+- 永不主动建议
+- 应在独立的 git 迁移步骤中执行，保证整次迁移可整体回滚
 
-- `startup`、`clear`：只加载一次 core skill、根 index、startup 列表和 MUST pack
-- `resume`：优先复用有效的 `LLMDOC_STATE`，没有有效状态时才执行一次冷启动
-- `compact`：继续同一任务，不重新加载 skill、startup pack、lessons 或已经加载的任务文档
+## 结果状态
 
-插件内置的 Codex `SessionStart` hook 会计算 startup pack 指纹和字节数。只有指纹变化、相关文档被修改、任务进入新子系统或 compact 状态不足时，才读取最小的相关文档集合。
+所有显式工作流都只报告以下一个精确结果名：
 
-`index.md` + `startup.md` + `must/` 的默认预算是 24 KiB；这是确定性的近似约束，不是精确 token 数。巨石仓库应让 `llmdoc/index.md` 只做 L0 路由，在相关文档旁建立子系统索引，并且只加载当前子系统的路由。
+- `success`
+- `no_change`
+- `dry_run`
+- `incomplete`
+- `failed`
 
-## llmdoc 结构
+## 渐进读取
 
-```text
-llmdoc/
-├── index.md
-├── startup.md
-├── must/                 # 冷启动时读取一次的小型上下文
-├── overview/             # 项目和特性的身份与边界
-├── architecture/         # 检索地图、不变量、所有权边界
-├── guides/               # 一篇文档只讲一个工作流
-├── reference/            # 稳定的查阅型事实和约定
-└── memory/
-    ├── reflections/      # 每次任务后的反思
-    ├── decisions/        # 长期保留的过程或设计决策
-    └── doc-gaps.md       # 已知文档缺口
+日常使用以 CLI 为入口：
 
-.llmdoc-tmp/
-└── investigations/       # 临时调查草稿
-```
+1. `npx llmdoc tree`
+2. 用 `npx llmdoc index --topic <t>` 看文档元数据
+3. 用 `npx llmdoc context --files ...` 或 `npx llmdoc search ...`
+4. 仅对真正需要的文档执行 `npx llmdoc show ...`
 
-`llmdoc/index.md` 是有固定预算的全局路由。
-`llmdoc/startup.md` 只负责冷启动阅读顺序。
-两者可以互相链接，但不应该重复同一批内容。
+V3 不再保留 V2 的 startup pack、根路由文档、`worker`、`reflector` 或 `sync.md` 契约。CLI 本身就是入口。
 
-`.llmdoc-tmp/` 是本地临时 context cache。investigator 报告可以跨相邻会话保留，帮助减少重复调研，但它被 git 忽略、不会进入 index，也不是 source of truth。只有稳定、可复用的结论才应该提升到 tracked `llmdoc/` 文档里。
-
-## 内部 Agents
-
-| Agent | 用途 |
-|------|------|
-| `investigator` | 做证据驱动的调研，可回对话、调研当前现状，也可输出临时调查草稿 |
-| `worker` | 执行明确的任务 |
-| `recorder` | 维护稳定 llmdoc 文档 |
-| `reflector` | 记录任务后的 reflection |
-
-## 安装
+## 安装与验证
 
 ### Claude Code
 
-先安装 Claude Code。Anthropic 官方文档当前给出的安装方式包括：
-
-- `npm install -g @anthropic-ai/claude-code`
-- 或 macOS/Linux/WSL 原生安装：`curl -fsSL https://claude.ai/install.sh | bash`
-
-官方文档：
-
-- https://docs.anthropic.com/en/docs/claude-code/quickstart
-- https://docs.anthropic.com/en/docs/claude-code/setup
-
-然后安装这个插件市场和插件：
+仓库内已验证的插件安装入口：
 
 ```bash
 /plugin marketplace add https://github.com/TokenRollAI/llmdoc
 /plugin install llmdoc@llmdoc-cc-plugin
 ```
 
-安装后：
+### Codex
 
-1. 把 [`CLAUDE.example.md`](CLAUDE.example.md) 复制到 `~/.claude/CLAUDE.md`
-2. 如果你还想加仓库级约束，可以把 [`AGENTS.example.md`](AGENTS.example.md) 改成项目根目录下的 `AGENTS.md`
-3. 重启 Claude Code，让新的 prompt 和 plugin 状态生效
+Codex 支持来自转换后的 `.codex-plugin/` 表面。插件结构和转换约束以 OpenAI 官方 Codex 插件文档为准：
 
-### Codex CLI
-
-先安装 Codex CLI。OpenAI 官方文档当前给出的最小安装方式是：
-
-```bash
-npm i -g @openai/codex
-codex
-```
-
-官方文档：
-
-- https://developers.openai.com/codex/cli
 - https://developers.openai.com/codex/plugins
 - https://developers.openai.com/codex/plugins/build
 - https://developers.openai.com/codex/subagents
 - https://developers.openai.com/codex/hooks
 
-这个仓库里有两类不同的 Codex 集成面：
+这里不提供手写 Codex 安装命令。Codex 打包应由 Claude 表面通过 ACPlugin 转换得到。
+Codex 会要求用户先审查并信任非托管的插件 hook；安装后可用 `/hooks` 查看并确认。
 
-- `llmdoc` 插件本身的打包文件：
-  - [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json)
-  - [`skills/llmdoc/`](skills/llmdoc/)
-  - [`skills/llmdoc-init/`](skills/llmdoc-init/)
-  - [`skills/llmdoc-update/`](skills/llmdoc-update/)
-  - [`hooks/hooks.json`](hooks/hooks.json)，插件内置的生命周期感知 `SessionStart` hook
-  - [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json)，作为 repo 级本地 marketplace 示例
-- 这个仓库自己的 repo-local Codex 工作流文件：
-  - [`.codex/config.toml`](.codex/config.toml)
-  - [`.codex/agents/`](.codex/agents)
-  - [`skills/llmdoc/templates/codex-hooks.json`](skills/llmdoc/templates/codex-hooks.json)
-  - [`skills/llmdoc/templates/compact-prompt.md`](skills/llmdoc/templates/compact-prompt.md)
+### 本仓库开发验证
 
-#### 方式一：从 GitHub 安装（推荐）
-
-适合你希望这台机器上的所有仓库都能使用 `llmdoc` 插件。
+这个仓库常用的本地验证命令：
 
 ```bash
-codex plugin marketplace add TokenRollAI/llmdoc
+npm install
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npm run validate:dogfood
+npm run check:prompts
 ```
 
-然后：
+请从仓库根目录安装依赖，确保本地 `llmdoc` bin 在校验前已建立链接。`validate:dogfood` 用于校验本仓库 dogfood 的 `llmdoc/` 知识面。
 
-1. 重启 Codex，让新的 marketplace 源加载进来
-2. 在 Codex 中执行 `/plugins`
-3. 在插件列表中找到 `llmdoc`，选中进入详情页
-4. 安装插件
-5. 在 `/hooks` 中检查并信任插件内置的生命周期 hook
-6. 在任意仓库里新开一个对话，然后按你的目标选择入口：
-   - 正常工作时，让 Codex 先加载 `llmdoc` skill
-   - 要执行 `/llmdoc:init` 等价流程时，选择 `llmdoc-init`
-   - 要执行 `/llmdoc:update` 等价流程时，选择 `llmdoc-update`
-   - 或者输入 `@`，再显式选择这个插件或它打包进来的 skill
+## 仓库形态
 
-#### 方式二：直接在 Codex 里使用这个仓库（本地开发）
+```text
+.
+├── .claude-plugin/
+├── .codex-plugin/          # 由 Claude 表面转换生成
+├── agents/
+│   ├── investigator.md
+│   └── recorder.md
+├── cli/
+├── hooks/
+│   └── hooks.json
+├── skills/
+│   ├── llmdoc/          # operating skill
+│   ├── init/
+│   ├── update/
+│   ├── prune/
+│   └── upgrade/
+├── llmdoc/
+│   ├── meta.json
+│   ├── architecture.mdx
+│   └── <topic>/*.mdx
+└── .llmdoc-tmp/
+    ├── cache/
+    ├── investigations/
+    └── records/
+```
 
-适合你正在这个仓库里工作——参与贡献或测试本地改动。
+## 其他平台
 
-1. 用 Codex 打开这个仓库
-2. 确认 [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json) 存在
-3. 如果 Codex 已经在运行，先重启一次，让 repo marketplace 和 project-scoped agents 重新加载
-4. 在 Codex 中执行 `/plugins`
-5. 在插件列表中找到 `llmdoc`，选中进入详情页
-6. 安装插件
-7. 在这个仓库里新开一个对话，然后按你的目标选择入口：
-   - 正常工作时，让 Codex 先加载 `llmdoc` skill
-   - 要执行 `/llmdoc:init` 等价流程时，选择 `llmdoc-init`
-   - 要执行 `/llmdoc:update` 等价流程时，选择 `llmdoc-update`
-   - 或者输入 `@`，再显式选择这个插件或它打包进来的 skill
-8. 在 `/hooks` 中检查并信任插件内置 hook。如果你更希望使用 repo-local hook，可以把 [`skills/llmdoc/templates/codex-hooks.json`](skills/llmdoc/templates/codex-hooks.json) 复制到 `.codex/hooks.json`，再按机器路径调整脚本；不要同时启用两份
+没有原生插件系统的工具，只需要一份最小 `AGENTS.md`，内容包括：
 
-compact-prompt 模板是可选增强，因为配置 `compact_prompt` 或 `experimental_compact_prompt_file` 会覆盖 Codex 内置 compaction prompt。只有在需要更强的 `LLMDOC_STATE` 结构保证，并愿意随 Codex 演进持续检查模板时才启用。
+- 在大范围探索或文档工作前先加载 llmdoc
+- 用 `npx llmdoc` 处理 tree、index、show、search、context、status、delta、validate、fingerprint，以及显式工作流入口
+- 把 `init`、`update`、`prune`、`upgrade` 视为带授权语义的显式工作流
 
-当你打开的就是这个仓库时，Codex 还会同时使用 [`.codex/agents/`](.codex/agents) 里的 project-scoped agents，以及 [`.codex/config.toml`](.codex/config.toml) 里的 agent 限制配置。
+## 示例提示词
 
-## 仓库内文件
-
-可复用 skill 位于 [`skills/llmdoc/SKILL.md`](skills/llmdoc/SKILL.md)。
-Codex helper 入口 skills 位于 [`skills/llmdoc-init/SKILL.md`](skills/llmdoc-init/SKILL.md) 和 [`skills/llmdoc-update/SKILL.md`](skills/llmdoc-update/SKILL.md)。
-详细参考文档位于 [`skills/llmdoc/references/`](skills/llmdoc/references/)。
-Codex CLI hooks 模板位于 [`skills/llmdoc/templates/`](skills/llmdoc/templates/)。
-插件内置的 Codex hook 位于 [`hooks/hooks.json`](hooks/hooks.json)。
-
-## Codex Subagents
-
-这个仓库现在也包含 project-scoped 的 Codex 自定义 agents：
-
-- [`.codex/config.toml`](.codex/config.toml)
-- [`.codex/agents/llmdoc-investigator.toml`](.codex/agents/llmdoc-investigator.toml)
-- [`.codex/agents/llmdoc-worker.toml`](.codex/agents/llmdoc-worker.toml)
-- [`.codex/agents/llmdoc-recorder.toml`](.codex/agents/llmdoc-recorder.toml)
-- [`.codex/agents/llmdoc-reflector.toml`](.codex/agents/llmdoc-reflector.toml)
-
-这些文件遵循官方 Codex subagents 文档里 project-scoped TOML agents 的模式，放在 `.codex/agents/` 下，所以它们是在“打开这个仓库”时生效的。
-
-这里使用了 `llmdoc_` 前缀，避免覆盖 Codex 自带的 `worker`、`explorer` 等内置 agents。
-
-## 迁移说明
-
-这个版本把旧的碎片化 skill 收敛成一个 skill：
-
-- 当前 skill: `llmdoc`
-- 移除 skills: `read-doc`、`investigate`、`update-doc`、`doc-workflow`、`deep-dive`、`commit`
-- 移除 commands: `initDoc`、`withScout`、`what`
-- 移除 agent: `scout`
-
-如果你之前依赖这些入口：
-
-- 用 `/llmdoc:init` 替代旧的 `tr` 前缀 init 命令
-- 用 `/llmdoc:update` 替代 `/update-doc`
-- 用 `llmdoc` skill 替代分散的 read/investigate skill
+- “先加载 llmdoc，检查这个仓库，并告诉我应该先读哪些 topic 文档。”
+- “在这些架构改动之后执行 llmdoc update 工作流。”
+- “把这个仓库从 llmdoc V2 升级到 V3。”
