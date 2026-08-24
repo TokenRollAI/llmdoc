@@ -12,7 +12,7 @@
     "check:prompts": "node scripts/check-prompt-budget.mjs"
   },
   "devDependencies": {
-    "@tokenroll/llmdoc": "file:./cli"
+    "@tokenroll/llmdoc": "file:cli"
   },
   "overrides": {
     "vite": "6.4.3"
