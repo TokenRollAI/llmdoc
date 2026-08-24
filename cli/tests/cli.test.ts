@@ -7,6 +7,8 @@ import { runCli } from "../src/cli.js";
 import { assertOutputSchema } from "../src/lib/output-schema.js";
 import { commitAll, createFixture, detachHead, readMeta, removeGitDirectory, stageFile, writeRepoFile } from "./helpers.js";
 
+const PACKAGE_VERSION = (JSON.parse(fs.readFileSync(path.resolve(__dirname, "..", "package.json"), "utf8")) as { version: string }).version;
+
 describe("llmdoc cli", () => {
   test("validate passes on a valid v3 workspace", async () => {
     const rootDir = createFixture();
@@ -468,7 +470,7 @@ describe("llmdoc cli", () => {
       const installedPackageJson = JSON.parse(fs.readFileSync(path.join(consumerDir, "node_modules", "@tokenroll/llmdoc", "package.json"), "utf8")) as {
         version: string;
       };
-      expect(installedPackageJson.version).toBe("3.0.0");
+      expect(installedPackageJson.version).toBe(PACKAGE_VERSION);
       const result = spawnSync(binPath, ["--help"], { cwd: consumerDir, encoding: "utf8" });
       expect(result.status).toBe(0);
       expect(result.stdout).toContain("Usage: llmdoc");
@@ -569,7 +571,7 @@ code:
     const rootDir = createFixture();
     const version = await runCli(["--version"], rootDir);
     expect(version.exitCode).toBe(0);
-    expect(version.stdout.trim()).toBe("3.0.0");
+    expect(version.stdout.trim()).toBe(PACKAGE_VERSION);
   });
 
   test("all public json payloads validate through runtime output schemas", async () => {
