@@ -23,7 +23,7 @@ code:
 - 会给出同 topic 小文档 merge candidates
 - 返回的是只读 `dry_run` 语义，而不是自动写文档
 
-所以现在的正确用法是：先拿报告，再由 `recorder` 执行收敛计划，最后自己跑 `validate` 和后续 fingerprint。
+所以现在的正确用法是：先拿报告，再由 `recorder` 执行收敛计划，最后用 `llmdoc commit` 收尾（validate 门控 + fingerprint 自动完成）。upgrade/init 场景没有台账时先 `llmdoc init-state`。
 
 ## upgrade 的当前状态
 

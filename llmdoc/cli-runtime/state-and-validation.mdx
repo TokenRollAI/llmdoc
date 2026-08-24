@@ -43,6 +43,8 @@ code:
 - `meta.json` 的 baseline 与 per-document `validatedRevision` 必须都是真实 commit
 - `meta.json.documents` 与当前文件树必须一一对应
 
+unmapped/dirty 信号会排除 lockfile、git 元文件与仓库根可选 `.llmdocignore`（每行一个 minimatch pattern，`#` 注释，`dir/` 自动展开为 `dir/**`）匹配的路径；validate 对正文中的 `[[wikilink]]` 语法输出 warning（llmdoc 不解析它）。
+
 `meta.json` 只保存 revision 台账，不复制树结构。装载前还会做 `llmdoc/` 根 realpath 边界检查；若符号链接逃逸到仓库外，CLI 会直接拒绝。
 
 ## revision 与 delta 语义

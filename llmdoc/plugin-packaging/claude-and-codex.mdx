@@ -44,8 +44,10 @@ code:
 README 与示例文件都已经把方向收敛到“Claude canonical，Codex 兼容/转换表面”。当前实现里，ACPlugin 生成的是：
 
 - `.codex-plugin/plugin.json` manifest
-- `.agents/skills/` 下的 operating skill 与四个命令 skills
+- `.agents/skills/` 下的五个 skills（operating + 四个工作流，与 Claude 侧同名一比一转换，无 `cmd-*` 前缀；`upgrade` 的 `disable-model-invocation` 同时映射为 frontmatter 与 `agents/openai.yaml` 的 `allow_implicit_invocation: false`）
 - `.codex/agents/` 下的 project-scoped `investigator` / `recorder` TOML
+
+acplugin 转换的已知缺口（重生成后需人工核对）：PreCompact hook 被跳过、SessionStart/Stop 只降级为 AGENTS.md 文字、`model: inherit` 会被硬编码为具体模型名、manifest version 不随源同步（需手动改回）。转换必须在临时副本运行后替换式同步，acplugin 不清理上次的陈旧输出。
 
 根 `hooks/hooks.json` 不靠 ACPlugin 复制；Claude 与 Codex 都直接共用这份根 hook 壳，并统一调用同一个 CLI hook 子命令。
 

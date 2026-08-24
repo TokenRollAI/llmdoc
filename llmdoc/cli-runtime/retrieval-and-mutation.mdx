@@ -38,6 +38,8 @@ code:
 
 - `new`：只会在 `llmdoc/` 下生成 `.mdx` 脚手架，模板来自 `cli/templates/doc.mdx`
 - `mv`：用 `git mv` 移动文件或整个 topic，并重写 `relations`、正文链接和 `meta.json.documents` key
+- `init-state`：首次生成 `meta.json` 台账骨架（全部文档 `validatedRevision: null` + 实测 convergence 统计）；已有台账时拒绝覆盖
+- `commit`：一体化收尾——validate 门控 → 以 pathspec 只提交 `llmdoc/` 写集（不卷入用户 staged 的其他文件）→ fingerprint → `meta.json` 单独小 commit。不要手工做这个序列，也不要用 `--amend` 并 meta（会改写 fingerprint 刚记录的 hash）；`--no-verify` 透传给 git，供 husky 等重钩子仓库使用
 
 `new` 和 `mv` 都会先过仓库内 realpath 校验；若目标越界或经符号链接逃逸，CLI 会拒绝继续。`new` 可直接在新 topic 下建文档（目录自动创建），但拒绝 `index.mdx` 文件名。
 

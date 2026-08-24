@@ -47,14 +47,13 @@ code:
 
 - `status` / `delta` 会诚实地把这些文档标成 dirty 或 impacted
 - update 可以完成文档同步，但不能把这类状态包装成“已提交且已 fingerprint 的 clean revision”
-- 真正清除 dirty/impacted 信号，要等用户提交相关实现后再运行 fingerprint
+- 真正清除 dirty/impacted 信号，要等用户提交相关实现后再运行 fingerprint（或 `llmdoc commit --all`）
 
 ## 结束条件
 
 update 成功前至少要有：
 
 - 受影响文档已经改写完
-- `npx llmdoc validate` 通过
-- 按 scope 运行 `fingerprint --update` 或 `--all`
+- 用 `npx --no-install llmdoc commit -m "<message>"` 收尾（`--all` 做全仓验证并推进 baseline）：它内置 validate 门控、只按 pathspec 提交 `llmdoc/`、自动 fingerprint 并把 `meta.json` 落成后续小 commit
 
 结果状态固定只有五个：`success`、`no_change`、`dry_run`、`incomplete`、`failed`。不要在 stable docs 里发明第六种“半成功”。
