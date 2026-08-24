@@ -1,5 +1,5 @@
 ---
-description: init 与 update 的当前契约：何时允许运行、何时需要 investigator、何时只做 recorder 直改，以及成功前必须经过哪些校验与 fingerprint 步骤。
+description: init 与 update 的当前契约：何时允许运行、何时需要 investigator、何时只做 recorder 直改，以及收尾时 recorder 与 calling workflow 各自负责的校验与提交步骤。
 kind: guide
 relations:
   related:
@@ -39,6 +39,14 @@ code:
 
 命令文档把源码编辑排除在授权之外；update 只同步 `llmdoc/` 与 `meta.json`。
 
+## recorder 与工作流的收尾分工
+
+写入之后的收尾按角色分两段：
+
+- `recorder` 只负责跑 `validate` 并修复它报告的全部失败，然后汇报写集；它不执行最终收尾，也不用 `validate` + `fingerprint` 手工拼出 `commit` 的等价序列。
+- 最终收尾归 calling workflow 所有，由它执行一体化 `commit`：validate 门控 → 按 pathspec 提交 `llmdoc/` 写集 → fingerprint → 把 `meta.json` 落成后续小 commit。
+- 只有当工作流明确要求“只刷新 revision、不提交”时，recorder 才自己跑 `fingerprint --update`。
+
 ## dirty worktree 的完成语义
 
 当前仓库常见的一种状态是：稳定文档已经反映了工作树实现，但相关源码尚未提交。此时 `baseline.revision` 与各文档 `validatedRevision` 仍必须锚定真实 HEAD，而不能伪造“工作树 revision”。
@@ -53,7 +61,7 @@ code:
 
 update 成功前至少要有：
 
-- 受影响文档已经改写完
-- 用 `npx @tokenroll/llmdoc commit -m "<message>"` 收尾（`--all` 做全仓验证并推进 baseline）：它内置 validate 门控、只按 pathspec 提交 `llmdoc/`、自动 fingerprint 并把 `meta.json` 落成后续小 commit
+- 受影响文档已经改写完，且 recorder 的 `validate` 全部通过
+- 由工作流用 `npx -y @tokenroll/llmdoc commit -m "<message>"` 收尾（`--all` 做全仓验证并推进 baseline）：它内置 validate 门控、只按 pathspec 提交 `llmdoc/`、自动 fingerprint 并把 `meta.json` 落成后续小 commit
 
-结果状态固定只有五个：`success`、`no_change`、`dry_run`、`incomplete`、`failed`。不要在 stable docs 里发明第六种“半成功”。
+结果状态固定只有五个：`success`、`no_change`、`dry_run`、`incomplete`、`failed`。不要在 stable docs 里发明第六种“半成功”。工作流的最终汇报以 `validate` 与 `commit` 的结果为准，不再单独汇报一次独立的 fingerprint 步骤。

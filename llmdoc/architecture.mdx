@@ -36,9 +36,9 @@ code:
 
 V3 的重要分工是“提示词只做判断，CLI 负责机械”。命令文档会决定何时走 `init`、`update`、`prune`、`upgrade`，真正的目录扫描、JSON schema 校验、git revision 检查、delta 计算和 hook 输出都落在 `cli/src/`。
 
-operating skill 与 README 内嵌配方用 Retrieval Gate 落实这个分工：第一次发现式检索及调查进入新子系统时，按意图从 `search`（概念或契约）、`context --files`（具体源码文件）、`tree`（范围不明）、`index`（已知 topic/kind）或 `show`（已定位文档正文）中选择入口，而不是把命令跑成固定序列。CLI 圈定工作集后，原生工具负责源码、行号、测试、计数和 git 状态等实时精确事实。
+operating skill、README 内嵌配方与两个 agent 契约共同用 Retrieval Gate 落实这个分工：第一次发现式检索及调查进入新子系统时，按意图从 `search`（概念或契约）、`context --files`（具体源码文件）、`tree`（范围不明）、`index`（已知 topic/kind）或 `show`（已定位文档正文）中选择入口，而不是把命令跑成固定序列。`agents/investigator.md` 与 `agents/recorder.md` 同样不以固定命令清单开场，而是按任务意图取单一入口。CLI 圈定工作集后，原生工具负责源码、行号、测试、计数和 git 状态等实时精确事实——investigator 契约把这条边界写成显式规则。
 
-当前仓库已经按 V3 的公开接口改写：README（含给无插件平台的内嵌 AGENTS.md 配方）、命令面、hook 面与 CI/release 都以 `@tokenroll/llmdoc` CLI 为共同 runtime。operating skill 与 README 检索配方通过 `npx -y @tokenroll/llmdoc` 按需调用这个项目外部工具；缺包时只写入 npm 缓存，不得改写被服务项目的 `package.json` 或 lockfile，需要固定版本时在 npx 包名中 pin 即可。V2 的根 `index.md`、`startup.md`、`sync.md`、`worker`、`reflector` 不再是有效契约。
+当前仓库已经按 V3 的公开接口改写：README（含给无插件平台的内嵌 AGENTS.md 配方）、命令面、hook 面与 CI/release 都以 `@tokenroll/llmdoc` CLI 为共同 runtime。全部提示词表面——operating skill、四个工作流 skill、两个 agent 契约、hooks 与 README 检索配方——统一通过 `npx -y @tokenroll/llmdoc <cmd>` 按需调用这个项目外部工具，且每个表面只声明一次调用形式，正文引用短命令名；不得使用裸 `npx`（缺包时交互式挂住）或 `npx --no-install`（缺包直接失败）。缺包时只写入 npm 缓存，不得改写被服务项目的 `package.json` 或 lockfile，需要固定版本时在 npx 包名中 pin 即可。V2 的根 `index.md`、`startup.md`、`sync.md`、`worker`、`reflector` 不再是有效契约。
 
 按主题继续阅读（topic 无入口节点，用 `llmdoc index --topic <t>` 看各文档描述）：
 

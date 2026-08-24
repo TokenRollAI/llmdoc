@@ -45,7 +45,7 @@ code:
 
 因此包装层变更时，先检查命令文档是否只保留判断性内容；不要把 diff、schema 校验或 git 逻辑重新写进 prompt。
 
-Retrieval Gate 是需要跨宿主保持语义一致的判断性契约：第一次发现式检索与进入新子系统时按意图选择 CLI 入口，圈定工作集后允许原生工具核对实时精确事实，并且不把检索命令跑成固定序列。Claude canonical skill、生成的 `.agents/skills/llmdoc/SKILL.md` 与面向无插件平台的中英文 README 配方应保持这些边界及外部 `npx -y @tokenroll/llmdoc` 调用语义一致；不得为了满足 gate 而改写业务项目依赖。宿主 front matter 和具体措辞可以不同。
+Retrieval Gate 是需要跨宿主保持语义一致的判断性契约：第一次发现式检索与进入新子系统时按意图选择 CLI 入口，圈定工作集后允许原生工具核对实时精确事实，并且不把检索命令跑成固定序列。这个契约现在同时覆盖 skill 与角色两条线：Claude canonical skill 与生成的 `.agents/skills/llmdoc/SKILL.md`、两个 Claude 角色契约（`agents/investigator.md`、`agents/recorder.md`）与生成的 `.codex/agents/*.toml`、以及面向无插件平台的中英文 README 配方，都应保持这些边界及外部 `npx -y @tokenroll/llmdoc` 调用语义一致；不得为了满足 gate 而改写业务项目依赖。宿主 front matter 和具体措辞可以不同。
 
 ## Codex 兼容面的实际要求
 
@@ -59,6 +59,8 @@ README 与示例文件都已经把方向收敛到“Claude canonical，Codex 兼
 Codex 插件原生支持 hooks：默认从插件根 `hooks/hooks.json` 读取（Claude 兼容 schema，SessionStart/Stop/PreCompact 与 `additionalContextLimit` 均支持），manifest 无需 `hooks` 字段——本仓库根既是 Claude 又是 Codex 插件根，同一份 hooks.json 一份两用。插件 hooks 是非托管的，用户安装后须经 `/hooks` 审查信任才会运行。
 
 acplugin 转换注意（重生成后需人工核对）：`model: inherit` 硬编码与 hooks 降级已在 acplugin PR #9 修复（合并前旧版仍有此问题）；manifest version 读取 `.claude-plugin/marketplace.json`，bump 版本时不要漏掉它。转换必须在临时副本运行后替换式同步，acplugin 不清理上次的陈旧输出。
+
+当前 Codex 表面的同步状态：`.agents/skills/` 与 `.codex/agents/` 是随 canonical 变更手工替换式同步的（正文与 Claude 侧逐字节一致、TOML 可解析），尚未用修复版 acplugin（≥1.6.1）重生成确认——npx 当前只解析到旧版本，旧版会重新引入 `model: inherit` 与 hooks 降级回归，因此在拿到修复版之前不要盲跑重生成。生成表面里旧有的 `npx --no-install` 调用已全部清除，与 canonical 统一为 `npx -y`。
 
 `scripts/check-codex-surface.mjs` 会自动拒绝任一 marketplace 名不是 `llmdoc-plugin` 或两侧名称不一致；`tests/parity-checklist.md` 则要求发布前人工确认两侧 marketplace 名与插件名分别为 `llmdoc-plugin` 和 `llmdoc`。
 

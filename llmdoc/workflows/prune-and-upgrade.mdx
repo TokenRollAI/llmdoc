@@ -16,14 +16,14 @@ code:
 
 ## prune 的当前状态
 
-命令文档已经把 `prune` 定义成显式 convergence pass，并允许改写、合并或删除 `llmdoc/`。但当前 CLI 实现只支持 `npx @tokenroll/llmdoc prune --report`：
+命令文档已经把 `prune` 定义成显式 convergence pass，并允许改写、合并或删除 `llmdoc/`。但当前 CLI 实现只支持 `npx -y @tokenroll/llmdoc prune --report`：
 
 - 会输出 growth 概况
 - 会给出 duplicate candidates
 - 会给出同 topic 小文档 merge candidates
-- 返回的是只读 `dry_run` 语义，而不是自动写文档
+- 返回的是只读 `dry_run` 语义：CLI 只产报告，不自动改写或删除任何文档
 
-所以现在的正确用法是：先拿报告，再由 `recorder` 执行收敛计划，最后用 `llmdoc commit` 收尾（validate 门控 + fingerprint 自动完成）。upgrade/init 场景没有台账时先 `llmdoc init-state`。
+所以现在的正确用法是两段式：先拿 CLI 报告，再由 `recorder` 执行语义收敛并跑 `validate`，最后由工作流用 `commit` 收尾（validate 门控 + fingerprint 自动完成）。
 
 ## upgrade 的当前状态
 
@@ -34,6 +34,8 @@ code:
 - 如果检测到 V2 标记或混合结构，返回 `dry_run`，列出 legacy paths、目标 V3 结构，以及是否需要 recorder 做 semantic migration
 
 这意味着当前 CLI 不会自动把 V2 文本搬进 V3，也不会自动删除 legacy 文件。迁移仍然是“CLI 给诊断，recorder 做正式改写”的两段式流程。
+
+upgrade 的收尾序列是固定的：迁移后若没有 `llmdoc/meta.json` 台账存活，先用 `init-state` 种出台账（`validate` 没有台账必失败，顺序不能颠倒）→ 跑 `validate` 并修复全部失败 → 用 `commit --all` 收尾并推进 baseline。最终汇报以 `validate` 与 `commit` 的结果为准。
 
 ## 文档维护时要特别注意
 
