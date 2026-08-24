@@ -1,0 +1,23 @@
+{
+  "name": "@tokenrollai/llmdoc-repository",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Development workspace for the llmdoc V3 CLI and plugin surfaces",
+  "scripts": {
+    "build": "npm --prefix cli run build",
+    "lint": "npm --prefix cli run lint",
+    "test": "npm --prefix cli test",
+    "typecheck": "npm --prefix cli run typecheck",
+    "validate:dogfood": "npx --no-install llmdoc validate",
+    "check:prompts": "node scripts/check-prompt-budget.mjs"
+  },
+  "devDependencies": {
+    "llmdoc-cli": "file:./cli"
+  },
+  "overrides": {
+    "vite": "6.4.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

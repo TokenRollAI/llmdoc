@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>llmdoc viewer</title>
+<script src="/assets/marked.js"></script>
+<style>
+  :root {
+    --bg: #f4f5f7; --panel: #ffffff; --border: #e5e8ec; --border-strong: #d6dade;
+    --text: #171c26; --muted: #667085; --faint: #98a2b3;
+    --accent: #4c5fd5; --accent-soft: #eef0fc;
+    --fresh: #aab2bd; --impacted: #e8890c; --dirty: #d6453d; --review: #c9a227;
+    --shadow: 0 1px 2px rgba(16,24,40,.05), 0 4px 14px rgba(16,24,40,.06);
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; color: var(--text); background: var(--bg);
+    font: 13px/1.6 -apple-system, "SF Pro Text", "Segoe UI", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+    display: flex; flex-direction: column; overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- header ---------- */
+  header {
+    display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+    background: var(--panel); border-bottom: 1px solid var(--border); flex-wrap: wrap; z-index: 3;
+  }
+  header h1 { font-size: 14.5px; margin: 0 8px 0 0; font-weight: 700; letter-spacing: -.01em; }
+  header h1 .repo { color: var(--muted); font-weight: 450; }
+  .chip {
+    padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border);
+    background: #fafbfc; font-size: 11.5px; color: var(--muted); white-space: nowrap;
+  }
+  .chip.ok   { color: #147a3d; border-color: #bfe4cb; background: #f0faf3; }
+  .chip.bad  { color: var(--dirty); border-color: #f0c7c4; background: #fdf2f1; }
+  .chip.warn { color: #b26a05; border-color: #f0dcb4; background: #fdf8ec; }
+  .chip.btn  { cursor: pointer; user-select: none; }
+  .chip.btn:hover { border-color: var(--border-strong); color: var(--text); }
+  .toggle { display: flex; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; margin-left: auto; }
+  .toggle button {
+    border: 0; background: var(--panel); color: var(--muted); font: inherit; font-size: 12px;
+    padding: 5px 14px; cursor: pointer;
+  }
+  .toggle button.on { background: var(--accent); color: #fff; font-weight: 600; }
+  .toggle button:not(.on):hover { background: var(--accent-soft); color: var(--accent); }
+
+  /* ---------- layout ---------- */
+  main { flex: 1; display: grid; grid-template-columns: 272px 1fr 408px; min-height: 0; }
+
+  /* ---------- sidebar ---------- */
+  #sidebar { background: var(--panel); border-right: 1px solid var(--border); overflow-y: auto; padding: 12px; }
+  #sidebar input {
+    width: 100%; padding: 7px 11px; border: 1px solid var(--border); border-radius: 9px;
+    font: inherit; font-size: 12.5px; margin-bottom: 8px; outline: none; background: #fafbfc;
+  }
+  #sidebar input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(76,95,213,.12); }
+  .group-label {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--faint);
+    margin: 14px 6px 5px; display: flex; align-items: center; gap: 7px; font-weight: 600; cursor: pointer;
+  }
+  .group-label:hover { color: var(--muted); }
+  .swatch { width: 10px; height: 10px; border-radius: 3.5px; display: inline-block; }
+  .doc-item {
+    display: flex; align-items: center; gap: 8px; padding: 5.5px 9px; border-radius: 8px;
+    cursor: pointer; transition: background .1s;
+  }
+  .doc-item:hover { background: #f2f4f7; }
+  .doc-item.active { background: var(--accent-soft); }
+  .doc-item.active .name { color: var(--accent); font-weight: 600; }
+  .doc-item .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2.5px color-mix(in srgb, currentColor 18%, transparent); }
+  .doc-item .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; }
+  .doc-item .kind { margin-left: auto; font-size: 10px; color: var(--faint); flex: none; }
+
+  /* ---------- graph ---------- */
+  #graph-wrap { position: relative; min-width: 0; background:
+    radial-gradient(circle at 1px 1px, #dfe3e8 1px, transparent 0) 0 0/26px 26px; }
+  #graph { width: 100%; height: 100%; display: block; cursor: grab; }
+  #graph:active { cursor: grabbing; }
+  #legend {
+    position: absolute; left: 14px; bottom: 14px; background: color-mix(in srgb, var(--panel) 92%, transparent);
+    backdrop-filter: blur(6px); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 14px; font-size: 11px; color: var(--muted); display: flex; gap: 15px; box-shadow: var(--shadow);
+  }
+  #legend i { display: inline-block; width: 18px; border-top: 2px solid #9aa4b2; vertical-align: middle; margin-right: 5px; border-radius: 2px; }
+  #legend i.related { border-top-style: dashed; }
+  #legend i.link { border-top-width: 1px; border-top-color: #c8cfd8; }
+  #graph-hint {
+    position: absolute; top: 14px; left: 14px; font-size: 11.5px; color: var(--muted);
+    background: color-mix(in srgb, var(--panel) 92%, transparent); backdrop-filter: blur(6px);
+    border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px; box-shadow: var(--shadow);
+  }
+
+  /* svg */
+  .edge-path { fill: none; transition: opacity .15s; }
+  .node { transition: opacity .15s; }
+  .node circle, .node .topic-shape { cursor: pointer; transition: filter .12s; }
+  .node:hover circle, .node:hover .topic-shape { filter: brightness(1.06) saturate(1.1); }
+  .node text { fill: var(--text); pointer-events: none; }
+  .node .sub { fill: var(--muted); }
+  .node.dim, .edge-path.dim { opacity: .12; }
+
+  /* ---------- detail ---------- */
+  #detail { background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; }
+  #detail .inner { padding: 18px 20px 32px; }
+  #detail .placeholder { color: var(--faint); margin-top: 48px; text-align: center; font-size: 12.5px; }
+  #detail h2 { font-size: 15px; margin: 0 0 3px; word-break: break-all; letter-spacing: -.01em; }
+  #detail .desc { color: var(--muted); font-size: 12.5px; }
+  #detail .meta-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 6px; }
+  .rel-block { font-size: 12.5px; margin: 3px 0; }
+  .rel-link { color: var(--accent); cursor: pointer; text-decoration: none; }
+  .rel-link:hover { text-decoration: underline; }
+  .code-path {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px;
+    background: #f6f7f9; border: 1px solid var(--border); border-radius: 6px; padding: 2px 7px;
+  }
+  .coderef {
+    font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #6d3fc0;
+    background: #f6f1fd; border: 1px solid #e4d6f8; border-radius: 6px; padding: 1px 7px;
+  }
+  #doc-body { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; font-size: 13.5px; }
+  #doc-body h1 { font-size: 17px; } #doc-body h2 { font-size: 14.5px; margin-top: 22px; } #doc-body h3 { font-size: 13.5px; }
+  #doc-body pre { background: #f6f7f9; border: 1px solid var(--border); padding: 11px 13px; border-radius: 9px; overflow-x: auto; font-size: 12px; }
+  #doc-body code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; background: #f3f4f6; padding: 1px 5px; border-radius: 5px; }
+  #doc-body pre code { background: none; padding: 0; }
+  #doc-body table { border-collapse: collapse; font-size: 12.5px; }
+  #doc-body td, #doc-body th { border: 1px solid var(--border); padding: 5px 9px; }
+  #doc-body a { color: var(--accent); }
+  #doc-body blockquote { margin: 0; padding: 2px 14px; border-left: 3px solid var(--border-strong); color: var(--muted); }
+
+  /* topic detail card list */
+  .topic-doc-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 13px; margin: 8px 0;
+    cursor: pointer; transition: border-color .12s, box-shadow .12s;
+  }
+  .topic-doc-card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+  .topic-doc-card .t { font-weight: 600; font-size: 12.5px; display: flex; gap: 8px; align-items: center; }
+  .topic-doc-card .d { color: var(--muted); font-size: 12px; margin-top: 3px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>llmdoc <span class="repo" id="repo"></span></h1>
+  <span class="chip" id="stat-docs"></span>
+  <span class="chip" id="stat-baseline"></span>
+  <span class="chip" id="stat-validate"></span>
+  <span class="chip" id="stat-delta"></span>
+  <span class="chip btn" id="refresh">↻ 刷新</span>
+  <div class="toggle">
+    <button id="mode-topics">Topics 拓扑</button>
+    <button id="mode-docs">Documents 全图</button>
+  </div>
+</header>
+<main>
+  <nav id="sidebar">
+    <input id="search" type="search" placeholder="过滤文档 (路径 / 描述)" />
+    <div id="doc-list"></div>
+  </nav>
+  <section id="graph-wrap">
+    <svg id="graph"></svg>
+    <div id="graph-hint"></div>
+    <div id="legend"></div>
+  </section>
+  <aside id="detail"><div class="inner"><div class="placeholder">选择一个 topic 或文档查看详情</div></div></aside>
+</main>
+<script>
+"use strict";
+const PALETTE = ["#4c5fd5", "#0e8f6f", "#c26a12", "#7a4bc9", "#0d84ab", "#b13d72", "#5f8016", "#96591f"];
+const STATUS_COLOR = { fresh: "#aab2bd", impacted: "#e8890c", dirty: "#d6453d", "needs-review": "#c9a227" };
+const STATUS_RANK = { fresh: 0, "needs-review": 1, impacted: 2, dirty: 3 };
+let state = null, selected = null, mode = "topics", topicColor = new Map(), sim = null;
+
+async function loadState() {
+  state = await (await fetch("/api/state")).json();
+  topicColor = new Map();
+  [...new Set(state.nodes.map((n) => n.topic).filter(Boolean))].sort()
+    .forEach((topic, i) => topicColor.set(topic, PALETTE[i % PALETTE.length]));
+  renderHeader(); renderSidebar(); renderGraph();
+}
+
+function colorOf(topic) { return topic ? topicColor.get(topic) : "#3c4657"; }
+
+function renderHeader() {
+  document.getElementById("repo").textContent = "/ " + state.repository;
+  document.getElementById("stat-docs").textContent =
+    state.nodes.length + " docs · ~" + state.growth.currentTotalEstimatedTokens + " tokens";
+  const behind = state.baseline.behindHead;
+  const baselineEl = document.getElementById("stat-baseline");
+  baselineEl.textContent = state.baseline.revision
+    ? "baseline " + state.baseline.revision.slice(0, 7) + (behind ? " · " + behind + " behind" : " · 最新")
+    : "baseline 缺失";
+  baselineEl.className = "chip " + (behind ? "warn" : state.baseline.revision ? "ok" : "bad");
+  const v = state.validate;
+  const validateEl = document.getElementById("stat-validate");
+  validateEl.textContent = v.ok ? "validate ok" + (v.warnings ? " · " + v.warnings + " warn" : "") : "validate " + v.errors + " errors";
+  validateEl.className = "chip " + (v.ok ? "ok" : "bad");
+  const stale = state.nodes.filter((n) => n.status !== "fresh").length;
+  const deltaEl = document.getElementById("stat-delta");
+  deltaEl.textContent = stale ? stale + " 份待同步 · 建议 " + state.delta.suggestedMode : "知识面新鲜";
+  deltaEl.className = "chip " + (stale ? "warn" : "ok");
+}
+
+/* ---------- sidebar ---------- */
+function renderSidebar() {
+  const query = document.getElementById("search").value.trim().toLowerCase();
+  const match = (n) => !query || n.path.toLowerCase().includes(query) || n.description.toLowerCase().includes(query);
+  const container = document.getElementById("doc-list");
+  container.innerHTML = "";
+  const groups = new Map([["", state.nodes.filter((n) => !n.topic && match(n))]]);
+  for (const node of state.nodes) if (node.topic && match(node)) {
+    if (!groups.has(node.topic)) groups.set(node.topic, []);
+    groups.get(node.topic).push(node);
+  }
+  for (const [topic, nodes] of groups) {
+    if (!nodes.length) continue;
+    const label = document.createElement("div");
+    label.className = "group-label";
+    label.innerHTML = topic
+      ? '<span class="swatch" style="background:' + colorOf(topic) + '"></span>' + topic + "/"
+      : "root";
+    if (topic) label.onclick = () => selectTopic(topic);
+    container.append(label);
+    for (const node of nodes) {
+      const item = document.createElement("div");
+      item.className = "doc-item" + (selected === node.path ? " active" : "");
+      item.innerHTML =
+        '<span class="dot" style="background:' + STATUS_COLOR[node.status] + ';color:' + STATUS_COLOR[node.status] + '"></span>' +
+        '<span class="name" title="' + node.path + '">' + node.path.split("/").pop().replace(/\.mdx$/, "") + "</span>" +
+        '<span class="kind">' + node.kind + "</span>";
+      item.onclick = () => selectDoc(node.path);
+      container.append(item);
+    }
+  }
+}
+
+/* ---------- shared force simulation ---------- */
+function simulate(nodes, edges, width, height, spread) {
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  nodes.forEach((n, i) => {
+    const angle = (i / nodes.length) * Math.PI * 2;
+    n.x = width / 2 + Math.cos(angle) * spread * 0.55 + Math.cos(i * 5.7) * 30;
+    n.y = height / 2 + Math.sin(angle) * spread * 0.55 + Math.sin(i * 5.7) * 30;
+    n.vx = 0; n.vy = 0;
+  });
+  const repulse = spread * spread * 3.2;
+  for (let step = 0; step < 320; step++) {
+    for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j];
+      let dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy || 1, d = Math.sqrt(d2);
+      const force = Math.min(14, repulse / d2);
+      dx /= d; dy /= d; a.vx += dx * force; a.vy += dy * force; b.vx -= dx * force; b.vy -= dy * force;
+    }
+    for (const e of edges) {
+      const a = byId.get(e.from), b = byId.get(e.to);
+      if (!a || !b) continue;
+      const dx = b.x - a.x, dy = b.y - a.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
+      const pull = (d - (a.r + b.r + spread * 0.55)) * 0.014;
+      a.vx += (dx / d) * pull; a.vy += (dy / d) * pull; b.vx -= (dx / d) * pull; b.vy -= (dy / d) * pull;
+    }
+    for (const n of nodes) {
+      if (n.cluster) { n.vx += (n.cluster.x - n.x) * 0.014; n.vy += (n.cluster.y - n.y) * 0.014; }
+      n.vx += (width / 2 - n.x) * 0.004; n.vy += (height / 2 - n.y) * 0.004;
+      n.x += n.vx *= 0.8; n.y += n.vy *= 0.8;
+    }
+  }
+}
+
+/* ---------- graph rendering ---------- */
+function renderGraph() {
+  const svg = document.getElementById("graph");
+  const { width, height } = svg.getBoundingClientRect();
+  const NS = "http://www.w3.org/2000/svg";
+  svg.innerHTML = "";
+  const defs = document.createElementNS(NS, "defs");
+  defs.innerHTML =
+    '<marker id="arrow" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto">' +
+    '<path d="M0 .8 L8 4 L0 7.2 z" fill="#9aa4b2"/></marker>' +
+    '<filter id="soft" x="-40%" y="-40%" width="180%" height="180%">' +
+    '<feDropShadow dx="0" dy="1.5" stdDeviation="2.5" flood-color="#101828" flood-opacity="0.18"/></filter>';
+  const root = document.createElementNS(NS, "g");
+  svg.append(defs, root);
+
+  const graph = mode === "topics" ? buildTopicGraph(width, height) : buildDocGraph(width, height);
+  document.getElementById("graph-hint").textContent = mode === "topics"
+    ? "Topic 拓扑 · 边粗细 = 跨域引用数 · 点击下钻"
+    : "文档全图 · 点击节点查看详情 · 拖拽 / 滚轮缩放";
+  document.getElementById("legend").innerHTML = (mode === "topics"
+    ? '<span><i></i>跨域引用</span>'
+    : '<span><i></i>requires</span><span><i class="related"></i>related</span><span><i class="link"></i>link</span>') +
+    '<span><b style="color:var(--dirty)">●</b> dirty</span><span><b style="color:var(--impacted)">●</b> impacted</span><span><b style="color:var(--review)">●</b> review</span>';
+
+  const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+  const edgeEls = graph.edges.map((e) => {
+    const pathEl = document.createElementNS(NS, "path");
+    pathEl.setAttribute("class", "edge-path");
+    pathEl.setAttribute("stroke", e.style === "link" ? "#c8cfd8" : "#9aa4b2");
+    pathEl.setAttribute("stroke-width", e.width ?? (e.style === "link" ? 1 : 1.7));
+    pathEl.setAttribute("stroke-linecap", "round");
+    pathEl.setAttribute("stroke-opacity", e.style === "link" ? 0.75 : 0.85);
+    if (e.style === "related") pathEl.setAttribute("stroke-dasharray", "5 5");
+    if (e.style === "requires") pathEl.setAttribute("marker-end", "url(#arrow)");
+    root.append(pathEl);
+    return { e, pathEl };
+  });
+  const nodeEls = graph.nodes.map((n) => {
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "node");
+    const circle = document.createElementNS(NS, "circle");
+    circle.setAttribute("r", n.r);
+    circle.setAttribute("fill", n.fill);
+    circle.setAttribute("fill-opacity", n.isTopic ? "0.92" : "0.88");
+    circle.setAttribute("stroke", n.status === "fresh" ? "#ffffff" : STATUS_COLOR[n.status]);
+    circle.setAttribute("stroke-width", n.status === "fresh" ? 2 : 3.5);
+    circle.setAttribute("filter", "url(#soft)");
+    if (n.isTopic) circle.setAttribute("class", "topic-shape");
+    g.append(circle);
+    if (n.isTopic) {
+      const title = textEl(NS, n.label, 0, 4, 12.5, 700, "#ffffff");
+      const sub = textEl(NS, n.subLabel, 0, n.r + 15, 10.5, 500, null);
+      sub.setAttribute("class", "sub");
+      g.append(title, sub);
+    } else {
+      const label = textEl(NS, n.label, 0, n.r + 13, 10, 500, null);
+      g.append(label);
+    }
+    const tip = document.createElementNS(NS, "title");
+    tip.textContent = n.tooltip;
+    g.append(tip);
+    g.addEventListener("click", (event) => { event.stopPropagation(); n.onClick(); });
+    enableDrag(g, n);
+    root.append(g);
+    return { n, g };
+  });
+
+  function position() {
+    for (const { e, pathEl } of edgeEls) {
+      const a = byId.get(e.from), b = byId.get(e.to);
+      const dx = b.x - a.x, dy = b.y - a.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
+      const ax = a.x + (dx / d) * a.r, ay = a.y + (dy / d) * a.r;
+      const bx = b.x - (dx / d) * (b.r + (e.style === "requires" ? 4 : 0)), by = b.y - (dy / d) * (b.r + (e.style === "requires" ? 4 : 0));
+      const mx = (ax + bx) / 2 - dy / d * d * 0.09, my = (ay + by) / 2 + dx / d * d * 0.09;
+      pathEl.setAttribute("d", `M ${ax} ${ay} Q ${mx} ${my} ${bx} ${by}`);
+    }
+    for (const { n, g } of nodeEls) g.setAttribute("transform", `translate(${n.x},${n.y})`);
+  }
+  const view = { x: 0, y: 0, k: 1 };
+  const applyView = () => root.setAttribute("transform", `translate(${view.x},${view.y}) scale(${view.k})`);
+  svg.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    const factor = event.deltaY < 0 ? 1.12 : 0.9;
+    const next = Math.min(4, Math.max(0.25, view.k * factor));
+    view.x = event.offsetX - ((event.offsetX - view.x) / view.k) * next;
+    view.y = event.offsetY - ((event.offsetY - view.y) / view.k) * next;
+    view.k = next; applyView();
+  }, { passive: false });
+  let pan = null;
+  svg.addEventListener("mousedown", (event) => { if (event.target === svg) pan = { x: event.clientX - view.x, y: event.clientY - view.y }; });
+  window.addEventListener("mousemove", (event) => { if (pan) { view.x = event.clientX - pan.x; view.y = event.clientY - pan.y; applyView(); } });
+  window.addEventListener("mouseup", () => { pan = null; });
+  svg.addEventListener("click", () => highlight(null));
+
+  sim = { nodes: graph.nodes, edges: graph.edges, nodeEls, edgeEls, position, view };
+  position();
+  highlight(mode === "docs" ? selected : null);
+}
+
+function textEl(NS, content, x, y, size, weight, fill) {
+  const t = document.createElementNS(NS, "text");
+  t.setAttribute("text-anchor", "middle");
+  t.setAttribute("x", x); t.setAttribute("y", y);
+  t.setAttribute("font-size", size); t.setAttribute("font-weight", weight);
+  if (fill) t.style.fill = fill;
+  t.textContent = content;
+  return t;
+}
+
+function worstStatus(nodes) {
+  return nodes.reduce((worst, n) => (STATUS_RANK[n.status] > STATUS_RANK[worst] ? n.status : worst), "fresh");
+}
+
+/* Topics 拓扑:topic 聚合节点 + root singletons,边 = 跨域文档关系聚合 */
+function buildTopicGraph(width, height) {
+  const topics = [...new Set(state.nodes.map((n) => n.topic).filter(Boolean))].sort();
+  const nodes = [];
+  for (const topic of topics) {
+    const docs = state.nodes.filter((n) => n.topic === topic);
+    const tokens = docs.reduce((sum, n) => sum + n.estimatedTokens, 0);
+    nodes.push({
+      id: "topic:" + topic, isTopic: true, label: topic, subLabel: docs.length + " docs · ~" + tokens + " tk",
+      r: 26 + Math.min(26, Math.sqrt(tokens)), fill: colorOf(topic), status: worstStatus(docs),
+      tooltip: topic + "/\n" + docs.map((d) => "· " + d.path.split("/").pop()).join("\n"),
+      onClick: () => selectTopic(topic)
+    });
+  }
+  for (const n of state.nodes.filter((n) => !n.topic)) {
+    nodes.push({
+      id: "doc:" + n.path, isTopic: false, label: n.path.replace(/\.mdx$/, ""),
+      r: 10 + Math.min(9, Math.sqrt(n.estimatedTokens)), fill: colorOf(null), status: n.status,
+      tooltip: n.path + "\n" + n.description, onClick: () => selectDoc(n.path)
+    });
+  }
+  const groupOf = (path) => {
+    const node = state.nodes.find((n) => n.path === path);
+    return node ? (node.topic ? "topic:" + node.topic : "doc:" + path) : null;
+  };
+  const agg = new Map();
+  for (const e of state.edges) {
+    const a = groupOf(e.from), b = groupOf(e.to);
+    if (!a || !b || a === b) continue;
+    const key = [a, b].sort().join("→");
+    agg.set(key, (agg.get(key) ?? { from: a, to: b, count: 0 }));
+    agg.get(key).count += 1;
+  }
+  const edges = [...agg.values()].map((e) => ({ from: e.from, to: e.to, style: "aggregate", width: 1.4 + Math.min(6, e.count * 1.1) }));
+  simulate(nodes, edges, width, height, Math.min(width, height) / 3.1);
+  return { nodes, edges };
+}
+
+/* Documents 全图 */
+function buildDocGraph(width, height) {
+  const topics = [...new Set(state.nodes.map((n) => n.topic || "·root"))];
+  const centers = new Map(topics.map((topic, i) => {
+    const angle = (i / topics.length) * Math.PI * 2;
+    return [topic, { x: width / 2 + Math.cos(angle) * width / 4.6, y: height / 2 + Math.sin(angle) * height / 4.6 }];
+  }));
+  const nodes = state.nodes.map((n) => ({
+    id: n.path, isTopic: false,
+    label: n.path.split("/").pop().replace(/\.mdx$/, ""),
+    r: 8 + Math.min(11, Math.sqrt(n.estimatedTokens)), fill: colorOf(n.topic), status: n.status,
+    cluster: centers.get(n.topic || "·root"),
+    tooltip: n.path + "\n" + n.description, onClick: () => selectDoc(n.path)
+  }));
+  const edges = state.edges.map((e) => ({ from: e.from, to: e.to, style: e.type }));
+  simulate(nodes, edges, width, height, Math.min(width, height) / 5.2);
+  return { nodes, edges };
+}
+
+function enableDrag(g, node) {
+  g.addEventListener("mousedown", (event) => {
+    event.stopPropagation();
+    const start = { x: event.clientX, y: event.clientY, nx: node.x, ny: node.y };
+    const move = (e2) => { node.x = start.nx + (e2.clientX - start.x) / sim.view.k; node.y = start.ny + (e2.clientY - start.y) / sim.view.k; sim.position(); };
+    const up = () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); };
+    window.addEventListener("mousemove", move); window.addEventListener("mouseup", up);
+  });
+}
+
+function highlight(id) {
+  if (!sim) return;
+  const neighbors = new Set();
+  if (id) {
+    neighbors.add(id);
+    for (const e of sim.edges) { if (e.from === id) neighbors.add(e.to); if (e.to === id) neighbors.add(e.from); }
+  }
+  for (const { n, g } of sim.nodeEls) g.setAttribute("class", "node" + (id && !neighbors.has(n.id) ? " dim" : ""));
+  for (const { e, pathEl } of sim.edgeEls) {
+    const cls = "edge-path" + (id && e.from !== id && e.to !== id ? " dim" : "");
+    pathEl.setAttribute("class", cls);
+  }
+}
+
+/* ---------- detail panel ---------- */
+function setMode(next) {
+  mode = next;
+  document.getElementById("mode-topics").className = mode === "topics" ? "on" : "";
+  document.getElementById("mode-docs").className = mode === "docs" ? "on" : "";
+  if (state) renderGraph();
+}
+
+function selectTopic(topic) {
+  selected = null;
+  renderSidebar();
+  if (mode === "topics") highlight("topic:" + topic);
+  const docs = state.nodes.filter((n) => n.topic === topic);
+  const detail = document.querySelector("#detail .inner");
+  detail.innerHTML =
+    '<h2><span class="swatch" style="background:' + colorOf(topic) + ';width:12px;height:12px;border-radius:4px;display:inline-block;margin-right:7px"></span>' + topic + "/</h2>" +
+    '<div class="desc">' + docs.length + " docs · ~" + docs.reduce((s, n) => s + n.estimatedTokens, 0) + " tokens · " +
+    "状态最差 " + worstStatus(docs) + "</div>" +
+    docs.map((n) =>
+      '<div class="topic-doc-card" data-path="' + n.path + '">' +
+        '<div class="t"><span class="dot" style="width:7px;height:7px;border-radius:50%;background:' + STATUS_COLOR[n.status] + '"></span>' +
+        n.path.split("/").pop().replace(/\.mdx$/, "") + '<span style="margin-left:auto;color:var(--faint);font-size:10px;font-weight:500">' + n.kind + "</span></div>" +
+        '<div class="d">' + escapeHtml(n.description) + "</div>" +
+      "</div>"
+    ).join("");
+  detail.querySelectorAll(".topic-doc-card").forEach((card) => { card.onclick = () => selectDoc(card.dataset.path); });
+}
+
+async function selectDoc(path) {
+  selected = path;
+  renderSidebar();
+  if (mode === "docs") highlight(path); else { setMode("docs"); highlight(path); }
+  const detail = document.querySelector("#detail .inner");
+  const response = await fetch("/api/doc?path=" + encodeURIComponent(path));
+  if (!response.ok) { detail.innerHTML = '<div class="placeholder">加载失败</div>'; return; }
+  const doc = await response.json();
+  const node = state.nodes.find((n) => n.path === path) || {};
+  const relations = doc.frontmatter.relations || {};
+  const relHtml = (list, label) => (list && list.length)
+    ? '<div class="rel-block"><b>' + label + ":</b> " + list.map((t) => '<a class="rel-link" data-path="' + t + '">' + t + "</a>").join(" · ") + "</div>"
+    : "";
+  const body = (doc.body || "").replace(/<CodeRef\s+([^>]*?)\/>/g, (m, attrs) => {
+    const pathAttr = /path="([^"]*)"/.exec(attrs), symbol = /symbol="([^"]*)"/.exec(attrs);
+    return '<span class="coderef">⌁ ' + (pathAttr ? pathAttr[1] : "") + (symbol ? " · " + symbol[1] : "") + "</span>";
+  });
+  detail.innerHTML =
+    "<h2>" + path + "</h2>" +
+    '<div class="desc">' + escapeHtml(doc.frontmatter.description || "") + "</div>" +
+    '<div class="meta-row">' +
+      '<span class="chip">' + (doc.frontmatter.kind || "?") + "</span>" +
+      '<span class="chip" style="color:' + STATUS_COLOR[node.status || "fresh"] + '">' + (node.status || "") + "</span>" +
+      '<span class="chip">~' + doc.estimatedTokens + " tokens · " + doc.lineCount + " lines</span>" +
+    "</div>" +
+    relHtml(relations.requires, "requires") + relHtml(relations.related, "related") +
+    ((doc.frontmatter.code && doc.frontmatter.code.paths && doc.frontmatter.code.paths.length)
+      ? '<div class="meta-row">' + doc.frontmatter.code.paths.map((p) => '<span class="code-path">' + escapeHtml(p) + "</span>").join("") + "</div>"
+      : "") +
+    '<div id="doc-body">' + window.marked.parse(body) + "</div>";
+  detail.querySelectorAll(".rel-link").forEach((a) => { a.onclick = () => selectDoc(a.dataset.path); });
+  detail.querySelectorAll("#doc-body a[href]").forEach((a) => {
+    const href = a.getAttribute("href");
+    if (/^https?:|^mailto:|^#/.test(href)) { a.target = "_blank"; return; }
+    a.onclick = (event) => {
+      event.preventDefault();
+      const resolved = normalizePath(path.split("/").slice(0, -1).join("/") + "/" + href.split(/[?#]/)[0]);
+      if (state.nodes.some((n) => n.path === resolved)) selectDoc(resolved);
+    };
+  });
+  document.getElementById("detail").scrollTop = 0;
+}
+
+function normalizePath(p) {
+  const parts = [];
+  for (const part of p.split("/")) {
+    if (!part || part === ".") continue;
+    if (part === "..") parts.pop(); else parts.push(part);
+  }
+  return parts.join("/");
+}
+function escapeHtml(text) { const div = document.createElement("div"); div.textContent = text; return div.innerHTML; }
+
+document.getElementById("search").addEventListener("input", renderSidebar);
+document.getElementById("refresh").addEventListener("click", loadState);
+document.getElementById("mode-topics").addEventListener("click", () => setMode("topics"));
+document.getElementById("mode-docs").addEventListener("click", () => setMode("docs"));
+window.addEventListener("resize", () => state && renderGraph());
+setMode("topics");
+loadState();
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://llmdoc.dev/schemas/doc-frontmatter.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["description", "kind"],
+  "properties": {
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["architecture", "guide", "reference"]
+    },
+    "relations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requires": {
+          "$ref": "#/$defs/pathArray"
+        },
+        "related": {
+          "$ref": "#/$defs/pathArray"
+        }
+      }
+    },
+    "code": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "paths": {
+          "$ref": "#/$defs/pathArray"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "pathArray": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    }
+  }
+}

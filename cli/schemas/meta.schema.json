@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://llmdoc.dev/schemas/meta.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "baseline", "documents", "convergence"],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "llmdoc.meta/v3"
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision", "verifiedAt"],
+      "properties": {
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verifiedAt": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+        }
+      }
+    },
+    "documents": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["validatedRevision"],
+        "properties": {
+          "validatedRevision": {
+            "type": ["string", "null"],
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "convergence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capturedAt", "source", "documentCount", "totalEstimatedTokens"],
+      "properties": {
+        "capturedAt": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+        },
+        "source": {
+          "type": "string",
+          "enum": ["init", "prune"]
+        },
+        "documentCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalEstimatedTokens": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
