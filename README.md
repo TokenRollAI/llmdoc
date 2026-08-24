@@ -207,11 +207,24 @@ Install from the repository root so the local `llmdoc` bin is linked before vali
 
 ## Other Platforms
 
-For tools without a native plugin system, keep a minimal `AGENTS.md` that says:
+Claude Code and Codex users get all of this from the plugin (hooks, operating skill, workflow commands). For tools without a native plugin system, install `@tokenroll/llmdoc` and paste this recipe into the project's `AGENTS.md`:
 
-- load llmdoc before broad exploration or documentation work
-- use `npx llmdoc` for tree, index, show, search, context, status, delta, validate, fingerprint, and explicit workflow entrypoints
-- treat `init`, `update`, `prune`, and `upgrade` as explicit workflows with the authorization semantics above
+```markdown
+# llmdoc
+
+This project uses llmdoc V3 as persistent engineering context.
+
+- `@tokenroll/llmdoc` must be installed; call the CLI as `npx --no-install llmdoc ...`.
+- Before broad exploration, start from `npx --no-install llmdoc tree`, then
+  `index --topic`, `context --files`, `search`, and read bodies last with `show`.
+- Read only what the current task needs; document descriptions decide relevance.
+- `init` / `update` / `prune` / `upgrade` are explicit workflows: suggest them
+  when relevant, run only after user confirmation; never suggest `upgrade`.
+- Stable knowledge lives in `llmdoc/`; never hand-edit `llmdoc/meta.json`
+  (use `fingerprint` / `new` / `mv`). Scratch belongs in `.llmdoc-tmp/`.
+- After work that changes durable architecture, contracts, or workflows,
+  suggest running the update workflow.
+```
 
 ## Example Prompts
 

@@ -207,11 +207,23 @@ npm run check:prompts
 
 ## 其他平台
 
-没有原生插件系统的工具，只需要一份最小 `AGENTS.md`，内容包括：
+Claude Code 与 Codex 用户由插件承担这一切（hooks、operating skill、工作流命令）。没有原生插件系统的工具，安装 `@tokenroll/llmdoc` 后把下面这份配方贴进项目的 `AGENTS.md` 即可：
 
-- 在大范围探索或文档工作前先加载 llmdoc
-- 用 `npx llmdoc` 处理 tree、index、show、search、context、status、delta、validate、fingerprint，以及显式工作流入口
-- 把 `init`、`update`、`prune`、`upgrade` 视为带授权语义的显式工作流
+```markdown
+# llmdoc
+
+本项目使用 llmdoc V3 作为持久化工程上下文。
+
+- 必须已安装 `@tokenroll/llmdoc`；一律以 `npx --no-install llmdoc ...` 调用。
+- 大范围探索前先 `npx --no-install llmdoc tree`，再按需 `index --topic`、
+  `context --files`、`search`，最后才用 `show` 读正文。
+- 只读当前任务需要的内容；相关性由文档 description 判断。
+- `init` / `update` / `prune` / `upgrade` 是显式工作流：可以建议、须经用户
+  确认后执行；永不主动建议 `upgrade`。
+- 稳定知识在 `llmdoc/`；不要手工编辑 `llmdoc/meta.json`（用 `fingerprint` /
+  `new` / `mv`）。临时材料放 `.llmdoc-tmp/`。
+- 完成改变架构、契约或工作流的任务后，建议执行 update 工作流。
+```
 
 ## 示例提示词
 
