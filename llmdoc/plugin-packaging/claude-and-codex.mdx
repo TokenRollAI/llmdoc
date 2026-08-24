@@ -45,7 +45,7 @@ code:
 
 因此包装层变更时，先检查命令文档是否只保留判断性内容；不要把 diff、schema 校验或 git 逻辑重新写进 prompt。
 
-Retrieval Gate 是需要跨宿主保持语义一致的判断性契约：第一次发现式检索与进入新子系统时按意图选择 CLI 入口，圈定工作集后允许原生工具核对实时精确事实，并且不把检索命令跑成固定序列。Claude canonical skill、生成的 `.agents/skills/llmdoc/SKILL.md` 与面向无插件平台的中英文 README 配方应保持这些边界及本地 `npx --no-install` 调用语义一致；宿主 front matter 和具体措辞可以不同。
+Retrieval Gate 是需要跨宿主保持语义一致的判断性契约：第一次发现式检索与进入新子系统时按意图选择 CLI 入口，圈定工作集后允许原生工具核对实时精确事实，并且不把检索命令跑成固定序列。Claude canonical skill、生成的 `.agents/skills/llmdoc/SKILL.md` 与面向无插件平台的中英文 README 配方应保持这些边界及外部 `npx -y @tokenroll/llmdoc` 调用语义一致；不得为了满足 gate 而改写业务项目依赖。宿主 front matter 和具体措辞可以不同。
 
 ## Codex 兼容面的实际要求
 
@@ -62,7 +62,7 @@ acplugin 转换注意（重生成后需人工核对）：`model: inherit` 硬编
 
 `scripts/check-codex-surface.mjs` 会自动拒绝任一 marketplace 名不是 `llmdoc-plugin` 或两侧名称不一致；`tests/parity-checklist.md` 则要求发布前人工确认两侧 marketplace 名与插件名分别为 `llmdoc-plugin` 和 `llmdoc`。
 
-根 `hooks/hooks.json` 不靠 ACPlugin 复制；Claude 与 Codex 都直接共用这份根 hook 壳，并统一通过 `npx -y @tokenroll/llmdoc` 调用 CLI hook 子命令。`-y` 允许缺包时非交互获取正确的 scoped 包；本地安装仍是确定版本和离线运行的首选。
+根 `hooks/hooks.json` 不靠 ACPlugin 复制；Claude 与 Codex 都直接共用这份根 hook 壳，并统一通过 `npx -y @tokenroll/llmdoc` 调用 CLI hook 子命令。`-y` 允许缺包时非交互获取正确的 scoped 包到 npm 缓存，且不触碰业务项目的依赖清单；需要确定版本时应在 npx 包名中 pin，而不是执行会改写项目 `package.json` 或 lockfile 的安装命令。
 
 维护时要遵守两点：
 

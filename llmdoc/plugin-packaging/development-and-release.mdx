@@ -16,7 +16,7 @@ code:
 ## 包结构
 
 - `cli/package.json` 定义公开 npm 包 `@tokenroll/llmdoc`，Node 要求 `>=18`，唯一 bin 是 `llmdoc`
-- 仓库根 `package.json` 是私有开发工作区，主要把 `./cli` 挂成 devDependency，并转发 `build`、`lint`、`test`、`typecheck`、`validate:dogfood`、`check:prompts`
+- 仓库根 `package.json` 是 llmdoc 自身的私有开发工作区，主要把 `./cli` 挂成 devDependency，并转发 `build`、`lint`、`test`、`typecheck`、`validate:dogfood`、`check:prompts`；这仅服务本仓库开发，不代表消费方应把 llmdoc 加入业务项目依赖
 
 ## 本地验证
 

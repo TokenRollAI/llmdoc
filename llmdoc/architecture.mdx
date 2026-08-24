@@ -20,6 +20,7 @@ code:
     - package.json
     - README.md
     - README.zh-CN.md
+    - docs/v3-design/*.md
 ---
 
 # llmdoc 仓库整体架构
@@ -37,7 +38,7 @@ V3 的重要分工是“提示词只做判断，CLI 负责机械”。命令文�
 
 operating skill 与 README 内嵌配方用 Retrieval Gate 落实这个分工：第一次发现式检索及调查进入新子系统时，按意图从 `search`（概念或契约）、`context --files`（具体源码文件）、`tree`（范围不明）、`index`（已知 topic/kind）或 `show`（已定位文档正文）中选择入口，而不是把命令跑成固定序列。CLI 圈定工作集后，原生工具负责源码、行号、测试、计数和 git 状态等实时精确事实。
 
-当前仓库已经按 V3 的公开接口改写：README（含给无插件平台的内嵌 AGENTS.md 配方）、命令面、hook 面与 CI/release 都以 `@tokenroll/llmdoc` CLI 为共同 runtime；operating skill 与 README 检索配方要求本地包并使用 `npx --no-install @tokenroll/llmdoc`，避免隐式安装。这个调用约束只描述这些检索提示面，不代表 hook 或所有 workflow 命令都使用相同参数。V2 的根 `index.md`、`startup.md`、`sync.md`、`worker`、`reflector` 不再是有效契约。
+当前仓库已经按 V3 的公开接口改写：README（含给无插件平台的内嵌 AGENTS.md 配方）、命令面、hook 面与 CI/release 都以 `@tokenroll/llmdoc` CLI 为共同 runtime。operating skill 与 README 检索配方通过 `npx -y @tokenroll/llmdoc` 按需调用这个项目外部工具；缺包时只写入 npm 缓存，不得改写被服务项目的 `package.json` 或 lockfile，需要固定版本时在 npx 包名中 pin 即可。V2 的根 `index.md`、`startup.md`、`sync.md`、`worker`、`reflector` 不再是有效契约。
 
 按主题继续阅读（topic 无入口节点，用 `llmdoc index --topic <t>` 看各文档描述）：
 
