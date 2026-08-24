@@ -15,6 +15,7 @@ code:
     - .codex/agents/*.toml
     - hooks/hooks.json
     - .claude-plugin/*.json
+    - .agents/plugins/*.json
     - .codex-plugin/*.json
     - package.json
     - README.md
@@ -27,8 +28,10 @@ code:
 
 - `cli/` 是运行时实体，负责扫描 `llmdoc/`、校验 front matter 与 `meta.json`、做检索与影响面分析，并暴露 hook 与维护命令。
 - 仓库根的 Claude 表面负责判断性 SOP：`skills/` 下五个 SKILL.md（`llmdoc` operating skill 加 `init/update/prune/upgrade` 四个显式工作流）描述工作流，`agents/investigator.md` 与 `agents/recorder.md` 描述两个角色，`hooks/hooks.json` 只负责把生命周期事件转发到 CLI。
-- ACPlugin 生成的 Codex 兼容表面位于 `.agents/skills/`、`.codex/agents/` 与 `.codex-plugin/plugin.json`，它们承接 Claude 根表面的命令、operating skill、角色契约与 manifest。
+- ACPlugin 生成的 Codex 兼容表面位于 `.agents/plugins/marketplace.json`、`.agents/skills/`、`.codex/agents/` 与 `.codex-plugin/plugin.json`，它们承接 Claude 根表面的 marketplace、命令、operating skill、角色契约与 manifest。
 - `llmdoc/` 是仓库自身的 dogfood 知识面，用 V3 两层目录反过来解释这套实现本身。
+
+跨宿主包装共用一个公开身份：Claude canonical marketplace 与 Codex catalog 都使用 `llmdoc-plugin`，其中的可安装插件名是 `llmdoc`；Claude 的完整安装坐标因此是 `llmdoc@llmdoc-plugin`。
 
 V3 的重要分工是“提示词只做判断，CLI 负责机械”。命令文档会决定何时走 `init`、`update`、`prune`、`upgrade`，真正的目录扫描、JSON schema 校验、git revision 检查、delta 计算和 hook 输出都落在 `cli/src/`。
 
