@@ -32,3 +32,14 @@ code:
 - `release.yml`：在 `v*` tag 上复跑验证、核对五处版本表面一致（`cli/package.json`、根 `package.json`、`.claude-plugin/plugin.json`、`.claude-plugin/marketplace.json` 的 `plugins[].version`、`.codex-plugin/plugin.json`）、发布 `@tokenroll/llmdoc` 到 npm，并上传 npm tarball 与插件 tarball 到 GitHub Release
 
 维护时要让 README、命令表面、生成后的 Codex 表面与这些自动化同步演进。
+
+## 命令语义变更的同步不变量
+
+任何 CLI 命令或输出语义的变更，同一个 change-set 必须同步四类表面：
+
+1. `skills/*/SKILL.md` 中引用该命令语义的段落（受 `check:prompts` token 预算约束）
+2. 版本表面 bump——五处 JSON（`cli/package.json`、根 `package.json`、`.claude-plugin/plugin.json`、`.claude-plugin/marketplace.json` 的 `plugins[].version`、`.codex-plugin/plugin.json`）加两个 lockfile
+3. README 双语与 design docs、agents 提示词中的命令清单
+4. llmdoc dogfood 文档
+
+自动化只兜住一部分：`release.yml` 只核对五处版本数字一致，不会发现「skills 描述落后于 CLI 语义」这类漂移；skills 同步只能靠 change-set 纪律。
