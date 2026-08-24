@@ -104,7 +104,7 @@ function inspectLlmdocDirectory(llmdocDir: string): UpgradeReport {
       status: "dry_run",
       summary: "检测到 llmdoc/ 目录，但没有明确的 V2 或 V3 结构特征。",
       legacyPaths: [],
-      targetStructure: ["llmdoc/meta.json", "llmdoc/architecture.mdx", "llmdoc/<topic>/index.mdx"],
+      targetStructure: ["llmdoc/meta.json", "llmdoc/architecture.mdx", "llmdoc/<topic>/*.mdx (纯目录,无 index.mdx 入口节点)"],
       requiresRecorderSemanticMigration: false,
       notes: ["需要人工确认该目录是否为遗留知识面。"]
     };
@@ -114,7 +114,7 @@ function inspectLlmdocDirectory(llmdocDir: string): UpgradeReport {
     status: "dry_run",
     summary: "检测到 legacy/V2 结构，需要 Recorder 参与语义迁移到 V3。",
     legacyPaths,
-    targetStructure: ["llmdoc/meta.json", "llmdoc/architecture.mdx", "llmdoc/<topic>/index.mdx", "llmdoc/<topic>/*.mdx"],
+    targetStructure: ["llmdoc/meta.json", "llmdoc/architecture.mdx", "llmdoc/<topic>/*.mdx (纯目录,无 index.mdx 入口节点)"],
     requiresRecorderSemanticMigration: true,
     notes: [
       hasV3Meta ? "存在部分 V3 迹象，但 legacy 结构仍在，需要整理边界后再迁移。" : "未发现完整 V3 ledger，需要生成新的 meta.json baseline。",

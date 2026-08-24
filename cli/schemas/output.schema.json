@@ -903,6 +903,68 @@
           "minLength": 1
         }
       }
+    },
+    "initState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "documents",
+        "baselineRevision",
+        "next"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "success"
+        },
+        "documents": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "baselineRevision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "next": {
+          "type": "string"
+        }
+      }
+    },
+    "commit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "commits",
+        "updated"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "success",
+            "no_change"
+          ]
+        },
+        "commits": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "updated": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "baselineAdvanced": {
+          "type": "boolean"
+        }
+      }
     }
   }
 }

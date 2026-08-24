@@ -24,6 +24,8 @@ CLI 是 V3 的 Runtime 实体:所有确定性、可测试、重复出现的工�
 
 搜索索引缓存于 `.llmdoc-tmp/cache/`,按 mtime/revision 增量重建,删除可再生。不做 embedding。
 
+仓库根可选 `.llmdocignore`(每行一个 minimatch pattern,`#` 注释,`dir/` 自动展开为 `dir/**`):匹配路径不参与 unmapped/dirty 信号,用于本地运行时文件、数据库等非知识面路径。
+
 ### 2.2 状态与校验面
 
 | 命令 | 作用 |
@@ -32,6 +34,8 @@ CLI 是 V3 的 Runtime 实体:所有确定性、可测试、重复出现的工�
 | `llmdoc delta [--scope <topic\|path...>]` | 变更代码 → 受影响文档闭包 + unmapped paths + light/deep 建议信号(见 04) |
 | `llmdoc validate` | 全量校验:front matter schema、kind 合法、禁 index.mdx、层级深度(禁嵌套)、链接/requires 悬空、CodeRef path 存在、ledger 与文件树一致、体积告警。CI 与写入门控共用 |
 | `llmdoc fingerprint --update <path...|--all>` | 将指定文档的 `validatedRevision` 刷到当前 HEAD(update 成功后由 Recorder 调用;命名沿用惯例,实际记录 revision) |
+| `llmdoc init-state` | 首次生成 `meta.json` 台账骨架:全部文档 `validatedRevision: null` + 实测 convergence;init/upgrade 场景专用,拒绝覆盖已有台账 |
+| `llmdoc commit [-m] [--all] [--no-verify]` | **一体化收尾**:validate 门控 → 以 pathspec 提交 llmdoc 写集(不卷入用户 staged 的其他文件)→ fingerprint → meta 单独小 commit。消灭手工三步曲与 `--amend` 追尾陷阱 |
 
 ### 2.3 Hook 面(webhook 需要做的事全部收敛于此)
 

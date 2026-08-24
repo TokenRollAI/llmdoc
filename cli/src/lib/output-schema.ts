@@ -22,7 +22,9 @@ export type OutputSchemaName =
   | "upgrade"
   | "new"
   | "mv"
-  | "hook";
+  | "hook"
+  | "initState"
+  | "commit";
 
 type AjvConstructor = new (options: { allErrors: boolean; strict: boolean }) => {
   compile: (schema: unknown) => ValidateFunction;

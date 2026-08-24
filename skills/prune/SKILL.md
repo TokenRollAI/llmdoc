@@ -40,7 +40,7 @@ This command does not authorize source-code edits.
    - Run `npx --no-install llmdoc validate`.
    - Re-run `npx --no-install llmdoc prune --report` and compare document/token scale with the first report.
    - Confirm the surviving union of `code.paths` has not lost covered implementation paths.
-   - Commit the `llmdoc/` write-set as its own commit, run `npx --no-install llmdoc fingerprint --update <surviving paths...>`, then amend the `meta.json` change into that commit.
+   - Finalize with `npx --no-install llmdoc commit -m "<message>"`, which fingerprints the surviving docs and lands the `meta.json` follow-up commit automatically.
    - Report `success` and refresh convergence only when scale actually declines without coverage loss; otherwise repair, roll back, or report `no_change` as appropriate.
 
 ## State Invariants

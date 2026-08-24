@@ -771,4 +771,68 @@ code:
       await server.close();
     }
   });
+
+  test("init-state seeds a null-revision ledger and refuses to overwrite", async () => {
+    const rootDir = createFixture();
+    fs.rmSync(path.join(rootDir, "llmdoc", "meta.json"));
+
+    const seeded = await runCli(["--json", "init-state"], rootDir);
+    expect(seeded.exitCode).toBe(0);
+    const payload = JSON.parse(seeded.stdout) as { status: string; documents: number; next: string };
+    expect(payload.status).toBe("success");
+    expect(payload.documents).toBe(4);
+    const meta = readMeta(rootDir);
+    expect(meta.documents["api-client/retry-policy.mdx"].validatedRevision).toBeNull();
+
+    const refused = await runCli(["init-state"], rootDir);
+    expect(refused.exitCode).toBe(1);
+    expect(refused.stdout).toContain("已存在");
+  });
+
+  test("commit finalizes llmdoc writes as docs+meta commits with fingerprints", async () => {
+    const rootDir = createFixture();
+    fs.appendFileSync(path.join(rootDir, "llmdoc", "api-client", "retry-policy.mdx"), "\n新增一段稳定知识。\n");
+    // 用户 stage 的非 llmdoc 文件不得被卷入
+    writeRepoFile(rootDir, "src/unrelated.ts", "export const X = 1;\n");
+    stageFile(rootDir, "src/unrelated.ts");
+
+    const result = await runCli(["--json", "commit", "-m", "docs(llmdoc): test update"], rootDir);
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout) as { status: string; commits: string[]; updated: string[] };
+    expect(payload.status).toBe("success");
+    expect(payload.commits).toHaveLength(2);
+    expect(payload.updated).toEqual(["api-client/retry-policy.mdx"]);
+
+    const { spawnSync } = await import("node:child_process");
+    const staged = spawnSync("git", ["diff", "--cached", "--name-only"], { cwd: rootDir, encoding: "utf8" }).stdout;
+    expect(staged).toContain("src/unrelated.ts");
+    const lastTwo = spawnSync("git", ["log", "-2", "--name-only", "--pretty=%s"], { cwd: rootDir, encoding: "utf8" }).stdout;
+    expect(lastTwo).toContain("refresh fingerprints");
+    expect(lastTwo).not.toContain("src/unrelated.ts");
+
+    const again = await runCli(["commit"], rootDir);
+    expect(again.exitCode).toBe(0);
+    expect(again.stdout).toContain("no_change");
+  });
+
+  test("llmdocignore filters unmapped noise", async () => {
+    const rootDir = createFixture();
+    writeRepoFile(rootDir, "data/state.sqlite3", "binary-ish\n");
+    writeRepoFile(rootDir, "notes.local.md", "scratch\n");
+    writeRepoFile(rootDir, ".llmdocignore", "# local runtime files\ndata/\n*.local.md\n");
+
+    const status = await runCli(["--json", "status"], rootDir);
+    const payload = JSON.parse(status.stdout) as { unmapped: { dirty: string[] } };
+    expect(payload.unmapped.dirty).not.toContain("data/state.sqlite3");
+    expect(payload.unmapped.dirty).not.toContain("notes.local.md");
+    // .llmdocignore 本身是 untracked 的,不在忽略清单里则会出现——把它也忽略掉不是默认行为
+  });
+
+  test("validate warns on wikilink syntax", async () => {
+    const rootDir = createFixture();
+    fs.appendFileSync(path.join(rootDir, "llmdoc", "api-client", "retry-policy.mdx"), "\n另见 [[api-client/error-model]]。\n");
+    const result = await runCli(["validate"], rootDir);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("link.wikilink");
+  });
 });

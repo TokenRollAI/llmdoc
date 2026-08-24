@@ -34,8 +34,10 @@ export interface GrowthState {
 
 export function analyzeDelta(workspace: WorkspaceData, scope?: ScopeFilter): DeltaState {
   const git = readWorkspaceGitState(workspace);
+  const ignorePatterns = loadIgnorePatterns(workspace.rootDir);
+  const isSurface = (repoRelativePath: string): boolean => isImplementationSurfacePath(repoRelativePath, ignorePatterns);
   const scopedDocuments = applyScope(workspace.documents, scope);
-  const dirtyPaths = uniquePaths([...git.stagedPaths, ...git.unstagedPaths, ...git.untrackedPaths].filter(isImplementationSurfacePath));
+  const dirtyPaths = uniquePaths([...git.stagedPaths, ...git.unstagedPaths, ...git.untrackedPaths].filter(isSurface));
   const invalidRevisionDocuments: ParsedDocument[] = [];
   const invalidRevisionReasons: string[] = [];
   const changedPathsByRevision = new Map<string, string[]>();
@@ -68,7 +70,7 @@ export function analyzeDelta(workspace: WorkspaceData, scope?: ScopeFilter): Del
       const changedCommittedPaths =
         !revisionInvalid && git.headRevision && validatedRevision !== git.headRevision
           ? getChangedPathsForRevision(workspace.rootDir, validatedRevision, git.headRevision, changedPathsByRevision).filter(
-              (filePath) => isImplementationSurfacePath(filePath) && documentMatchesPath(document, filePath)
+              (filePath) => isSurface(filePath) && documentMatchesPath(document, filePath)
             )
           : [];
       const dirtyDocumentPaths = dirtyPaths.filter((filePath) => documentMatchesPath(document, filePath));
@@ -107,7 +109,7 @@ export function analyzeDelta(workspace: WorkspaceData, scope?: ScopeFilter): Del
 
   const needsReview = [...needsReviewMap.values()].sort((left, right) => left.llmdocPath.localeCompare(right.llmdocPath));
   const dirtyDocuments = directImpacts.filter((impact) => impact.dirtyPaths.length > 0).map((impact) => impact.document);
-  const baselineCommittedPaths = git.committedChangedPaths.filter(isImplementationSurfacePath);
+  const baselineCommittedPaths = git.committedChangedPaths.filter(isSurface);
   const unmappedCommittedPaths = baselineCommittedPaths.filter(
     (filePath) => !workspace.documents.some((document) => documentMatchesPath(document, filePath))
   );
@@ -219,8 +221,9 @@ export function updateMetaRevisions(input: {
   }
 
   const targetPaths = updateAll ? workspace.documents.map((document) => document.llmdocPath) : llmdocPaths;
-  const dirtyPaths = uniquePaths([...git.stagedPaths, ...git.unstagedPaths, ...git.untrackedPaths]).filter(
-    isImplementationSurfacePath
+  const ignorePatterns = loadIgnorePatterns(workspace.rootDir);
+  const dirtyPaths = uniquePaths([...git.stagedPaths, ...git.unstagedPaths, ...git.untrackedPaths]).filter((filePath) =>
+    isImplementationSurfacePath(filePath, ignorePatterns)
   );
   // 只有映射到某份文档 code.paths 的 dirty 变更才阻塞推进;
   // 无关的 untracked/dirty 文件不影响 revision 的真实性,不应拦路。
@@ -295,12 +298,40 @@ const NON_IMPLEMENTATION_BASENAMES = new Set([
   "go.sum"
 ]);
 
-function isImplementationSurfacePath(repoRelativePath: string): boolean {
+const ignorePatternsCache = new Map<string, string[]>();
+
+// .llmdocignore:仓库根的可选文件,每行一个 minimatch pattern(# 开头为注释),
+// 匹配的路径不参与 unmapped/dirty 信号(本地运行时文件、生成物等非知识面路径)。
+export function loadIgnorePatterns(rootDir: string): string[] {
+  const cached = ignorePatternsCache.get(rootDir);
+  if (cached) {
+    return cached;
+  }
+  const ignoreFile = `${rootDir}/.llmdocignore`;
+  let patterns: string[] = [];
+  try {
+    patterns = fs
+      .readFileSync(ignoreFile, "utf8")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith("#"))
+      .map((line) => line.replace(/^\.\//, "").replace(/\/$/, "/**"));
+  } catch {
+    patterns = [];
+  }
+  ignorePatternsCache.set(rootDir, patterns);
+  return patterns;
+}
+
+function isImplementationSurfacePath(repoRelativePath: string, ignorePatterns: string[] = []): boolean {
   if (repoRelativePath.startsWith("llmdoc/") || repoRelativePath.startsWith(".llmdoc-tmp/")) {
     return false;
   }
   const basename = repoRelativePath.split("/").pop() ?? repoRelativePath;
-  return !NON_IMPLEMENTATION_BASENAMES.has(basename);
+  if (NON_IMPLEMENTATION_BASENAMES.has(basename)) {
+    return false;
+  }
+  return !ignorePatterns.some((pattern) => matchesCodePathPattern(pattern, repoRelativePath));
 }
 
 function buildReverseRequires(documents: ParsedDocument[]): Map<string, ParsedDocument[]> {

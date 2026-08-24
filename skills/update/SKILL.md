@@ -41,9 +41,7 @@ This command does not authorize source-code edits.
    - Deep: `investigator` writes a scoped report first, then `recorder` rewrites the affected docs using that report plus the CLI evidence.
 
 4. Re-validate and finalize.
-   - Run `npx --no-install llmdoc validate`.
-   - Commit the `llmdoc/` write-set as its own commit before touching fingerprints; `validatedRevision` must point at a commit that actually contains the updated docs.
-   - After the commit, run `npx --no-install llmdoc fingerprint --update <paths...>` for scoped work or `npx --no-install llmdoc fingerprint --all` for a full-repository verification, then amend the resulting `meta.json` change into the same commit (`git commit --amend --no-edit -- llmdoc/`).
+   - Run `npx --no-install llmdoc commit -m "<message>"` (add `--all` for a full-repository verification, `--no-verify` in repos with heavy git hooks). It gates on validate, commits the `llmdoc/` write-set, refreshes fingerprints, and lands the `meta.json` change as a follow-up commit — never hand-roll this sequence or use `--amend` (it rewrites the hash fingerprints just recorded).
    - Re-check `npx --no-install llmdoc status` when you need a final stale/clean signal.
 
 5. Fold durable lessons into stable docs directly.

@@ -42,9 +42,8 @@ Stop instead of improvising when:
    - Create the V3 root singleton plus one-level topic directories; topics are plain directories with no `index.mdx` entry node.
 
 3. Validate before reporting success.
-   - Run `npx --no-install llmdoc validate`.
-   - Fix all schema, routing, and reference failures before finishing.
-   - Commit the bootstrap as one `llmdoc/` commit, then seed fingerprints with `npx --no-install llmdoc fingerprint --all` and amend the `meta.json` change into that commit.
+   - Seed the ledger with `npx --no-install llmdoc init-state` (writes meta.json with null revisions), then run `npx --no-install llmdoc validate` and fix all schema, routing, and reference failures.
+   - Finalize with `npx --no-install llmdoc commit --all -m "docs: bootstrap llmdoc"` — it commits the surface, brands fingerprints, and lands the meta follow-up commit in one step.
    - On a validation failure that cannot be repaired in-run, roll back the init write-set.
 
 ## State Invariants

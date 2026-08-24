@@ -211,6 +211,15 @@ export function validateWorkspace(workspace: WorkspaceData): ValidationIssue[] {
       });
     }
 
+    if (/\[\[[^\]\n]+\]\]/.test(stripMarkdownLiterals(document.body))) {
+      issues.push({
+        severity: "warning",
+        code: "link.wikilink",
+        path: document.repoPath,
+        message: "正文包含 [[wikilink]] 语法;llmdoc 不解析它,请改用标准 Markdown 相对链接。"
+      });
+    }
+
     for (const relationPath of document.frontmatter.relations?.requires ?? []) {
       const normalizedRelation = validateLlmdocRelativePath(relationPath);
       if (!normalizedRelation.ok) {

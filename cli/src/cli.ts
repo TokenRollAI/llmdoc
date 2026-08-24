@@ -159,6 +159,39 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
     });
 
   program
+    .command("init-state")
+    .description("首次生成 llmdoc/meta.json 台账骨架(validatedRevision 全部为 null)")
+    .action(async () => {
+      const { runInitState } = await import("./commands/init-state.js");
+      const rootDir = findProjectRoot(cwd);
+      output.push(writeOutput("initState", runInitState({ ...globalOptions, cwd: rootDir }), globalOptions.json));
+    });
+
+  program
+    .command("commit")
+    .description("一体化收尾:validate 门控 → 提交 llmdoc 写集 → fingerprint → meta 小 commit")
+    .option("-m, --message <message>", "docs commit message")
+    .option("--all", "fingerprint 全部文档并推进 baseline")
+    .option("--no-verify", "透传 git commit --no-verify(husky 等重钩子仓库)")
+    .action(async (commandOptions) => {
+      const { runCommit } = await import("./commands/commit.js");
+      const rootDir = findProjectRoot(cwd);
+      output.push(
+        writeOutput(
+          "commit",
+          runCommit({
+            ...globalOptions,
+            cwd: rootDir,
+            message: commandOptions.message,
+            all: commandOptions.all,
+            noVerify: commandOptions.verify === false
+          }),
+          globalOptions.json
+        )
+      );
+    });
+
+  program
     .command("prune")
     .description("输出只读收敛候选报告")
     .option("--report", "输出只读收敛报告")
