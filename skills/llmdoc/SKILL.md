@@ -8,7 +8,7 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit, WebSearch, WebFetch
 
 The operating protocol for V3 `llmdoc` projects. `llmdoc/` holds the architecture, constraints, and working agreements that source code does not cheaply give back; the CLI is how you reach them.
 
-Every command below runs as `npx -y @tokenroll/llmdoc <cmd>` (see [CLI Invocation](#cli-invocation)).
+Every command below runs as `npx -y @tokenroll/llmdoc <cmd>`; the CLI Invocation section holds the full rules.
 
 ## Retrieval Gate
 
@@ -22,7 +22,7 @@ Apply this gate before the first discovery action of a task, and again whenever 
 | Known topic or document kind | `index --topic <topic>` / `--kind <kind>` |
 | Bodies of documents already identified | `show <path...>` |
 
-What the gate stands in front of is broad native discovery: recursive or cross-directory exploration with Read, Grep, Glob, or shell, outside a working set llmdoc has already narrowed.
+The gate guards broad native discovery: recursive or cross-directory exploration with Read, Grep, Glob, or shell outside a working set llmdoc has already narrowed.
 
 Once llmdoc has narrowed that working set, native tools own the exact facts — source text, line numbers, test behavior, counts, git state. The knowledge surface deliberately does not duplicate those.
 

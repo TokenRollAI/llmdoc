@@ -62,5 +62,5 @@ Always report:
 
 - the `prune --report` signal that justified the run
 - which docs were merged, rewritten, or deleted
-- the `validate` result
+- the `validate` and `commit` results
 - whether convergence improved without losing coverage

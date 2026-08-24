@@ -23,11 +23,11 @@ npm install --global @tokenroll/llmdoc
 llmdoc tree
 ```
 
-This optional machine-wide install does not modify the consumer repository's `package.json` or lockfile. Append an exact version to the package name when needed, for example `npm install --global @tokenroll/llmdoc@3.1.1`.
+This optional machine-wide install does not modify the consumer repository's `package.json` or lockfile. Append an exact version to the package name when needed, for example `npm install --global @tokenroll/llmdoc@3.2.0`.
 
 V3 assumes the CLI is always present. Navigation, search, validation, delta detection, hook signals, and workflow entrypoints come from `npx @tokenroll/llmdoc`.
 
-> Always invoke with the full scoped name `npx @tokenroll/llmdoc <cmd>` — never a bare `npx llmdoc`, which would resolve to an unrelated third-party npm package. `npx -y` fetches a missing CLI into the npm cache without modifying the consumer repository's `package.json` or lockfile. When a workflow needs a fixed version, pin it in the package spec, for example `npx -y @tokenroll/llmdoc@3.1.1 tree`; do not install llmdoc as a project dependency.
+> Always invoke with the full scoped name `npx @tokenroll/llmdoc <cmd>` — never a bare `npx llmdoc`, which would resolve to an unrelated third-party npm package. `npx -y` fetches a missing CLI into the npm cache without modifying the consumer repository's `package.json` or lockfile. When a workflow needs a fixed version, pin it in the package spec, for example `npx -y @tokenroll/llmdoc@3.2.0 tree`; do not install llmdoc as a project dependency.
 
 
 ## Public Surface

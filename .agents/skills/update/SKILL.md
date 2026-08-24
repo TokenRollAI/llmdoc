@@ -40,7 +40,7 @@ This command does not authorize source-code edits.
    - Light: `recorder` updates the impacted docs directly from `delta`, `context`, `search`, and targeted `show` reads.
    - Deep: `investigator` writes a scoped report first, then `recorder` rewrites the affected docs using that report plus the CLI evidence.
 
-4. Re-validate and finalize.
+4. Finalize.
    - Run `commit -m "<message>"` (add `--all` for a full-repository verification, `--no-verify` in repos with heavy git hooks). It gates on validate, commits the `llmdoc/` write-set, refreshes fingerprints, and lands the `meta.json` change as a follow-up commit — never hand-roll this sequence out of `validate` plus `fingerprint`, and never `--amend` (that rewrites the hash fingerprints just recorded).
    - Re-check `status` when you need a final stale/clean signal.
 
@@ -68,5 +68,4 @@ Always report:
 - the `status` and `delta` signals used
 - any investigation report path
 - the stable docs changed by `recorder`
-- the `validate` result
-- the `fingerprint` result or why it was skipped
+- the `commit` result — validate gate, fingerprint refresh, and the meta follow-up commit — or why finalization was skipped

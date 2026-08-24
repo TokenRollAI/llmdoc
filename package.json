@@ -1,6 +1,6 @@
 {
   "name": "@tokenroll/llmdoc-repository",
-  "version": "3.1.1",
+  "version": "3.2.0",
   "private": true,
   "description": "Development workspace for the llmdoc V3 CLI and plugin surfaces",
   "scripts": {

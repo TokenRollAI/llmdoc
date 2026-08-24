@@ -23,11 +23,11 @@ npm install --global @tokenroll/llmdoc
 llmdoc tree
 ```
 
-这个可选的本机安装方式不会修改业务项目的 `package.json` 或 lockfile。需要固定版本时直接追加版本号，例如 `npm install --global @tokenroll/llmdoc@3.1.1`。
+这个可选的本机安装方式不会修改业务项目的 `package.json` 或 lockfile。需要固定版本时直接追加版本号，例如 `npm install --global @tokenroll/llmdoc@3.2.0`。
 
 V3 假定 CLI 始终存在。导航、检索、校验、delta 检测、hook 信号和工作流入口都来自 `npx @tokenroll/llmdoc`。
 
-> 一律使用完整 scoped 名调用：`npx @tokenroll/llmdoc <cmd>`，永远不要用裸的 `npx llmdoc`——后者会解析到 npm 上一个无关的第三方包。`npx -y` 会把缺失的 CLI 获取到 npm 缓存，不会修改业务项目的 `package.json` 或 lockfile。需要固定版本时直接写在包名后，例如 `npx -y @tokenroll/llmdoc@3.1.1 tree`；不要把 llmdoc 安装为项目依赖。
+> 一律使用完整 scoped 名调用：`npx @tokenroll/llmdoc <cmd>`，永远不要用裸的 `npx llmdoc`——后者会解析到 npm 上一个无关的第三方包。`npx -y` 会把缺失的 CLI 获取到 npm 缓存，不会修改业务项目的 `package.json` 或 lockfile。需要固定版本时直接写在包名后，例如 `npx -y @tokenroll/llmdoc@3.2.0 tree`；不要把 llmdoc 安装为项目依赖。
 
 
 ## 公开接口

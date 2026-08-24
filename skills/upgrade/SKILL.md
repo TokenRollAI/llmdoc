@@ -47,8 +47,9 @@ This command should run against a rollback-safe git state.
    - Drop obsolete migration-only material instead of preserving it as dead weight.
 
 4. Validate before reporting success.
-   - Run `validate`.
-   - Seed the ledger with `init-state` when no `llmdoc/meta.json` survives the migration, then finalize with `commit --all -m "<message>"`.
+   - Seed the ledger with `init-state` when no `llmdoc/meta.json` survives the migration; `validate` cannot pass without a ledger.
+   - Run `validate` and repair every failure it reports.
+   - Finalize with `commit --all -m "<message>"`.
 
 ## State Invariants
 
@@ -70,4 +71,4 @@ Always report:
 - the `upgrade` result
 - the V3 surfaces created
 - the legacy files deleted or intentionally dropped
-- the `validate` result
+- the `validate` and `commit` results

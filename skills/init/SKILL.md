@@ -65,5 +65,5 @@ Always report:
 - whether init ran or was refused
 - the investigation report path or paths used
 - the topics and stable docs created
-- the `validate` result
+- the `validate` and `commit` results
 - any material gaps left for later `/llmdoc:update`
