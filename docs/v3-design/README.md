@@ -11,7 +11,7 @@ llmdoc 是工程的**持久化外置上下文**:把代码里无法低成本恢�
 ## 设计原则
 
 1. **轻量优先**:不引入重机械。Markdown + YAML front matter 是基座,MDX 只作最小增强;事务靠 git,不自建 snapshot/journal;检索靠词法,必要时 grep 也能用。
-2. **CLI 即 Runtime,且是强制依赖**:所有确定性工作(索引、校验、delta、检索、hook 信号)由 npm 包 `@tokenroll/llmdoc` 承担,该包暴露可执行文件 `llmdoc`;判断性工作(写什么知识、怎么组织)留给模型;prompt 只描述"什么时候调哪个命令"。使用环境必须先安装 `@tokenroll/llmdoc`,并能运行解析到该本地 bin 的 `npx llmdoc`——正因如此,全局地图可以由 `llmdoc tree` 动态生成,不再需要手工维护的根 index。
+2. **CLI 即 Runtime,且是强制依赖**:所有确定性工作(索引、校验、delta、检索、hook 信号)由 npm 包 `@tokenroll/llmdoc` 承担,该包暴露可执行文件 `llmdoc`;判断性工作(写什么知识、怎么组织)留给模型;prompt 只描述"什么时候调哪个命令"。使用环境必须先安装 `@tokenroll/llmdoc`,并能运行解析到该本地 bin 的 `npx @tokenroll/llmdoc`——正因如此,全局地图可以由 `llmdoc tree` 动态生成,不再需要手工维护的根 index。
 3. **结构即知识**:目录层级本身承载分类学,固定两层(根单例 + topic folder);topic 是纯目录,没有任何静态入口节点——全局与 topic 级摘要都由 CLI 动态聚合。
 4. **文档本身仍是纯粹的 Markdown**:MDX 只作最小增强,`cat` 单份文档依然完全可读;但导航、检索、校验依赖 CLI,不为无 CLI 环境做设计妥协。
 5. **git-native**:路径即文档 ID,变更检测锚定 git revision,回滚就是 `git checkout`。
@@ -43,7 +43,7 @@ llmdoc 是工程的**持久化外置上下文**:把代码里无法低成本恢�
 
 ## 已拍板的关键决策
 
-- **`@tokenroll/llmdoc` 是强制依赖**:npm 包名是 `@tokenroll/llmdoc`,bin 名是 `llmdoc`;所有使用环境必须先安装该包,再运行 `npx llmdoc`(Node ≥ 18)。
+- **`@tokenroll/llmdoc` 是强制依赖**:npm 包名是 `@tokenroll/llmdoc`,bin 名是 `llmdoc`;所有使用环境必须先安装该包,再运行 `npx @tokenroll/llmdoc`(Node ≥ 18)。
 - Markdown + YAML front matter 为基座;使用标准 MDX 语法但组件白名单仅 `<CodeRef>`,且为可选增强。
 - 路径即文档 ID。
 - `meta.json` 单文件,只存有效性台账(方案 A);聚合索引(方案 B)留待后续 benchmark。

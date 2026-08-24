@@ -54,6 +54,6 @@ code:
 update 成功前至少要有：
 
 - 受影响文档已经改写完
-- 用 `npx --no-install llmdoc commit -m "<message>"` 收尾（`--all` 做全仓验证并推进 baseline）：它内置 validate 门控、只按 pathspec 提交 `llmdoc/`、自动 fingerprint 并把 `meta.json` 落成后续小 commit
+- 用 `npx @tokenroll/llmdoc commit -m "<message>"` 收尾（`--all` 做全仓验证并推进 baseline）：它内置 validate 门控、只按 pathspec 提交 `llmdoc/`、自动 fingerprint 并把 `meta.json` 落成后续小 commit
 
 结果状态固定只有五个：`success`、`no_change`、`dry_run`、`incomplete`、`failed`。不要在 stable docs 里发明第六种“半成功”。

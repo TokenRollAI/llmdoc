@@ -24,7 +24,7 @@ code:
 - `.claude-plugin/*.json` 提供插件元数据与 marketplace 入口
 - `skills/init|update|prune|upgrade/SKILL.md` 是四个显式工作流的薄壳 SOP
 - `agents/investigator.md` 与 `agents/recorder.md` 是角色契约
-- 根 `hooks/hooks.json` 只负责把生命周期事件转给 `npx --no-install llmdoc hook ...`
+- 根 `hooks/hooks.json` 只负责把生命周期事件转给 `npx @tokenroll/llmdoc hook ...`
 
 这些文件描述“何时、为什么、授权到哪里”，而不是重写 CLI 的算法。
 

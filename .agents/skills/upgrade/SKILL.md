@@ -35,7 +35,7 @@ This command should run against a rollback-safe git state.
    - Use `investigator` to identify the current legacy structure, surviving durable knowledge, and obsolete material.
 
 2. Run the deterministic CLI migration or diagnostic path.
-   - Call `npx --no-install llmdoc upgrade`.
+   - Call `npx @tokenroll/llmdoc upgrade`.
    - Use CLI diagnostics as the primary migration truth for what was transformed, skipped, or rejected.
 
 3. Finalize with `recorder`.
@@ -44,7 +44,7 @@ This command should run against a rollback-safe git state.
    - Drop obsolete migration-only material instead of preserving it as dead weight.
 
 4. Validate before reporting success.
-   - Run `npx --no-install llmdoc validate`.
+   - Run `npx @tokenroll/llmdoc validate`.
 
 ## State Invariants
 
@@ -63,7 +63,7 @@ This command should run against a rollback-safe git state.
 Always report:
 
 - the legacy surfaces consumed
-- the `npx --no-install llmdoc upgrade` result
+- the `npx @tokenroll/llmdoc upgrade` result
 - the V3 surfaces created
 - the legacy files deleted or intentionally dropped
 - the `validate` result

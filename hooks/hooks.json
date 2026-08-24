@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no-install llmdoc hook session-start",
+            "command": "npx --no-install @tokenroll/llmdoc hook session-start",
             "additionalContextLimit": 1200
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no-install llmdoc hook stop"
+            "command": "npx --no-install @tokenroll/llmdoc hook stop"
           }
         ]
       }
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no-install llmdoc hook compact"
+            "command": "npx --no-install @tokenroll/llmdoc hook compact"
           }
         ]
       }

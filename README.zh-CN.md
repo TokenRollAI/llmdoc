@@ -7,7 +7,7 @@
 ## 强制依赖
 
 - Node.js 18 或更新版本
-- 先安装 `@tokenroll/llmdoc`，再运行 `npx llmdoc`
+- 先安装 `@tokenroll/llmdoc`，再运行 `npx @tokenroll/llmdoc`
 - git 作为有效性、delta 与回滚语义的基础
 
 推荐把 CLI 装进项目依赖，例如：
@@ -16,9 +16,10 @@
 npm install --save-dev @tokenroll/llmdoc
 ```
 
-V3 假定 CLI 始终存在。导航、检索、校验、delta 检测、hook 信号和工作流入口都来自 `npx llmdoc`。
+V3 假定 CLI 始终存在。导航、检索、校验、delta 检测、hook 信号和工作流入口都来自 `npx @tokenroll/llmdoc`。
 
-> 警告：`npx llmdoc` 解析的是 `@tokenroll/llmdoc` 安装到本地的 bin。不要在未安装该包的项目里裸跑——npx 会转而下载并执行 npm 上恰好叫 `llmdoc` 的无关第三方包。本插件中所有 agent 提示词与 hooks 均使用 `npx --no-install llmdoc`，正是为了杜绝这一点。
+> 一律使用完整 scoped 名调用：`npx @tokenroll/llmdoc <cmd>`，永远不要用裸的 `npx llmdoc`——在未安装本包的环境里，裸名会解析到 npm 上一个无关的第三方包。使用 scoped 名则不存在任何错包风险：npx 会运行本地已安装副本，缺失时自动获取正确的包。hooks 使用 `npx --no-install @tokenroll/llmdoc`，保证离线安全且 fail-open。
+
 
 ## 公开接口
 
@@ -27,7 +28,7 @@ V3 假定 CLI 始终存在。导航、检索、校验、delta 检测、hook 信�
   - `skills/` (operating skill + explicit workflow skills)
   - `agents/`
   - `hooks/hooks.json`
-- CLI runtime：`npx llmdoc <command>`
+- CLI runtime：`npx @tokenroll/llmdoc <command>`
 - 显式工作流：
   - `init`
   - `update`
@@ -37,7 +38,7 @@ V3 假定 CLI 始终存在。导航、检索、校验、delta 检测、hook 信�
   - `investigator`：把证据调查写入 `.llmdoc-tmp/investigations/`
   - `recorder`：唯一允许写入 tracked `llmdoc/` 知识和 `llmdoc/meta.json` 的角色
 
-Claude 是唯一手工维护的准源。Codex 插件表面由它通过 ACPlugin 转换生成。其他平台只需要一份精简 `AGENTS.md` 加 `npx llmdoc`。
+Claude 是唯一手工维护的准源。Codex 插件表面由它通过 ACPlugin 转换生成。其他平台只需要一份精简 `AGENTS.md` 加 `npx @tokenroll/llmdoc`。
 
 ## 知识模型
 
@@ -64,22 +65,22 @@ tracked 有效性记录在 `llmdoc/meta.json`：
 
 | 命令 | 作用 |
 |---|---|
-| `npx llmdoc tree` | 动态根地图，列出根单例和 topics |
-| `npx llmdoc index [--topic ...] [--kind ...]` | 输出文档发现用的 front matter 投影 |
-| `npx llmdoc show <path...>` | 读取指定文档正文 |
-| `npx llmdoc search <query>` | 在知识层做词法检索 |
-| `npx llmdoc context --files <src...>` | 从源码文件反查推荐阅读文档 |
-| `npx llmdoc status` | 输出当前有效性、baseline、dirty 与 growth 信号 |
-| `npx llmdoc delta` | 从代码变更推导受影响文档闭包 |
-| `npx llmdoc validate` | 校验 schema、结构、关系、链接与 code paths |
-| `npx llmdoc fingerprint --update <path...> \| --all` | 刷新 `llmdoc/meta.json` 中的 validated revisions |
-| `npx llmdoc new <path> --kind <kind>` | 脚手架生成新的 V3 文档 |
-| `npx llmdoc mv <from> <to>` | 移动文档并更新引用 |
-| `npx llmdoc prune --report` | 输出收敛报告但不写文档 |
-| `npx llmdoc upgrade` | 显式的 V2 到 V3 迁移入口 |
-| `npx --no-install llmdoc hook session-start` | 给宿主提供启动信号 |
-| `npx --no-install llmdoc hook stop` | 给宿主提供停止时提醒信号 |
-| `npx --no-install llmdoc hook compact` | 输出 compact 状态 |
+| `npx @tokenroll/llmdoc tree` | 动态根地图，列出根单例和 topics |
+| `npx @tokenroll/llmdoc index [--topic ...] [--kind ...]` | 输出文档发现用的 front matter 投影 |
+| `npx @tokenroll/llmdoc show <path...>` | 读取指定文档正文 |
+| `npx @tokenroll/llmdoc search <query>` | 在知识层做词法检索 |
+| `npx @tokenroll/llmdoc context --files <src...>` | 从源码文件反查推荐阅读文档 |
+| `npx @tokenroll/llmdoc status` | 输出当前有效性、baseline、dirty 与 growth 信号 |
+| `npx @tokenroll/llmdoc delta` | 从代码变更推导受影响文档闭包 |
+| `npx @tokenroll/llmdoc validate` | 校验 schema、结构、关系、链接与 code paths |
+| `npx @tokenroll/llmdoc fingerprint --update <path...> \| --all` | 刷新 `llmdoc/meta.json` 中的 validated revisions |
+| `npx @tokenroll/llmdoc new <path> --kind <kind>` | 脚手架生成新的 V3 文档 |
+| `npx @tokenroll/llmdoc mv <from> <to>` | 移动文档并更新引用 |
+| `npx @tokenroll/llmdoc prune --report` | 输出收敛报告但不写文档 |
+| `npx @tokenroll/llmdoc upgrade` | 显式的 V2 到 V3 迁移入口 |
+| `npx @tokenroll/llmdoc hook session-start` | 给宿主提供启动信号 |
+| `npx @tokenroll/llmdoc hook stop` | 给宿主提供停止时提醒信号 |
+| `npx @tokenroll/llmdoc hook compact` | 输出 compact 状态 |
 
 ## 工作流语义
 
@@ -131,10 +132,10 @@ tracked 有效性记录在 `llmdoc/meta.json`：
 
 日常使用以 CLI 为入口：
 
-1. `npx llmdoc tree`
-2. 用 `npx llmdoc index --topic <t>` 看文档元数据
-3. 用 `npx llmdoc context --files ...` 或 `npx llmdoc search ...`
-4. 仅对真正需要的文档执行 `npx llmdoc show ...`
+1. `npx @tokenroll/llmdoc tree`
+2. 用 `npx @tokenroll/llmdoc index --topic <t>` 看文档元数据
+3. 用 `npx @tokenroll/llmdoc context --files ...` 或 `npx @tokenroll/llmdoc search ...`
+4. 仅对真正需要的文档执行 `npx @tokenroll/llmdoc show ...`
 
 V3 不再保留 V2 的 startup pack、根路由文档、`worker`、`reflector` 或 `sync.md` 契约。CLI 本身就是入口。
 
@@ -151,15 +152,15 @@ V3 不再保留 V2 的 startup pack、根路由文档、`worker`、`reflector` �
 
 ### Codex
 
-Codex 支持来自转换后的 `.codex-plugin/` 表面。插件结构和转换约束以 OpenAI 官方 Codex 插件文档为准：
+按[官方插件文档](https://developers.openai.com/plugins/build/plugins)把本仓库添加为 plugin marketplace 源，然后在 Plugins Directory 中安装 `llmdoc`：
 
-- https://developers.openai.com/codex/plugins
-- https://developers.openai.com/codex/plugins/build
-- https://developers.openai.com/codex/subagents
-- https://developers.openai.com/codex/hooks
+```bash
+codex plugin marketplace add TokenRollAI/llmdoc
+```
 
-这里不提供手写 Codex 安装命令。Codex 打包应由 Claude 表面通过 ACPlugin 转换得到。
-Codex 会要求用户先审查并信任非托管的插件 hook；安装后可用 `/hooks` 查看并确认。
+marketplace 目录是 `.agents/plugins/marketplace.json`；插件 manifest 是 `.codex-plugin/plugin.json`，skills 位于 `.agents/skills/`，hooks 在默认位置 `hooks/hooks.json`。Codex 打包由 Claude 表面经 ACPlugin 转换生成，请勿手工编辑。
+
+Codex 要求用户在非托管插件 hooks 运行前审查并信任它们；安装后用 `/hooks` 检查。
 
 ### 本仓库开发验证
 
@@ -214,8 +215,8 @@ Claude Code 与 Codex 用户由插件承担这一切（hooks、operating skill�
 
 本项目使用 llmdoc V3 作为持久化工程上下文。
 
-- 必须已安装 `@tokenroll/llmdoc`；一律以 `npx --no-install llmdoc ...` 调用。
-- 大范围探索前先 `npx --no-install llmdoc tree`，再按需 `index --topic`、
+- 必须已安装 `@tokenroll/llmdoc`；一律以 `npx @tokenroll/llmdoc ...` 调用。
+- 大范围探索前先 `npx @tokenroll/llmdoc tree`，再按需 `index --topic`、
   `context --files`、`search`，最后才用 `show` 读正文。
 - 只读当前任务需要的内容；相关性由文档 description 判断。
 - `init` / `update` / `prune` / `upgrade` 是显式工作流：可以建议、须经用户

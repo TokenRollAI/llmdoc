@@ -4,8 +4,8 @@
 
 CLI 是 V3 的 Runtime 实体:所有确定性、可测试、重复出现的工作从 prompt 移入 CLI。模型只负责判断(读什么、写什么知识),CLI 负责机械(扫描、索引、校验、diff、检索、hook 信号)。
 
-- **技术栈**:TypeScript,Node ≥ 18,npm 包名 `@tokenroll/llmdoc`,唯一 bin 名 `llmdoc`;使用环境安装该包后,默认以 `npx llmdoc <cmd>` 调用(MDX/remark 生态只有 JS 是一等公民)。
-- **强制依赖**:所有使用 llmdoc 的环境必须先安装 `@tokenroll/llmdoc`,并确保 `npx llmdoc` 解析到其本地 bin。这是硬性要求——正因为 CLI 必定在场,V3 才能砍掉手写的根 index,把全局地图交给 `tree` 动态生成。单份文档仍是纯粹的 Markdown(`cat` 可读),但导航、检索、校验不为无 CLI 环境做设计妥协。
+- **技术栈**:TypeScript,Node ≥ 18,npm 包名 `@tokenroll/llmdoc`,唯一 bin 名 `llmdoc`;使用环境安装该包后,默认以 `npx @tokenroll/llmdoc <cmd>` 调用(MDX/remark 生态只有 JS 是一等公民)。
+- **强制依赖**:所有使用 llmdoc 的环境必须先安装 `@tokenroll/llmdoc`,并确保 `npx @tokenroll/llmdoc` 解析到其本地 bin。这是硬性要求——正因为 CLI 必定在场,V3 才能砍掉手写的根 index,把全局地图交给 `tree` 动态生成。单份文档仍是纯粹的 Markdown(`cat` 可读),但导航、检索、校验不为无 CLI 环境做设计妥协。
 - **双输出**:默认输出面向 agent 的 token 精简文本;`--json` 输出机器可读结构。
 - **预算与分页**:批量输出带条数与预估 token 预算,超限返回 continuation cursor,**不静默截断**。
 - **安全**:只接受仓库内规范化相对路径,拒绝 `..` 越界与逃逸 symlink;结构化输出过 schema 校验。

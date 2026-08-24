@@ -17,7 +17,7 @@ llmdoc-repository/                  # 根 = 标准 Claude Code plugin
 │   └── upgrade/SKILL.md            # disable-model-invocation: true,仅显式调用
 ├── agents/                         # investigator.md / recorder.md(角色契约)
 ├── hooks/
-│   └── hooks.json                  # SessionStart/Stop/PreCompact → npx llmdoc hook *
+│   └── hooks.json                  # SessionStart/Stop/PreCompact → npx @tokenroll/llmdoc hook *
 ├── cli/                            # npm 包 @tokenroll/llmdoc,暴露 bin llmdoc(Runtime 实体)
 │   ├── src/
 │   ├── schemas/                    # front matter / meta.json 的 JSON Schema(事实源)
@@ -47,7 +47,7 @@ llmdoc-repository/                  # 根 = 标准 Claude Code plugin
 2. Codex 表面(`.codex-plugin/` + skills 化包装)由 **ACPlugin**(插件互转项目)从 Claude 表面转换生成,本仓库不自建 generate/verify 管线;
 3. 配一份 parity checklist(命令集、授权语义、hook 行为逐条对照),转换结果按 checklist 抽验,防行为漂移;
 4. Codex 当前支持 project-scoped custom agents；保留 ACPlugin 从两个 Claude 角色契约生成的 `.codex/agents/*.toml`,但不手工维护第二份角色文本,也不在安装后另行改写用户项目;
-5. 其他平台(Cursor、Gemini CLI 等)不做插件:README 提供一段 AGENTS.md 配方 + `npx llmdoc`(CLI 是强制依赖也是跨平台契约,插件只是发行渠道)。
+5. 其他平台(Cursor、Gemini CLI 等)不做插件:README 提供一段 AGENTS.md 配方 + `npx @tokenroll/llmdoc`(CLI 是强制依赖也是跨平台契约,插件只是发行渠道)。
 
 共同约束:
 

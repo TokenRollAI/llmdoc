@@ -7,7 +7,7 @@
 ## Requirements
 
 - Node.js 18 or newer
-- install `@tokenroll/llmdoc` before running `npx llmdoc`
+- install `@tokenroll/llmdoc` before running `npx @tokenroll/llmdoc`
 - git for validity, delta, and rollback semantics
 
 Recommended project-local install:
@@ -16,9 +16,10 @@ Recommended project-local install:
 npm install --save-dev @tokenroll/llmdoc
 ```
 
-V3 assumes the CLI is always present. Navigation, search, validation, delta detection, hook signals, and workflow entrypoints come from `npx llmdoc`.
+V3 assumes the CLI is always present. Navigation, search, validation, delta detection, hook signals, and workflow entrypoints come from `npx @tokenroll/llmdoc`.
 
-> Warning: `npx llmdoc` resolves the **local** bin installed by `@tokenroll/llmdoc`. Do not run it in a project that has not installed the package — npx would then download and execute an unrelated third-party package that happens to be named `llmdoc` on npm. Agent-facing prompts and hooks in this plugin use `npx --no-install llmdoc` for exactly this reason.
+> Always invoke with the full scoped name `npx @tokenroll/llmdoc <cmd>` — never a bare `npx llmdoc`, which would resolve to an unrelated third-party npm package in environments where this package is not installed. With the scoped name there is no wrong-package risk: npx runs the locally installed copy, or fetches the correct package if missing. Hooks use `npx --no-install @tokenroll/llmdoc` so they stay offline-safe and fail open.
+
 
 ## Public Surface
 
@@ -27,7 +28,7 @@ V3 assumes the CLI is always present. Navigation, search, validation, delta dete
   - `skills/` (operating skill + explicit workflow skills)
   - `agents/`
   - `hooks/hooks.json`
-- CLI runtime: `npx llmdoc <command>`
+- CLI runtime: `npx @tokenroll/llmdoc <command>`
 - Explicit workflows:
   - `init`
   - `update`
@@ -37,7 +38,7 @@ V3 assumes the CLI is always present. Navigation, search, validation, delta dete
   - `investigator`: gathers evidence into `.llmdoc-tmp/investigations/`
   - `recorder`: the only writer of tracked `llmdoc/` knowledge and `llmdoc/meta.json`
 
-Claude is the canonical authoring surface. Codex packaging is generated from that surface through ACPlugin conversion. Other platforms use a thin `AGENTS.md` recipe plus `npx llmdoc`.
+Claude is the canonical authoring surface. Codex packaging is generated from that surface through ACPlugin conversion. Other platforms use a thin `AGENTS.md` recipe plus `npx @tokenroll/llmdoc`.
 
 ## Knowledge Model
 
@@ -64,22 +65,22 @@ Temporary process records live under `.llmdoc-tmp/` and are not part of tracked 
 
 | Command | Purpose |
 |---|---|
-| `npx llmdoc tree` | dynamic root map of root singletons and topics |
-| `npx llmdoc index [--topic ...] [--kind ...]` | front-matter projection for document discovery |
-| `npx llmdoc show <path...>` | read selected document bodies |
-| `npx llmdoc search <query>` | lexical search across knowledge |
-| `npx llmdoc context --files <src...>` | map source files to recommended docs |
-| `npx llmdoc status` | current validity, baseline, dirty, and growth signals |
-| `npx llmdoc delta` | changed code to impacted-doc closure |
-| `npx llmdoc validate` | schema, structure, relation, link, and code-path validation |
-| `npx llmdoc fingerprint --update <path...> \| --all` | refresh validated revisions in `llmdoc/meta.json` |
-| `npx llmdoc new <path> --kind <kind>` | scaffold a new V3 doc |
-| `npx llmdoc mv <from> <to>` | move a doc and update references |
-| `npx llmdoc prune --report` | convergence report without writing docs |
-| `npx llmdoc upgrade` | explicit V2 to V3 migration entrypoint |
-| `npx --no-install llmdoc hook session-start` | startup signal for hosts |
-| `npx --no-install llmdoc hook stop` | stop-time reminder signal |
-| `npx --no-install llmdoc hook compact` | compaction-state emission |
+| `npx @tokenroll/llmdoc tree` | dynamic root map of root singletons and topics |
+| `npx @tokenroll/llmdoc index [--topic ...] [--kind ...]` | front-matter projection for document discovery |
+| `npx @tokenroll/llmdoc show <path...>` | read selected document bodies |
+| `npx @tokenroll/llmdoc search <query>` | lexical search across knowledge |
+| `npx @tokenroll/llmdoc context --files <src...>` | map source files to recommended docs |
+| `npx @tokenroll/llmdoc status` | current validity, baseline, dirty, and growth signals |
+| `npx @tokenroll/llmdoc delta` | changed code to impacted-doc closure |
+| `npx @tokenroll/llmdoc validate` | schema, structure, relation, link, and code-path validation |
+| `npx @tokenroll/llmdoc fingerprint --update <path...> \| --all` | refresh validated revisions in `llmdoc/meta.json` |
+| `npx @tokenroll/llmdoc new <path> --kind <kind>` | scaffold a new V3 doc |
+| `npx @tokenroll/llmdoc mv <from> <to>` | move a doc and update references |
+| `npx @tokenroll/llmdoc prune --report` | convergence report without writing docs |
+| `npx @tokenroll/llmdoc upgrade` | explicit V2 to V3 migration entrypoint |
+| `npx @tokenroll/llmdoc hook session-start` | startup signal for hosts |
+| `npx @tokenroll/llmdoc hook stop` | stop-time reminder signal |
+| `npx @tokenroll/llmdoc hook compact` | compaction-state emission |
 
 ## Workflow Semantics
 
@@ -131,10 +132,10 @@ All explicit workflows report one exact result name:
 
 Daily use is CLI-first:
 
-1. `npx llmdoc tree`
-2. run `npx llmdoc index --topic <t>` for document metadata
-3. use `npx llmdoc context --files ...` or `npx llmdoc search ...`
-4. use `npx llmdoc show ...` only for the documents that matter
+1. `npx @tokenroll/llmdoc tree`
+2. run `npx @tokenroll/llmdoc index --topic <t>` for document metadata
+3. use `npx @tokenroll/llmdoc context --files ...` or `npx @tokenroll/llmdoc search ...`
+4. use `npx @tokenroll/llmdoc show ...` only for the documents that matter
 
 There is no V2 startup pack, root router document, worker, reflector, or `sync.md` contract in V3. The CLI is the entrypoint.
 
@@ -151,14 +152,14 @@ Repository-verified plugin installation entrypoint:
 
 ### Codex
 
-Codex support comes from the converted `.codex-plugin/` surface. The plugin structure and conversion constraints are documented in the official OpenAI Codex plugin docs:
+Add this repository as a plugin marketplace source, then install `llmdoc` from the Plugins Directory (per the [official plugin docs](https://developers.openai.com/plugins/build/plugins)):
 
-- https://developers.openai.com/codex/plugins
-- https://developers.openai.com/codex/plugins/build
-- https://developers.openai.com/codex/subagents
-- https://developers.openai.com/codex/hooks
+```bash
+codex plugin marketplace add TokenRollAI/llmdoc
+```
 
-This repository does not publish hand-written Codex install commands here. Codex packaging is expected to come from the Claude surface through ACPlugin conversion.
+The marketplace catalog is `.agents/plugins/marketplace.json`; the plugin manifest is `.codex-plugin/plugin.json` with skills under `.agents/skills/` and hooks at the default `hooks/hooks.json` location. Codex packaging is generated from the Claude surface through ACPlugin conversion — do not hand-edit it.
+
 Codex requires users to review and trust non-managed plugin hooks before they run; inspect them with `/hooks` after installation.
 
 ### Repository Development
@@ -214,8 +215,8 @@ Claude Code and Codex users get all of this from the plugin (hooks, operating sk
 
 This project uses llmdoc V3 as persistent engineering context.
 
-- `@tokenroll/llmdoc` must be installed; call the CLI as `npx --no-install llmdoc ...`.
-- Before broad exploration, start from `npx --no-install llmdoc tree`, then
+- `@tokenroll/llmdoc` must be installed; call the CLI as `npx @tokenroll/llmdoc ...`.
+- Before broad exploration, start from `npx @tokenroll/llmdoc tree`, then
   `index --topic`, `context --files`, `search`, and read bodies last with `show`.
 - Read only what the current task needs; document descriptions decide relevance.
 - `init` / `update` / `prune` / `upgrade` are explicit workflows: suggest them

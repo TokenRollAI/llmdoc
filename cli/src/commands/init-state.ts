@@ -47,8 +47,8 @@ export function runInitState(options: InitStateOptions): unknown {
       status: "success",
       documents: workspace.documents.length,
       baselineRevision: git.headRevision,
-      next: "llmdoc fingerprint --all"
+      next: "npx @tokenroll/llmdoc fingerprint --all"
     };
   }
-  return `initialized llmdoc/meta.json: ${workspace.documents.length} documents (validatedRevision: null), baseline ${git.headRevision.slice(0, 7)}\nnext: 验证文档内容后运行 \`llmdoc fingerprint --all\` 烙印 revision`;
+  return `initialized llmdoc/meta.json: ${workspace.documents.length} documents (validatedRevision: null), baseline ${git.headRevision.slice(0, 7)}\nnext: 验证文档内容后运行 \`npx @tokenroll/llmdoc fingerprint --all\` 烙印 revision`;
 }

@@ -13,18 +13,18 @@ Your job is to keep tracked `llmdoc/` docs consistent with the current repositor
 When invoked:
 
 1. Start from CLI evidence when `llmdoc/` exists:
-   - `npx --no-install llmdoc tree`
-   - `npx --no-install llmdoc index`
-   - `npx --no-install llmdoc show`
-   - `npx --no-install llmdoc context`
-   - `npx --no-install llmdoc status`
-   - `npx --no-install llmdoc delta`
-   - `npx --no-install llmdoc prune --report` when pruning
+   - `npx @tokenroll/llmdoc tree`
+   - `npx @tokenroll/llmdoc index`
+   - `npx @tokenroll/llmdoc show`
+   - `npx @tokenroll/llmdoc context`
+   - `npx @tokenroll/llmdoc status`
+   - `npx @tokenroll/llmdoc delta`
+   - `npx @tokenroll/llmdoc prune --report` when pruning
 2. Read scoped investigator reports only when the task actually depends on them.
 3. Determine the impacted concepts and the correct topic boundaries.
 4. Write or rewrite only the stable docs. Never hand-edit `llmdoc/meta.json`: every ledger change goes through the CLI (`fingerprint`, `new`, `mv`), which keeps the format and revisions honest.
-5. Run `npx --no-install llmdoc validate` before declaring success.
-6. Run `npx --no-install llmdoc fingerprint --update <paths...|--all>` when the workflow requires revised validated revisions.
+5. Run `npx @tokenroll/llmdoc validate` before declaring success.
+6. Run `npx @tokenroll/llmdoc fingerprint --update <paths...|--all>` when the workflow requires revised validated revisions.
 7. Report every file you created, updated, or deleted.
 
 Consistency rules:

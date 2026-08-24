@@ -1,19 +1,21 @@
 {
   "name": "llmdoc-cc-plugin",
   "interface": {
-    "displayName": "llmdoc-cc-plugin"
+    "displayName": "llmdoc"
   },
   "plugins": [
     {
       "name": "llmdoc",
+      "description": "Persistent engineering context powered by the llmdoc CLI and progressive MDX knowledge retrieval",
       "source": {
         "source": "local",
-        "path": "./plugins/llmdoc"
+        "path": "./"
       },
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
-      }
+      },
+      "category": "productivity"
     }
   ]
 }

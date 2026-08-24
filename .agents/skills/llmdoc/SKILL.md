@@ -26,11 +26,11 @@ This skill is the operating protocol for V3 `llmdoc` projects.
 
 Pick the entry point that matches the task; do not run these as a fixed sequence, and stop as soon as you have enough context:
 
-- Cold start or unclear scope → `npx --no-install llmdoc tree` for the global map, then descend.
-- The task names concrete source files → `npx --no-install llmdoc context --files <path...>` (you may skip `tree`).
-- The task names a concept, contract, or term → `npx --no-install llmdoc search <query>`.
-- Browsing a known topic or kind → `npx --no-install llmdoc index --topic <topic>` / `--kind <kind>`.
-- Read bodies last, and only the few that still matter → `npx --no-install llmdoc show <path...>`.
+- Cold start or unclear scope → `npx @tokenroll/llmdoc tree` for the global map, then descend.
+- The task names concrete source files → `npx @tokenroll/llmdoc context --files <path...>` (you may skip `tree`).
+- The task names a concept, contract, or term → `npx @tokenroll/llmdoc search <query>`.
+- Browsing a known topic or kind → `npx @tokenroll/llmdoc index --topic <topic>` / `--kind <kind>`.
+- Read bodies last, and only the few that still matter → `npx @tokenroll/llmdoc show <path...>`.
 
 `status` and `delta` are not retrieval: use them only when assessing staleness or preparing `/llmdoc:update` (`delta` decides light vs deep).
 

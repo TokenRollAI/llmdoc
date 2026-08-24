@@ -1,6 +1,6 @@
 {
   "name": "llmdoc",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Persistent engineering context powered by the llmdoc CLI and progressive MDX knowledge retrieval",
   "skills": "./.agents/skills/"
 }
