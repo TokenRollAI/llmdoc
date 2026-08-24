@@ -77,9 +77,9 @@ tracked 有效性记录在 `llmdoc/meta.json`：
 | `npx llmdoc mv <from> <to>` | 移动文档并更新引用 |
 | `npx llmdoc prune --report` | 输出收敛报告但不写文档 |
 | `npx llmdoc upgrade` | 显式的 V2 到 V3 迁移入口 |
-| `npx llmdoc hook session-start` | 给宿主提供启动信号 |
-| `npx llmdoc hook stop` | 给宿主提供停止时提醒信号 |
-| `npx llmdoc hook compact` | 输出 compact 状态 |
+| `npx --no-install llmdoc hook session-start` | 给宿主提供启动信号 |
+| `npx --no-install llmdoc hook stop` | 给宿主提供停止时提醒信号 |
+| `npx --no-install llmdoc hook compact` | 输出 compact 状态 |
 
 ## 工作流语义
 

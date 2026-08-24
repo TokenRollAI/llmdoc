@@ -4,13 +4,13 @@ Before broad code exploration, planning, or documentation work, load the `llmdoc
 
 This project uses llmdoc V3.
 
-- `@tokenroll/llmdoc` is a required dependency. Install it in the project first, then use `npx llmdoc ...`.
+- `@tokenroll/llmdoc` is a required dependency. Install it in the project first, then use `npx --no-install llmdoc ...`.
 - Prefer the CLI as the entrypoint:
-  - `npx llmdoc tree`
-  - `npx llmdoc index --topic ...`
-  - `npx llmdoc context --files ...`
-  - `npx llmdoc search ...`
-  - `npx llmdoc show ...`
+  - `npx --no-install llmdoc tree`
+  - `npx --no-install llmdoc index --topic ...`
+  - `npx --no-install llmdoc context --files ...`
+  - `npx --no-install llmdoc search ...`
+  - `npx --no-install llmdoc show ...`
 - The tracked knowledge model is V3:
   - `.mdx` documents use pure Markdown, YAML front matter, and only the minimal optional `<CodeRef>` enhancement
   - front matter carries `kind`

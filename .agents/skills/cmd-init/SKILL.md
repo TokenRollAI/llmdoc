@@ -25,7 +25,7 @@ Stop instead of improvising when:
 ## Preconditions
 
 - `git status -- llmdoc/` must be clean before the first formal write.
-- If `npx llmdoc validate` fails after writes, revert the init write-set before reporting failure.
+- If `npx --no-install llmdoc validate` fails after writes, revert the init write-set before reporting failure.
 
 ## Workflow
 
@@ -41,7 +41,7 @@ Stop instead of improvising when:
    - Create the V3 root singleton plus one-level topic directories with mandatory `topic/index.mdx`.
 
 3. Validate before reporting success.
-   - Run `npx llmdoc validate`.
+   - Run `npx --no-install llmdoc validate`.
    - Fix all schema, routing, and reference failures before finishing.
    - On a validation failure that cannot be repaired in-run, roll back the init write-set.
 
@@ -64,5 +64,5 @@ Always report:
 - whether init ran or was refused
 - the investigation report path or paths used
 - the topics and stable docs created
-- the `npx llmdoc validate` result
+- the `npx --no-install llmdoc validate` result
 - any material gaps left for later `/llmdoc:update`

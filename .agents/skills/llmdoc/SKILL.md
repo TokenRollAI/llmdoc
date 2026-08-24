@@ -26,25 +26,25 @@ This skill is the operating protocol for V3 `llmdoc` projects.
 
 When `llmdoc/` exists, use this order and stop as soon as you have enough context:
 
-1. `npx llmdoc tree`
+1. `npx --no-install llmdoc tree`
    - Get the root map and candidate topics.
 
-2. `npx llmdoc index --topic <topic>` or `npx llmdoc index --kind <kind>`
+2. `npx --no-install llmdoc index --topic <topic>` or `npx --no-install llmdoc index --kind <kind>`
    - Inspect document metadata before opening bodies.
 
-3. `npx llmdoc context --files <path...>`
+3. `npx --no-install llmdoc context --files <path...>`
    - Use when the task is tied to concrete source files.
 
-4. `npx llmdoc search <query>`
+4. `npx --no-install llmdoc search <query>`
    - Use when the task is phrased as a concept, contract, or term.
 
-5. `npx llmdoc show <path...>`
+5. `npx --no-install llmdoc show <path...>`
    - Read only the selected documents that still look necessary.
 
-6. `npx llmdoc status`
+6. `npx --no-install llmdoc status`
    - Check whether the knowledge surface looks stale or needs follow-up sync.
 
-7. `npx llmdoc delta`
+7. `npx --no-install llmdoc delta`
    - Use before `/llmdoc:update` to decide whether a light or deep sync is required.
 
 ## Continuation State

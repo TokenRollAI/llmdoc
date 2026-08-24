@@ -23,11 +23,11 @@ This command does not authorize source-code edits.
 ## Preconditions
 
 - `git status -- llmdoc/` must be clean before the first formal write.
-- If `npx llmdoc validate` fails after pruning writes and cannot be repaired in-run, roll back the prune write-set before reporting failure.
+- If `npx --no-install llmdoc validate` fails after pruning writes and cannot be repaired in-run, roll back the prune write-set before reporting failure.
 
 ## Workflow
 
-1. Run `npx llmdoc prune --report`.
+1. Run `npx --no-install llmdoc prune --report`.
    - Use the report as the primary convergence signal.
 
 2. Decide the convergence plan with `recorder`.
@@ -36,8 +36,8 @@ This command does not authorize source-code edits.
    - Delete docs only when their knowledge is preserved elsewhere or proven obsolete.
 
 3. Re-validate the result.
-   - Run `npx llmdoc validate`.
-   - Re-run `npx llmdoc prune --report` and compare document/token scale with the first report.
+   - Run `npx --no-install llmdoc validate`.
+   - Re-run `npx --no-install llmdoc prune --report` and compare document/token scale with the first report.
    - Confirm the surviving union of `code.paths` has not lost covered implementation paths.
    - Report `success` and refresh convergence only when scale actually declines without coverage loss; otherwise repair, roll back, or report `no_change` as appropriate.
 

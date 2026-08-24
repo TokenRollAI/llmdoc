@@ -77,9 +77,9 @@ Temporary process records live under `.llmdoc-tmp/` and are not part of tracked 
 | `npx llmdoc mv <from> <to>` | move a doc and update references |
 | `npx llmdoc prune --report` | convergence report without writing docs |
 | `npx llmdoc upgrade` | explicit V2 to V3 migration entrypoint |
-| `npx llmdoc hook session-start` | startup signal for hosts |
-| `npx llmdoc hook stop` | stop-time reminder signal |
-| `npx llmdoc hook compact` | compaction-state emission |
+| `npx --no-install llmdoc hook session-start` | startup signal for hosts |
+| `npx --no-install llmdoc hook stop` | stop-time reminder signal |
+| `npx --no-install llmdoc hook compact` | compaction-state emission |
 
 ## Workflow Semantics
 
