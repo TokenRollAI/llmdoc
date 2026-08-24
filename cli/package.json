@@ -1,6 +1,6 @@
 {
   "name": "@tokenroll/llmdoc",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "V3 runtime CLI for llmdoc repositories",
   "homepage": "https://github.com/TokenRollAI/llmdoc",
   "repository": {

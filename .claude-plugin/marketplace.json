@@ -10,7 +10,7 @@
       "name": "llmdoc",
       "source": "./",
       "description": "Persistent engineering context powered by the llmdoc CLI and progressive MDX knowledge retrieval",
-      "version": "3.3.0"
+      "version": "3.4.0"
     }
   ]
 }

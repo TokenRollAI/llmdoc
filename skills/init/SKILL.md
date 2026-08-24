@@ -43,6 +43,7 @@ Stop instead of improvising when:
 
 3. Validate before reporting success.
    - Seed the ledger with `init-state` (writes meta.json with null revisions), then run `validate` and fix all schema, routing, and reference failures.
+   - Docs added after `init-state` already seeded the ledger get their entries via `adopt <path...>`; never hand-edit `meta.json` or recreate existing files through `new`.
    - Finalize with `commit --all -m "docs: bootstrap llmdoc"` — it commits the surface, brands fingerprints, and lands the meta follow-up commit in one step.
    - On a validation failure that cannot be repaired in-run, roll back the init write-set.
 

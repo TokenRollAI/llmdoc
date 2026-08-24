@@ -48,6 +48,7 @@ This command should run against a rollback-safe git state.
 
 4. Validate before reporting success.
    - Seed the ledger with `init-state` when no `llmdoc/meta.json` survives the migration; `validate` cannot pass without a ledger.
+   - When a ledger already exists, batch-register migrated docs with `adopt <path...>`; never hand-edit `meta.json` or rebuild existing bodies through `new`.
    - Run `validate` and repair every failure it reports.
    - Finalize with `commit --all -m "<message>"`.
 

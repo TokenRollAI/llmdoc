@@ -39,10 +39,12 @@ This command does not authorize source-code edits.
 3. Execute the update.
    - Light: `recorder` updates the impacted docs directly from `delta`, `context`, `search`, and targeted `show` reads.
    - Deep: `investigator` writes a scoped report first, then `recorder` rewrites the affected docs using that report plus the CLI evidence.
+   - Scaffold brand-new docs with `new`; register docs that already exist as files with `adopt <path...>` — never hand-edit `meta.json` or recreate the file through `new`.
 
 4. Finalize.
    - Run `commit -m "<message>"` (add `--all` for a full-repository verification, `--no-verify` in repos with heavy git hooks). It gates on validate, commits the `llmdoc/` write-set, refreshes fingerprints, and lands the `meta.json` change as a follow-up commit — never hand-roll this sequence out of `validate` plus `fingerprint`, and never `--amend` (that rewrites the hash fingerprints just recorded).
-   - Re-check `status` when you need a final stale/clean signal.
+   - `commit` preflights the fingerprint preconditions before creating any commit: if mapped source is still dirty it fails closed with the worktree untouched. Commit or clean the related source first, then rerun `commit` — do not fall back to a manual sequence.
+   - Re-check `status` when you need a final stale/clean signal. After a successful finalize, `N commits behind HEAD, metadata-only; knowledge clean` is the expected end state (the meta follow-up commit), not staleness — do not chase it with another update.
 
 5. Fold durable lessons into stable docs directly.
    - Put reusable cautions, invariants, and workflow fixes into the relevant architecture or guide docs.
