@@ -236,8 +236,9 @@ Claude Code 与 Codex 用户由插件承担这一切（hooks、operating skill�
   等实时事实。不要把所有检索命令跑成固定序列；上下文足够就停。
 - `init` / `update` / `prune` / `upgrade` 是显式工作流：可以建议、须经用户
   确认后执行；永不主动建议 `upgrade`。
-- 稳定知识在 `llmdoc/`；不要手工编辑 `llmdoc/meta.json`（用 `fingerprint` /
-  `new` / `mv`）。临时材料放 `.llmdoc-tmp/`。
+- 稳定知识在 `llmdoc/`；不要手工编辑 `llmdoc/meta.json`。文档改动用 `commit`
+  收尾——它内置 validate 门控并自动 fingerprint；其余台账变更走 `fingerprint` /
+  `new` / `mv`。临时材料放 `.llmdoc-tmp/`。
 - 完成改变架构、契约或工作流的任务后，建议执行 update 工作流。
 ```
 

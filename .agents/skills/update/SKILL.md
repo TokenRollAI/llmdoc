@@ -8,7 +8,7 @@ argument-hint: '[summary] [--scope <topic|path...>]'
 
 Use this command when repository knowledge has changed and tracked `llmdoc/` must be synchronized.
 
-Load the `llmdoc` skill before broad exploration.
+Load the `llmdoc` skill before broad exploration. CLI commands below run as `npx -y @tokenroll/llmdoc <cmd>`.
 
 ## Authorization
 
@@ -24,13 +24,13 @@ This command does not authorize source-code edits.
 
 - `git status -- llmdoc/` must be clean before the first formal write.
 - Rollback means `git checkout -- llmdoc/` (plus deleting any newly created files under `llmdoc/`); never hand-edit files back.
-- If `npx @tokenroll/llmdoc validate` fails after writes and cannot be repaired in-run, roll back the doc write-set before reporting failure.
+- If `validate` fails after writes and cannot be repaired in-run, roll back the doc write-set before reporting failure.
 
 ## Workflow
 
 1. Measure the current doc state.
-   - Run `npx @tokenroll/llmdoc status`.
-   - Run `npx @tokenroll/llmdoc delta` with any explicit scope flags.
+   - Run `status`.
+   - Run `delta` with any explicit scope flags.
 
 2. Choose the lightest sufficient path from the delta result.
    - Light: impacted docs are already mapped and facts are straightforward.
@@ -41,8 +41,8 @@ This command does not authorize source-code edits.
    - Deep: `investigator` writes a scoped report first, then `recorder` rewrites the affected docs using that report plus the CLI evidence.
 
 4. Re-validate and finalize.
-   - Run `npx @tokenroll/llmdoc commit -m "<message>"` (add `--all` for a full-repository verification, `--no-verify` in repos with heavy git hooks). It gates on validate, commits the `llmdoc/` write-set, refreshes fingerprints, and lands the `meta.json` change as a follow-up commit — never hand-roll this sequence or use `--amend` (it rewrites the hash fingerprints just recorded).
-   - Re-check `npx @tokenroll/llmdoc status` when you need a final stale/clean signal.
+   - Run `commit -m "<message>"` (add `--all` for a full-repository verification, `--no-verify` in repos with heavy git hooks). It gates on validate, commits the `llmdoc/` write-set, refreshes fingerprints, and lands the `meta.json` change as a follow-up commit — never hand-roll this sequence out of `validate` plus `fingerprint`, and never `--amend` (that rewrites the hash fingerprints just recorded).
+   - Re-check `status` when you need a final stale/clean signal.
 
 5. Fold durable lessons into stable docs directly.
    - Put reusable cautions, invariants, and workflow fixes into the relevant architecture or guide docs.

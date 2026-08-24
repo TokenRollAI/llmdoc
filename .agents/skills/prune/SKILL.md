@@ -10,7 +10,7 @@ argument-hint: '[--scope <topic|path...>] [summary]'
 
 Use this command only when existing `llmdoc/` knowledge needs convergence after growth, duplication, or fragmentation.
 
-Load the `llmdoc` skill before broad exploration.
+Load the `llmdoc` skill before broad exploration. CLI commands below run as `npx -y @tokenroll/llmdoc <cmd>`.
 
 ## Authorization
 
@@ -26,12 +26,13 @@ This command does not authorize source-code edits.
 
 - `git status -- llmdoc/` must be clean before the first formal write.
 - Rollback means `git checkout -- llmdoc/` (plus deleting any newly created files under `llmdoc/`); never hand-edit files back.
-- If `npx @tokenroll/llmdoc validate` fails after pruning writes and cannot be repaired in-run, roll back the prune write-set before reporting failure.
+- If `validate` fails after pruning writes and cannot be repaired in-run, roll back the prune write-set before reporting failure.
 
 ## Workflow
 
-1. Run `npx @tokenroll/llmdoc prune --report`.
+1. Run `prune --report`.
    - Use the report as the primary convergence signal.
+   - The CLI only reports; it never rewrites docs on its own.
 
 2. Decide the convergence plan with `recorder`.
    - Merge duplicated docs.
@@ -39,10 +40,10 @@ This command does not authorize source-code edits.
    - Delete docs only when their knowledge is preserved elsewhere or proven obsolete.
 
 3. Re-validate the result.
-   - Run `npx @tokenroll/llmdoc validate`.
-   - Re-run `npx @tokenroll/llmdoc prune --report` and compare document/token scale with the first report.
+   - Run `validate`.
+   - Re-run `prune --report` and compare document/token scale with the first report.
    - Confirm the surviving union of `code.paths` has not lost covered implementation paths.
-   - Finalize with `npx @tokenroll/llmdoc commit -m "<message>"`, which fingerprints the surviving docs and lands the `meta.json` follow-up commit automatically.
+   - Finalize with `commit -m "<message>"`, which fingerprints the surviving docs and lands the `meta.json` follow-up commit automatically.
    - Report `success` and refresh convergence only when scale actually declines without coverage loss; otherwise repair, roll back, or report `no_change` as appropriate.
 
 ## State Invariants

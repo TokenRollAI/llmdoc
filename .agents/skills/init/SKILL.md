@@ -9,7 +9,7 @@ description: >-
 
 Use this command only when the repository does not already have valid V3 `llmdoc/`.
 
-Load the `llmdoc` skill before broad exploration.
+Load the `llmdoc` skill before broad exploration. CLI commands below run as `npx -y @tokenroll/llmdoc <cmd>`.
 
 ## Authorization
 
@@ -28,7 +28,7 @@ Stop instead of improvising when:
 
 - `git status -- llmdoc/` must be clean before the first formal write.
 - Rollback for init means deleting the newly created `llmdoc/` surface (it did not exist before this run); never leave a half-bootstrapped tree behind.
-- If `npx @tokenroll/llmdoc validate` fails after writes, revert the init write-set before reporting failure.
+- If `validate` fails after writes, revert the init write-set before reporting failure.
 
 ## Workflow
 
@@ -44,8 +44,8 @@ Stop instead of improvising when:
    - Create the V3 root singleton plus one-level topic directories; topics are plain directories with no `index.mdx` entry node.
 
 3. Validate before reporting success.
-   - Seed the ledger with `npx @tokenroll/llmdoc init-state` (writes meta.json with null revisions), then run `npx @tokenroll/llmdoc validate` and fix all schema, routing, and reference failures.
-   - Finalize with `npx @tokenroll/llmdoc commit --all -m "docs: bootstrap llmdoc"` — it commits the surface, brands fingerprints, and lands the meta follow-up commit in one step.
+   - Seed the ledger with `init-state` (writes meta.json with null revisions), then run `validate` and fix all schema, routing, and reference failures.
+   - Finalize with `commit --all -m "docs: bootstrap llmdoc"` — it commits the surface, brands fingerprints, and lands the meta follow-up commit in one step.
    - On a validation failure that cannot be repaired in-run, roll back the init write-set.
 
 ## State Invariants
@@ -67,5 +67,5 @@ Always report:
 - whether init ran or was refused
 - the investigation report path or paths used
 - the topics and stable docs created
-- the `npx @tokenroll/llmdoc validate` result
+- the `validate` result
 - any material gaps left for later `/llmdoc:update`

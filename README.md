@@ -238,8 +238,10 @@ This project uses llmdoc V3 as persistent engineering context.
   retrieval command as a fixed sequence; stop when the task has enough context.
 - `init` / `update` / `prune` / `upgrade` are explicit workflows: suggest them
   when relevant, run only after user confirmation; never suggest `upgrade`.
-- Stable knowledge lives in `llmdoc/`; never hand-edit `llmdoc/meta.json`
-  (use `fingerprint` / `new` / `mv`). Scratch belongs in `.llmdoc-tmp/`.
+- Stable knowledge lives in `llmdoc/`; never hand-edit `llmdoc/meta.json`.
+  Finalize doc changes with `commit`, which gates on validate and fingerprints
+  in one step; otherwise go through `fingerprint` / `new` / `mv`. Scratch
+  belongs in `.llmdoc-tmp/`.
 - After work that changes durable architecture, contracts, or workflows,
   suggest running the update workflow.
 ```

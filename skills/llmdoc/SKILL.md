@@ -1,54 +1,53 @@
 ---
 name: llmdoc
-description: "Default V3 operating skill for llmdoc-enabled projects. Route broad or cross-subsystem discovery through the CLI retrieval surface."
+description: "Default V3 operating skill for llmdoc-enabled projects. Route discovery — exploring the codebase, locating a concept or contract, judging the blast radius of a change — through the llmdoc CLI instead of broad file crawling."
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, WebSearch, WebFetch
 ---
 
 # /llmdoc
 
-This skill is the operating protocol for V3 `llmdoc` projects.
+The operating protocol for V3 `llmdoc` projects. `llmdoc/` holds the architecture, constraints, and working agreements that source code does not cheaply give back; the CLI is how you reach them.
+
+Every command below runs as `npx -y @tokenroll/llmdoc <cmd>` (see [CLI Invocation](#cli-invocation)).
 
 ## Retrieval Gate
 
-Treat `@tokenroll/llmdoc` as external tooling and invoke it as
-`npx -y @tokenroll/llmdoc ...`. A missing package may be fetched into the npm
-cache, but it must never be added to the consumer repository's `package.json`
-or lockfile. Pin the version in the npx package spec when reproducibility
-requires it. If the CLI remains unavailable, report the degraded path and
-continue with narrowly scoped native tools.
+Apply this gate before the first discovery action of a task, and again whenever investigation crosses into a new subsystem. Choose the one entry point that matches the intent:
 
-Before the first discovery action for a task—and again whenever the
-investigation expands into a new subsystem—choose the matching entry point:
+| Intent | Entry point |
+|---|---|
+| Concept, contract, term, "where is X?" | `search <query>` |
+| Background or blast radius of concrete source files | `context --files <path...>` |
+| Cold start, unclear scope | `tree` |
+| Known topic or document kind | `index --topic <topic>` / `--kind <kind>` |
+| Bodies of documents already identified | `show <path...>` |
 
-- Concept, contract, term, or “where is X?” → `search <query>`.
-- Background or impact of concrete source files → `context --files <path...>`.
-- Cold start or unclear scope → `tree`.
-- Known topic or document kind → `index --topic <topic>` / `--kind <kind>`.
-- Body of already identified llmdoc documents → `show <path...>`.
-- Exact source text, line numbers, tests, counts, git state, or other live facts
-  inside an established working set → native source and shell tools.
+What the gate stands in front of is broad native discovery: recursive or cross-directory exploration with Read, Grep, Glob, or shell, outside a working set llmdoc has already narrowed.
 
-Broad native discovery means recursive or cross-directory exploration outside
-the working set already identified by llmdoc. Before doing that with Read,
-Grep, Glob, or shell commands, apply this gate.
+Once llmdoc has narrowed that working set, native tools own the exact facts — source text, line numbers, test behavior, counts, git state. The knowledge surface deliberately does not duplicate those.
 
-Once llmdoc has narrowed the working set, use native tools for exact source
-verification. Do not run every retrieval command as a fixed sequence. Read
-only enough to answer the task. “Stop as soon as you have enough context”
-applies after selecting the entry point; it does not authorize skipping this
-gate.
+These entry points are alternatives, not a sequence. Stop as soon as the task has enough context; that permission applies after choosing an entry point, never instead of choosing one.
 
-`status` and `delta` are not retrieval. Use them only when assessing staleness
-or preparing `/llmdoc:update`; `delta` decides light vs deep.
+`status` and `delta` are not retrieval. Use them to assess staleness or to prepare `/llmdoc:update`, where `delta` decides light vs deep.
+
+## CLI Invocation
+
+`@tokenroll/llmdoc` is external tooling, not a project dependency. `-y` lets a missing package resolve into the npm cache without a prompt.
+
+- Never add it to the served project's `package.json` or lockfile.
+- Pin in the package spec when reproducibility matters: `npx -y @tokenroll/llmdoc@<version> <cmd>`.
+- Never call a bare `npx llmdoc`; that name resolves to an unrelated package.
+- If the CLI stays unavailable, report the degraded path, then continue with narrowly scoped native tools.
 
 ## Operating Rules
 
 - Preserve and reuse `LLMDOC_STATE` across continuation; do not replay prior reads unless evidence changed or the task moved.
 - Temporary investigation notes belong in `.llmdoc-tmp/`, not in stable docs.
-- Stable llmdoc writes belong to `recorder`.
-- Before non-trivial edits, the main assistant should align with the user.
+- Stable `llmdoc/` writes belong to `recorder`; `llmdoc/meta.json` changes go through the CLI only.
+- Before non-trivial edits, align with the user.
 - If `llmdoc/` does not exist, suggest `/llmdoc:init`; do not fabricate the knowledge surface ad hoc.
 - When a task produces durable knowledge changes, suggest `/llmdoc:update` at the end.
+- Never suggest `/llmdoc:upgrade`; it runs only when the user asks for it by name.
 
 ## Continuation State
 
@@ -65,5 +64,5 @@ If that state is still sufficient, continue without re-running `tree`, `index`, 
 
 ## Roles
 
-- `investigator`: current-state research, scoped evidence gathering, scratch reports
-- `recorder`: stable llmdoc updates; `llmdoc/meta.json` changes go through the CLI only
+- `investigator`: current-state research, scoped evidence gathering, scratch reports under `.llmdoc-tmp/`
+- `recorder`: the only writer of tracked `llmdoc/` knowledge

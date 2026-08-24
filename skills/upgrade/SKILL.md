@@ -10,6 +10,8 @@ Use this command only for an explicit legacy-to-V3 migration.
 
 Do not suggest this command proactively. Do not mention its internals outside this file.
 
+CLI commands below run as `npx -y @tokenroll/llmdoc <cmd>`.
+
 ## Authorization
 
 An explicit `/llmdoc:upgrade` invocation authorizes this run to:
@@ -35,8 +37,9 @@ This command should run against a rollback-safe git state.
    - Use `investigator` to identify the current legacy structure, surviving durable knowledge, and obsolete material.
 
 2. Run the deterministic CLI migration or diagnostic path.
-   - Call `npx @tokenroll/llmdoc upgrade`.
+   - Call `upgrade`.
    - Use CLI diagnostics as the primary migration truth for what was transformed, skipped, or rejected.
+   - The CLI inventories legacy markers and reports the target V3 shape; it does not move document bodies on its own.
 
 3. Finalize with `recorder`.
    - Rebuild or adjust the knowledge surface around the V3 root singleton plus topic docs when the CLI reports follow-up recorder work.
@@ -44,7 +47,8 @@ This command should run against a rollback-safe git state.
    - Drop obsolete migration-only material instead of preserving it as dead weight.
 
 4. Validate before reporting success.
-   - Run `npx @tokenroll/llmdoc validate`.
+   - Run `validate`.
+   - Seed the ledger with `init-state` when no `llmdoc/meta.json` survives the migration, then finalize with `commit --all -m "<message>"`.
 
 ## State Invariants
 
@@ -63,7 +67,7 @@ This command should run against a rollback-safe git state.
 Always report:
 
 - the legacy surfaces consumed
-- the `npx @tokenroll/llmdoc upgrade` result
+- the `upgrade` result
 - the V3 surfaces created
 - the legacy files deleted or intentionally dropped
 - the `validate` result
