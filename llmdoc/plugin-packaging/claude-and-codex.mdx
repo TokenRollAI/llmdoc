@@ -25,6 +25,7 @@ code:
 仓库根已经按 Claude 插件形态组织：
 
 - `.claude-plugin/*.json` 提供插件元数据与 marketplace 入口
+- `skills/llmdoc/SKILL.md` 是手工维护的 operating skill 与 Retrieval Gate 源
 - `skills/init|update|prune|upgrade/SKILL.md` 是四个显式工作流的薄壳 SOP
 - `agents/investigator.md` 与 `agents/recorder.md` 是角色契约
 - 根 `hooks/hooks.json` 只负责把生命周期事件转给 `npx -y @tokenroll/llmdoc hook ...`
@@ -43,6 +44,8 @@ code:
 - 轻量结构改写
 
 因此包装层变更时，先检查命令文档是否只保留判断性内容；不要把 diff、schema 校验或 git 逻辑重新写进 prompt。
+
+Retrieval Gate 是需要跨宿主保持语义一致的判断性契约：第一次发现式检索与进入新子系统时按意图选择 CLI 入口，圈定工作集后允许原生工具核对实时精确事实，并且不把检索命令跑成固定序列。Claude canonical skill、生成的 `.agents/skills/llmdoc/SKILL.md` 与面向无插件平台的中英文 README 配方应保持这些边界及本地 `npx --no-install` 调用语义一致；宿主 front matter 和具体措辞可以不同。
 
 ## Codex 兼容面的实际要求
 
@@ -63,5 +66,5 @@ acplugin 转换注意（重生成后需人工核对）：`model: inherit` 硬编
 
 维护时要遵守两点：
 
-- `.agents/plugins/marketplace.json`、`.codex-plugin/plugin.json`、`.agents/skills/`、`.codex/agents/*.toml` 必须继续反映与 Claude 相同的公开契约，至少在 marketplace 身份、命令集、授权语义和 hook 行为上保持一致。
+- `.agents/plugins/marketplace.json`、`.codex-plugin/plugin.json`、`.agents/skills/`、`.codex/agents/*.toml` 必须继续反映与 Claude 相同的公开契约，至少在 marketplace 身份、命令集、Retrieval Gate、授权语义和 hook 行为上保持一致。
 - 不手工维护第二份 Codex 角色文本；Codex 角色文件是从两个 Claude 角色契约再生成的兼容表面，而不是独立真相源。
