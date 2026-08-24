@@ -59,7 +59,7 @@ unmapped/dirty 信号会排除 lockfile、git 元文件与仓库根可选 `.llmd
 
 - 每个文档优先用自己的 `validatedRevision`
 - 没有 per-document 记录时回落到 `baseline.revision`
-- `status` 通过 `git rev-list --count baseline..HEAD` 计算 baseline 落后多少 commit
+- `status` 通过 `git rev-list --count baseline..HEAD` 计算 baseline 落后多少 commit；除原始 `commitsBehindHead` 外还输出 `relevantCommitsBehindHead`（baseline..HEAD 中至少触碰一个 implementation surface 路径的提交数，按 `.llmdocignore` 与 llmdoc 内部路径排除规则计算）。当落后提交全部只改 `llmdoc/**`（典型为 commit 收尾的 meta follow-up）时，text 输出标注 `metadata-only; knowledge clean`，避免成功收尾后被误判为知识过期
 - `delta` 通过 `git diff --name-only validatedRevision..HEAD` 找到命中的 `code.paths`
 
 dirty worktree 不会伪造 revision。`staged`、`unstaged`、`untracked` 只会变成 dirty 信号，只针对 `llmdoc/` 之外的实现文件。若文档缺少 `validatedRevision`，或该 revision 已不在当前历史，CLI 会保守地把它记为 impacted，并把建议模式抬到 `deep`。

@@ -14,7 +14,9 @@ code:
     - cli/src/commands/search.ts
     - cli/src/commands/context.ts
     - cli/src/commands/new.ts
+    - cli/src/commands/adopt.ts
     - cli/src/commands/mv.ts
+    - cli/src/commands/commit.ts
     - cli/src/commands/prune.ts
     - cli/src/commands/upgrade.ts
     - cli/src/commands/serve.ts
@@ -39,7 +41,8 @@ code:
 - `new`：只会在 `llmdoc/` 下生成 `.mdx` 脚手架，模板来自 `cli/templates/doc.mdx`
 - `mv`：用 `git mv` 移动文件或整个 topic，并重写 `relations`、正文链接和 `meta.json.documents` key
 - `init-state`：首次生成 `meta.json` 台账骨架（全部文档 `validatedRevision: null` + 实测 convergence 统计）；已有台账时拒绝覆盖
-- `commit`：一体化收尾——validate 门控 → 以 pathspec 只提交 `llmdoc/` 写集（不卷入用户 staged 的其他文件）→ fingerprint → `meta.json` 单独小 commit。不要手工做这个序列，也不要用 `--amend` 并 meta（会改写 fingerprint 刚记录的 hash）；`--no-verify` 透传给 git，供 husky 等重钩子仓库使用
+- `adopt`：无损登记已存在的合法 `.mdx` 到 `meta.json`（只新增 `validatedRevision: null` 条目，不改正文；已登记路径幂等 no-op；目标文档需通过除 `meta.entry.missing` 外的结构校验）
+- `commit`：一体化收尾——validate 门控 → 以 pathspec 只提交 `llmdoc/` 写集（不卷入用户 staged 的其他文件）→ fingerprint → `meta.json` 单独小 commit。不要手工做这个序列，也不要用 `--amend` 并 meta（会改写 fingerprint 刚记录的 hash）；`--no-verify` 透传给 git，供 husky 等重钩子仓库使用。创建任何 commit 前会先对 fingerprint 前置条件（git 可推进、关联源码无 dirty）做预检，预检失败 fail-closed，工作树保持调用前状态，不会留下 docs 已提交但 meta 未刷新的半完成状态
 
 `new` 和 `mv` 都会先过仓库内 realpath 校验；若目标越界或经符号链接逃逸，CLI 会拒绝继续。`new` 可直接在新 topic 下建文档（目录自动创建），但拒绝 `index.mdx` 文件名。
 
