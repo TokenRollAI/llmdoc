@@ -82,6 +82,9 @@ dirty worktree 不会伪造 revision。`staged`、`unstaged`、`untracked` 只�
 
 公开 `--json` 输出会先按 `cli/schemas/output.schema.json` 过 Ajv 2020 校验；`hook stop` 与 `hook compact` 还会先解析并校验 hook payload。三类 hook 都是只读信号：
 
-- `session-start` 输出短文本摘要
-- `stop` 与 `compact` 成功时输出 `{ continue: true, systemMessage? }`
+- 是否需要更新统一取决于过滤后的 `impacts`、`needsReview` 和未映射的 committed/dirty 实现路径；`llmdoc/**`、`.llmdoc-tmp/**` 与 `.llmdocignore` 已排除路径不会形成可执行信号
+- `session-start` 输出短文本摘要；没有可执行信号时只标记文档无待处理影响，不报告原始 baseline 落后数
+- `stop` 与 `compact` 成功时输出 `{ continue: true, systemMessage? }`；没有可执行信号时 `stop` 不附带 `systemMessage`
 - 任何异常都 fail-open，不阻塞开发
+
+因此，只修改 llmdoc 的提交以及 fingerprint 收尾的 `llmdoc/meta.json` follow-up 即使使 HEAD 前进，也保持 knowledge clean：`session-start` 不会把它误报为需要更新，`stop` 保持静默。
