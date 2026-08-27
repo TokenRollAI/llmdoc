@@ -45,14 +45,25 @@ function runSessionStart(cwd: string, stdin: string): string {
   try {
     const workspace = loadWorkspace(cwd);
     const delta = analyzeDelta(workspace);
+    const signal = summarizeHookDelta(delta);
+    const parts = [`llmdoc ${lifecycle}`];
+    // fingerprint/commit 正常收尾会让 HEAD 前进到仅修改 llmdoc/meta.json 的 follow-up commit。
+    // 没有可执行影响时不展示 raw baseline 落后数，避免把知识面自身更新误报成需要再次 update。
+    if (!signal.shouldUpdate) {
+      parts.push("文档无待处理影响");
+      return parts.join("; ");
+    }
     const baseline = workspace.meta?.baseline.revision ? workspace.meta.baseline.revision.slice(0, 7) : "缺失";
     const freshness = delta.git.baselineBehindHead === null ? "落后未知" : delta.git.baselineBehindHead === 0 ? "与 HEAD 同步" : `落后 HEAD ${delta.git.baselineBehindHead} commit`;
-    const parts = [`llmdoc ${lifecycle}`, `baseline ${baseline}(${freshness})`];
-    if (delta.impacts.length === 0 && delta.needsReview.length === 0) {
-      parts.push("文档无待处理影响");
-    } else {
-      parts.push(`受影响 ${delta.impacts.length} 篇, 待复核 ${delta.needsReview.length} 篇 → 建议先看 npx @tokenroll/llmdoc delta`);
-    }
+    parts.push(`baseline ${baseline}(${freshness})`);
+    const summary = [
+      signal.impactedCount > 0 ? `受影响 ${signal.impactedCount} 篇` : null,
+      signal.needsReviewCount > 0 ? `待复核 ${signal.needsReviewCount} 篇` : null,
+      signal.unmappedCount > 0 ? `未映射代码路径 ${signal.unmappedCount} 个` : null
+    ]
+      .filter(Boolean)
+      .join(", ");
+    parts.push(`${summary} → 建议先看 npx @tokenroll/llmdoc delta`);
     return parts.join("; ");
   } catch {
     return `llmdoc ${lifecycle}; 状态读取失败,检索不受影响`;
@@ -63,14 +74,14 @@ function runStop(cwd: string): object {
   try {
     const workspace = loadWorkspace(cwd);
     const delta = analyzeDelta(workspace);
-    const unmappedCount = delta.unmappedCommittedPaths.length + delta.unmappedDirtyPaths.length;
-    const shouldUpdate = delta.impacts.length > 0 || unmappedCount > 0;
-    if (!shouldUpdate) {
+    const signal = summarizeHookDelta(delta);
+    if (!signal.shouldUpdate) {
       return { continue: true };
     }
     const summary = [
-      delta.impacts.length > 0 ? `${delta.impacts.length} 篇文档受代码变更影响` : null,
-      unmappedCount > 0 ? `${unmappedCount} 个代码路径未映射到任何文档` : null
+      signal.impactedCount > 0 ? `${signal.impactedCount} 篇文档受代码变更影响` : null,
+      signal.needsReviewCount > 0 ? `${signal.needsReviewCount} 篇文档需要复核` : null,
+      signal.unmappedCount > 0 ? `${signal.unmappedCount} 个代码路径未映射到任何文档` : null
     ]
       .filter(Boolean)
       .join(", ");
@@ -85,6 +96,23 @@ function runStop(cwd: string): object {
       systemMessage: `llmdoc hook degraded: ${(error as Error).message}`
     };
   }
+}
+
+function summarizeHookDelta(delta: ReturnType<typeof analyzeDelta>): {
+  shouldUpdate: boolean;
+  impactedCount: number;
+  needsReviewCount: number;
+  unmappedCount: number;
+} {
+  const impactedCount = delta.impacts.length;
+  const needsReviewCount = delta.needsReview.length;
+  const unmappedCount = delta.unmappedCommittedPaths.length + delta.unmappedDirtyPaths.length;
+  return {
+    shouldUpdate: impactedCount > 0 || needsReviewCount > 0 || unmappedCount > 0,
+    impactedCount,
+    needsReviewCount,
+    unmappedCount
+  };
 }
 
 function runCompact(): object {

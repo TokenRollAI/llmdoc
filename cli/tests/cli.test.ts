@@ -408,6 +408,30 @@ describe("llmdoc cli", () => {
     expect(stopJson.systemMessage).toBeUndefined();
   });
 
+  test("fingerprint follow-up commits stay quiet in lifecycle hooks", async () => {
+    const rootDir = createFixture();
+    fs.appendFileSync(path.join(rootDir, "llmdoc", "api-client", "retry-policy.mdx"), "\n补充一段稳定知识。\n");
+
+    const finalize = await runCli(["--json", "commit", "--all", "-m", "docs(llmdoc): update"], rootDir);
+    expect(finalize.exitCode).toBe(0);
+
+    // fingerprint 后的 meta follow-up 会让 raw baseline 天然落后 1 commit，但它不是可执行的更新信号。
+    const status = await runCli(["--json", "status"], rootDir);
+    const statusJson = JSON.parse(status.stdout) as { commitsBehindHead: number; relevantCommitsBehindHead: number };
+    expect(statusJson.commitsBehindHead).toBe(1);
+    expect(statusJson.relevantCommitsBehindHead).toBe(0);
+
+    const sessionStart = await runCli(["hook", "session-start"], rootDir);
+    expect(sessionStart.exitCode).toBe(0);
+    expect(sessionStart.stdout).toContain("文档无待处理影响");
+    expect(sessionStart.stdout).not.toContain("落后 HEAD");
+
+    const stop = await runCli(["hook", "stop"], rootDir);
+    const stopJson = JSON.parse(stop.stdout) as { continue: boolean; systemMessage?: string };
+    expect(stopJson.continue).toBe(true);
+    expect(stopJson.systemMessage).toBeUndefined();
+  });
+
   test("prune report and upgrade inventory stay read-only and deterministic", async () => {
     const rootDir = createFixture();
     const prune = await runCli(["prune", "--report", "--json"], rootDir);
