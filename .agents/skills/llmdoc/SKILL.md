@@ -47,7 +47,7 @@ These entry points are alternatives, not a sequence. Stop as soon as the task ha
 - Stable `llmdoc/` writes belong to `recorder`; `llmdoc/meta.json` changes go through the CLI only (`new`, `adopt`, `mv`, `fingerprint`, `commit`). A valid `.mdx` that already exists on disk gets its ledger entry via `adopt <path...>` — never the delete-and-recreate dance through `new`.
 - Before non-trivial edits, align with the user.
 - If `llmdoc/` does not exist, suggest `/llmdoc:init`; do not fabricate the knowledge surface ad hoc.
-- When a task produces durable knowledge changes, suggest `/llmdoc:update` at the end.
+- Once code is mostly done with no known major issues, delegate needed `/llmdoc:update` work alongside verification; include later fixes and finalize only after verification passes.
 - For topology or routing work, read [Knowledge Topology](references/knowledge-topology.md).
 - For SessionStart reminders or document preload, read [Startup Configuration](references/startup-config.md).
 - Never suggest `/llmdoc:upgrade`; it runs only when the user asks for it by name.
