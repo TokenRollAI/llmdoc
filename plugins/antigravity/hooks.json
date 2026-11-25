@@ -1,0 +1,11 @@
+{
+  "llmdoc": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "node ./scripts/llmdoc-hook.mjs session-start",
+        "timeout": 30
+      }
+    ]
+  }
+}

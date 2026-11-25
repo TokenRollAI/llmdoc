@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="llmdoc">
+  <rect width="64" height="64" rx="10" fill="#090d09"/>
+  <path d="M15 43 28 15h7L22 43h-7Zm18-12h16v6H33v-6Z" fill="#a7ff6a"/>
+  <circle cx="48" cy="18" r="4" fill="#ffc45b"/>
+</svg>
