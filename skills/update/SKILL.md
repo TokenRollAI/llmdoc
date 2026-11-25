@@ -54,11 +54,11 @@ This command does not authorize source-code edits.
    - Scaffold brand-new docs with `new`; register docs that already exist as files with `adopt <path...>` — never hand-edit `meta.json` or recreate the file through `new`.
 
 5. Finalize.
-   - If document identities changed, read [Startup Configuration](../llmdoc/references/startup-config.md). `mv` syncs renames; sync manual merges or deletions before validation.
+   - If document identities changed, read [Startup Configuration](../llmdoc/references/startup-config.md). `mv` syncs local renames; sync manual merges/deletions before validation. External `@source/` docs are read-only.
    - Run `validate`; after mapping or boundary changes, also run the reference's scoped routing acceptance.
    - If prose changed, run `commit -m "<message>"`, adding `--verified <path...>` for reviewed unchanged docs. If all stayed unchanged, run `commit --verified <path...>`. Full verification uses `--all`, never with `--verified`.
    - `commit` validates, commits prose, refreshes fingerprints, and lands `meta.json` separately. Never reconstruct this sequence manually or `--amend` it.
-   - Dirty mapped source makes `commit` fail closed; commit or clean that source, then retry.
+   - Dirty mapped source or a detached HEAD makes `commit` fail closed; clean source or switch to a branch first.
    - After success, `N commits behind HEAD, metadata-only; knowledge clean` reflects the meta follow-up commit, not staleness.
 
 6. Fold durable lessons into stable docs directly.

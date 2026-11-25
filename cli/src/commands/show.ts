@@ -5,6 +5,8 @@ import { OutputOptions, ParsedDocument } from "../types.js";
 import { DEFAULT_SHOW_BUDGET } from "../lib/constants.js";
 import { formatPaginationSummary } from "../lib/format.js";
 import { estimateTokens } from "../lib/markdown.js";
+import { formatDocumentPath, isSourceRef, parseSourceDocId } from "../lib/source-id.js";
+import { ensureSourcesForRead } from "../lib/sources.js";
 
 interface ShowOptions extends OutputOptions {
   cwd: string;
@@ -13,11 +15,42 @@ interface ShowOptions extends OutputOptions {
 
 export function runShow(options: ShowOptions): unknown {
   const workspace = loadWorkspace(options.cwd);
-  const documents = options.paths.map((rawPath) => {
-    const normalized = rawPath.startsWith("llmdoc/") ? rawPath.slice("llmdoc/".length) : rawPath;
+  const requestedSourceAliases = new Set<string>();
+  const parsedRequests = options.paths.map((rawPath) => {
+    if (isSourceRef(rawPath)) {
+      const parsed = parseSourceDocId(rawPath);
+      if (!workspace.sourcesByName.has(parsed.alias)) {
+        throw new CliError(`Unknown source: @${parsed.alias}`);
+      }
+      requestedSourceAliases.add(parsed.alias);
+      return { kind: "source" as const, rawPath, parsed };
+    }
+    return { kind: "local" as const, rawPath };
+  });
+
+  if (requestedSourceAliases.size > 0) {
+    ensureSourcesForRead(workspace, [...requestedSourceAliases]);
+  }
+
+  const documents = parsedRequests.map((request) => {
+    if (request.kind === "source") {
+      const source = workspace.sourcesByName.get(request.parsed.alias);
+      if (!source || source.status !== "ready") {
+        throw new CliError(
+          `Source @${request.parsed.alias} is unavailable: ${source?.error ?? "no local snapshot"}.${source?.remedy ? ` ${source.remedy}` : ""}`
+        );
+      }
+      const document = workspace.sourceDocumentsById.get(request.parsed.canonicalId);
+      if (!document) {
+        throw new CliError(`Document does not exist in @${request.parsed.alias}: ${request.parsed.canonicalId}`);
+      }
+      return document;
+    }
+
+    const normalized = request.rawPath.startsWith("llmdoc/") ? request.rawPath.slice("llmdoc/".length) : request.rawPath;
     const document = workspace.documentsByLlmdocPath.get(normalized);
     if (!document) {
-      throw new CliError(`Document does not exist: ${rawPath}`);
+      throw new CliError(`Document does not exist: ${request.rawPath}`);
     }
     return document;
   });
@@ -40,7 +73,7 @@ export function runShow(options: ShowOptions): unknown {
 
   const lines: string[] = [];
   for (const document of result.items) {
-    lines.push(`=== llmdoc/${document.llmdocPath} [${document.frontmatter.kind}] ===`);
+    lines.push(`=== ${formatDocumentPath(document)} [${document.frontmatter.kind}] ===`);
     lines.push(document.body);
     lines.push("");
   }
@@ -50,9 +83,10 @@ export function runShow(options: ShowOptions): unknown {
 
 function toDocumentPayload(document: ParsedDocument): object {
   return {
-    path: `llmdoc/${document.llmdocPath}`,
+    path: formatDocumentPath(document),
     kind: document.frontmatter.kind,
     description: document.frontmatter.description,
-    body: document.body
+    body: document.body,
+    ...(document.sourceName ? { source: document.sourceName } : {})
   };
 }

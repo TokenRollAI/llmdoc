@@ -4,7 +4,11 @@ kind: architecture
 code:
   paths:
     - cli/src/types.ts
+    - cli/src/lib/constants.ts
     - cli/src/lib/fs.ts
+    - cli/src/lib/frontmatter.ts
+    - cli/src/lib/source-id.ts
+    - cli/src/lib/sources.ts
     - cli/src/lib/workspace.ts
     - cli/src/lib/state.ts
     - cli/src/lib/config.ts
@@ -20,6 +24,8 @@ code:
     - cli/src/commands/fingerprint.ts
     - cli/src/commands/hook.ts
     - cli/tests/cli.test.ts
+    - cli/tests/sources-core.test.ts
+    - cli/tests/sources-cli.test.ts
     - cli/tests/viewer-state.test.ts
     - cli/tests/viewer-http.test.ts
     - cli/tests/cold-start.test.ts
@@ -36,19 +42,23 @@ code:
 
 除首次 `new` 外，CLI 只接受最近 Git 根直属的已有 `llmdoc/`，避免跨仓库误认；没有 Git 边界时仅兼容查找已有知识目录。V3 文档树固定为根 singleton 加一层 topic，路径即 ID；topic 没有入口文档，`meta.json` 也只保存有效性台账，不复制可扫描结构。
 
-`validate` 保证结构、引用、代码锚点、realpath 边界与 ledger 一致，并拒绝不存在的精确路径或空匹配 glob。它只证明结构有效，不判断 glob 是否吸附无关文件或 first-class owner 是否缺失；这些语义问题属于 Routing Gate 与 Context Floor。
+`validate` 保证结构、引用、代码锚点、realpath 边界与 ledger 一致，并拒绝不存在的精确路径或空匹配 glob。所有 `.mdx` frontmatter 仅以纯 YAML 安全模式解析，拒绝 `gray-matter` 脚本引擎执行；解析失败的本地文档必须记入未解析集合，不能被误报为孤立 ledger 条目。`validate` 只证明结构有效，不判断 glob 是否吸附无关文件或 first-class owner 是否缺失；这些语义问题属于 Routing Gate 与 Context Floor。
 
 `init-state` 的 baseline 必须锚定真实 HEAD；unborn branch 先创建首次提交。Git、HEAD 或 ledger 前置失败必须给出对应 remedy，不能折叠成模糊错误。
 
-## Startup 配置控制面
+## Startup 配置控制面与外部 Sources
 
 只要仓库存在 `llmdoc/`，SessionStart 就在状态信号后默认注入一份完整而最小的 operating guidance。它保留开始广泛探索前先加载 skill 并经 CLI 检索、非平凡计划或编辑前与用户对齐、主动按职责委派 investigator/recorder/reflector，以及持久知识变化后用 update 收尾这些护栏；详细协议仍只由 skill 正文拥有。
 
-仓库可在 CLI 解析出的 project root 放置可选的 `llmdoc.config.json`，当前契约以 `schema: "llmdoc.config/v1"` 显式定版。配置在 `loadWorkspace` 时加载、规范化并挂入 `WorkspaceData`，使 validate、hook 与结构改写消费同一快照，不能各自重读后形成不同解释。仓库自身保留一份有效配置作为这条跨命令路径的 dogfood。
+仓库可在 CLI 解析出的 project root 放置可选的 `llmdoc.config.json`，支持 `llmdoc.config/v1` 与新增 `sources` 的 `llmdoc.config/v2`；另外支持同目录、应保持 gitignored 的 `llmdoc.config.local.json` 用于本机覆写（仅本机配置允许指向仓库外的兄弟路径，若被 git 追踪则发出 warning）。配置在 `loadWorkspace` 时加载、合并并挂入 `WorkspaceData`，使 validate、hook、检索与结构改写消费同一快照；`llmdoc.config.json` 与 `llmdoc.config.local.json` 均属于知识控制面，不进入 implementation surface。仓库自身保留一份有效配置作为这条跨命令路径的 dogfood。
 
-`startup.remindSkill` 默认为 `true`，只有显式设为 `false` 才关闭默认 guidance；`startup.preload` 按声明顺序列出 project root 内已有的精确 `.mdx` 文档 ID，可省略 `llmdoc/` 前缀。JSON 或 schema 无效时无法保留字段意图，hook 回到默认 reminder 并跳过 preload；schema 有效而 preload 路径无效或缺失时，只跳过整组 preload，仍保留有效的 `remindSkill`。规范化后等价的重复项则 warning、去重并继续，不把写法别名升级成阻塞错误。
+`sources` 仅作为只读外部知识面，支持同仓/子模块 `path` 与远程 `git` 两种源，以 `@<alias>/<path>` 寻址，且永远不并入本地 `documents`、ledger、`delta` 或写入命令。`loadWorkspace` 保持纯本地只读不触发网络；读取命令只在冷缓存缺失时按需拉取，日常陈旧源由非阻塞后台进程刷新，`status --refresh` 提供显式同步更新并在刷新失败时返回非零退出码。远程源按 URL 共享全局 mirror（默认 `~/.llmdoc`，可用 `LLMDOC_HOME` 覆写），并按 `(url, ref, dir)` 隔离只读快照、仅按稀疏路径检出目标文档目录，校验 `merge-base --is-ancestor` 以防非快进覆盖。
 
-冷 SessionStart 按序直接注入完整正文，不设置 llmdoc 字符或 token 预算；只有最终 completion marker 可见时，Agent 才能假定正文完整并跳过重复 `search`/`show`，否则按缺失文档回退检索。compact 重入只列出配置文档 ID，不再次注入正文，避免刚压缩的上下文被固定 startup pack 立即填回。
+故障隔离是硬边界：外部源拉取失败、离线或单条外部文档缺失只降级为 warning 或跳过单项，绝不阻塞本地 `validate`/`commit`，也不拖垮同组本地 preload。未在配置中声明的 `@alias` 或 v2 模式下以 `@` 开头创建本地 topic 仍属显式配置/结构错误。
+
+`startup.remindSkill` 默认为 `true`，只有显式设为 `false` 才关闭默认 guidance；`startup.preload` 按声明顺序列出本地精确 `.mdx` ID（可省略 `llmdoc/` 前缀）或已声明的 `@<alias>/<path>`。JSON 或 schema 无效时无法保留字段意图，hook 回到默认 reminder 并跳过 preload；schema 有效而本地 preload 路径无效或缺失时跳过整组 preload，仍保留 `remindSkill`；外部 preload 则逐条降级跳过并受单条体积上限保护。规范化后等价的重复项则 warning、去重并继续，不把写法别名升级成阻塞错误。
+
+冷 SessionStart 按序直接注入完整正文，不设置本地 llmdoc 字符或 token 预算；末尾 completion marker 永远位于已跳过项清单之后，并区分完整注入与部分跳过，只有完整 marker 可见时 Agent 才能跳过重复 `search`/`show`。compact 重入只列出配置文档 ID，不再次注入正文，避免刚压缩的上下文被固定 startup pack 立即填回。
 
 ## Revision 与影响语义
 

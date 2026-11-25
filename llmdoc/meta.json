@@ -1,33 +1,33 @@
 {
   "schema": "llmdoc.meta/v3",
   "baseline": {
-    "revision": "2b114c1e18652ea1ef337848f5837a67157bf057",
-    "verifiedAt": "2026-08-27T12:03:28.648Z"
+    "revision": "8d1024a7f9f51ae53732bca02e1fa7af9d7edc57",
+    "verifiedAt": "2026-11-25T04:06:11.050Z"
   },
   "documents": {
     "architecture.mdx": {
-      "validatedRevision": "c06509e1ce1415317cef19ab222d7f2e299eed67"
+      "validatedRevision": "8d1024a7f9f51ae53732bca02e1fa7af9d7edc57"
     },
     "cli-runtime/state-and-validation.mdx": {
-      "validatedRevision": "ad51e18f7a0fad995a3da71f003c5ea84336a6db"
+      "validatedRevision": "8d1024a7f9f51ae53732bca02e1fa7af9d7edc57"
     },
     "cli-runtime/retrieval-and-mutation.mdx": {
-      "validatedRevision": "ad51e18f7a0fad995a3da71f003c5ea84336a6db"
+      "validatedRevision": "8d1024a7f9f51ae53732bca02e1fa7af9d7edc57"
     },
     "plugin-packaging/claude-and-codex.mdx": {
-      "validatedRevision": "ad51e18f7a0fad995a3da71f003c5ea84336a6db"
+      "validatedRevision": "8d1024a7f9f51ae53732bca02e1fa7af9d7edc57"
     },
     "plugin-packaging/development-and-release.mdx": {
-      "validatedRevision": "ad51e18f7a0fad995a3da71f003c5ea84336a6db"
+      "validatedRevision": "8d1024a7f9f51ae53732bca02e1fa7af9d7edc57"
     },
     "workflows/init-and-update.mdx": {
-      "validatedRevision": "c06509e1ce1415317cef19ab222d7f2e299eed67"
+      "validatedRevision": "8d1024a7f9f51ae53732bca02e1fa7af9d7edc57"
     },
     "workflows/prune-and-upgrade.mdx": {
-      "validatedRevision": "ad51e18f7a0fad995a3da71f003c5ea84336a6db"
+      "validatedRevision": "8d1024a7f9f51ae53732bca02e1fa7af9d7edc57"
     },
     "website/product-and-deployment.mdx": {
-      "validatedRevision": "ad51e18f7a0fad995a3da71f003c5ea84336a6db"
+      "validatedRevision": "8d1024a7f9f51ae53732bca02e1fa7af9d7edc57"
     }
   },
   "convergence": {

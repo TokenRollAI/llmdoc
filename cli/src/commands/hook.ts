@@ -4,7 +4,8 @@ import path from "node:path";
 import { analyzeDelta } from "../lib/state.js";
 import { loadWorkspace } from "../lib/workspace.js";
 import { formatCompactPreloadIndex, formatStartupPreloadDocuments, loadLlmdocConfig } from "../lib/config.js";
-import type { LoadedLlmdocConfig } from "../types.js";
+import { triggerBackgroundRefreshIfNeeded } from "../lib/sources.js";
+import type { LoadedLlmdocConfig, ParsedDocument, WorkspaceData } from "../types.js";
 
 interface HookOptions {
   cwd: string;
@@ -50,6 +51,13 @@ function runSessionStart(cwd: string, stdin: string): string {
   const lifecycle = source === "compact" ? "compact re-entry" : "cold start";
   try {
     const workspace = loadWorkspace(cwd);
+    if (source === "cold" && workspace.sources.length > 0) {
+      try {
+        triggerBackgroundRefreshIfNeeded(workspace);
+      } catch {
+        // Background refresh must stay fail-open and never degrade SessionStart.
+      }
+    }
     const delta = analyzeDelta(workspace);
     const signal = summarizeHookDelta(delta);
     const pendingLessonCandidates = countPendingLessonCandidates(cwd);
@@ -87,9 +95,7 @@ function runSessionStart(cwd: string, stdin: string): string {
     const preloaded =
       source === "compact"
         ? formatCompactPreloadIndex(startupConfig.preloadPaths)
-        : formatStartupPreloadDocuments(
-            startupConfig.preloadPaths.map((preloadPath) => workspace.documentsByLlmdocPath.get(preloadPath)!)
-          );
+        : formatColdStartupPreload(workspace);
     if (preloaded) {
       context.push(preloaded);
     }
@@ -105,19 +111,78 @@ function runSessionStart(cwd: string, stdin: string): string {
   }
 }
 
+function formatColdStartupPreload(workspace: WorkspaceData): string {
+  const resolved: ParsedDocument[] = [];
+  const skipped: Array<{ id: string; reason: string }> = [];
+
+  for (const entry of workspace.llmdocConfig.preloadEntries) {
+    if (entry.kind === "local") {
+      const doc = workspace.documentsByLlmdocPath.get(entry.normalized);
+      if (doc) {
+        resolved.push(doc);
+      }
+      continue;
+    }
+
+    const source = entry.sourceName ? workspace.sourcesByName.get(entry.sourceName) : undefined;
+    if (!source || source.status !== "ready") {
+      const detail = source?.error ?? "no local cache yet";
+      const remedy = source?.remedy ?? `run npx -y @tokenroll/llmdoc show ${entry.normalized} or npx -y @tokenroll/llmdoc status --refresh`;
+      skipped.push({
+        id: entry.normalized,
+        reason: `source @${entry.sourceName} is unavailable (${detail}; ${remedy})`
+      });
+      continue;
+    }
+
+    const doc = workspace.sourceDocumentsById.get(entry.normalized);
+    if (!doc) {
+      skipped.push({
+        id: entry.normalized,
+        reason: `document not found in @${entry.sourceName}${source.revision ? ` (${source.revision.slice(0, 7)})` : ""}`
+      });
+      continue;
+    }
+    resolved.push(doc);
+  }
+
+  return formatStartupPreloadDocuments(resolved, {
+    skipped,
+    sourcesByName: workspace.sourcesByName
+  });
+}
+
 function appendStartupConfigIssues(context: string[], startupConfig: LoadedLlmdocConfig): void {
   const errors = startupConfig.issues.filter((issue) => issue.severity === "error");
   const warnings = startupConfig.issues.filter((issue) => issue.severity === "warning");
   if (errors.length > 0) {
-    context.push(
-      startupConfig.config
-        ? "llmdoc.config.json has invalid startup.preload entries; preload was skipped while the valid remindSkill preference remained applied. Run npx @tokenroll/llmdoc validate for details."
-        : "llmdoc.config.json could not be applied; preload was skipped and the default skill reminder remains active. Run npx @tokenroll/llmdoc validate for details."
-    );
+    if (!startupConfig.config) {
+      const unsupported = errors.find((issue) => issue.code === "config.schema.unsupported");
+      context.push(
+        unsupported
+          ? `${unsupported.message} Preload was skipped and the default skill reminder remains active.`
+          : "llmdoc.config.json could not be applied; preload was skipped and the default skill reminder remains active. Run npx @tokenroll/llmdoc validate for details."
+      );
+    } else if (startupConfig.hasLocalPreloadErrors) {
+      context.push(
+        "llmdoc.config.json has invalid startup.preload entries; preload was skipped while the valid remindSkill preference remained applied. Run npx @tokenroll/llmdoc validate for details."
+      );
+    } else {
+      context.push(
+        "llmdoc.config.json has invalid source configuration entries; affected sources were skipped while valid startup settings remained applied. Run npx @tokenroll/llmdoc validate for details."
+      );
+    }
   }
-  if (warnings.length > 0) {
+  const duplicateWarnings = warnings.filter((issue) => issue.code === "config.startup.preload.duplicate");
+  if (duplicateWarnings.length > 0) {
     context.push(
       "llmdoc.config.json has warnings; normalized duplicate startup.preload entries were ignored. Run npx @tokenroll/llmdoc validate for details."
+    );
+  }
+  const otherWarnings = warnings.filter((issue) => issue.code !== "config.startup.preload.duplicate");
+  if (otherWarnings.length > 0) {
+    context.push(
+      `llmdoc.config.json reported ${otherWarnings.length} warning(s). Run npx @tokenroll/llmdoc validate for details.`
     );
   }
 }

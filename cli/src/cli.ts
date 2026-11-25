@@ -19,6 +19,8 @@ import { runHook } from "./commands/hook.js";
 import { runPrune } from "./commands/prune.js";
 import { parseAndValidateJsonString, stringifyValidatedOutput, type OutputSchemaName } from "./lib/output-schema.js";
 import { packageRootFromImport } from "./lib/package-root.js";
+import { refreshGitSources } from "./lib/sources.js";
+import { loadWorkspace } from "./lib/workspace.js";
 
 export interface RunCliResult {
   exitCode: number;
@@ -95,7 +97,7 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
   program
     .command("index")
     .description("list document metadata without reading bodies")
-    .option("--topic <topic>", "list documents only under this topic")
+    .option("--topic <topic>", "list documents only under a local topic or @source[/subdir]")
     .option("--kind <kind>", "filter by kind: architecture | guide | reference")
     .action((commandOptions) => {
       const rootDir = findProjectRoot(cwd);
@@ -105,7 +107,7 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
   program
     .command("show")
     .description("read one or more document bodies")
-    .argument("<path...>", "paths relative to llmdoc/, such as api-client/retry-policy.mdx")
+    .argument("<path...>", "local paths under llmdoc/ (e.g. api-client/retry.mdx) or external @source/<path> IDs")
     .action((paths) => {
       const rootDir = findProjectRoot(cwd);
       output.push(writeOutput("show", runShow({ ...globalOptions, cwd: rootDir, paths }), globalOptions.json));
@@ -115,7 +117,7 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
     .command("search")
     .description("search llmdoc documents lexically (Chinese segmentation with CJK bigram fallback)")
     .argument("<query>", "search query")
-    .option("--topic <topic>", "limit to a topic")
+    .option("--topic <topic>", "limit to a local topic or @source[/subdir]")
     .option("--kind <kind>", "filter by kind: architecture | guide | reference")
     .action((query, commandOptions) => {
       const rootDir = findProjectRoot(cwd);
@@ -153,10 +155,13 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
 
   program
     .command("status")
-    .description("inspect baseline, dirty, and growth state")
+    .description("inspect baseline, dirty, growth, and external source state")
+    .option("--refresh", "refresh configured git sources in the foreground")
     .action((commandOptions) => {
       const rootDir = findProjectRoot(cwd);
-      output.push(writeOutput("status", runStatus({ ...globalOptions, ...commandOptions, cwd: rootDir }), globalOptions.json));
+      const result = runStatus({ ...globalOptions, ...commandOptions, cwd: rootDir });
+      exitCode = result.exitCode;
+      output.push(writeOutput("status", result.output, globalOptions.json));
     });
 
   program
@@ -295,7 +300,7 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
   const hookCommand = program.command("hook").description("read-only, fail-open signals for editor and Agent hooks");
   hookCommand
     .command("session-start")
-    .description("output SessionStart state and apply optional llmdoc.config.json startup config")
+    .description("output SessionStart state and apply optional llmdoc.config.json (reads optional JSON stdin such as {\"source\":\"compact\"})")
     .action(() => {
       const rootDir = findProjectRootOrNull(cwd) ?? cwd;
       output.push(runHook({ cwd: rootDir, mode: "session-start", stdin }));
@@ -323,6 +328,18 @@ export async function runCli(argv: string[], cwd = process.cwd(), stdin = ""): P
       const { runServe } = await import("./commands/serve.js");
       const rootDir = findProjectRoot(cwd);
       output.push(await runServe({ cwd: rootDir, port: commandOptions.port }));
+    });
+
+  program
+    .command("_refresh-sources", { hidden: true })
+    .option("--cwd <dir>", "repository root directory")
+    .action((commandOptions) => {
+      const rootDir = findProjectRootOrNull(commandOptions.cwd ?? cwd);
+      if (!rootDir) {
+        return;
+      }
+      const workspace = loadWorkspace(rootDir);
+      refreshGitSources(workspace, { force: false });
     });
 
   try {

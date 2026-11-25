@@ -1,6 +1,6 @@
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import matter from "gray-matter";
 
 import { ParsedDocument, ValidationIssue, WorkspaceData, MetaLedger, DocumentFrontmatter } from "../types.js";
 import { DOC_LINE_WARNING_LIMIT } from "./constants.js";
@@ -11,7 +11,10 @@ import { normalizeRepoRelativePath, repoPath, resolveInsideRoot } from "./fs.js"
 import { gitCommitExists, isShallowRepository } from "./git.js";
 import { matchesCodePathPattern } from "./search.js";
 import { validateDocFrontmatter, validateMeta } from "./schema.js";
-import { loadLlmdocConfig } from "./config.js";
+import { LLMDOC_CONFIG_FILENAME, LLMDOC_LOCAL_CONFIG_FILENAME, loadLlmdocConfig } from "./config.js";
+import { parseYamlFrontmatter } from "./frontmatter.js";
+import { isSourceRef, parseSourceDocId } from "./source-id.js";
+import { loadSourcesReadOnly } from "./sources.js";
 
 export function loadWorkspace(rootDir: string): WorkspaceData {
   const configuredLlmdocDir = path.join(rootDir, "llmdoc");
@@ -22,7 +25,8 @@ export function loadWorkspace(rootDir: string): WorkspaceData {
   const llmdocDir = configuredLlmdocDir;
 
   const preloadIssues: ValidationIssue[] = [];
-  const documents = scanDocuments(rootDir, llmdocDir, preloadIssues);
+  const unparsedDocPaths = new Set<string>();
+  const documents = scanDocuments(rootDir, llmdocDir, preloadIssues, unparsedDocPaths);
   const documentsByLlmdocPath = new Map(documents.map((document) => [document.llmdocPath, document]));
   const topics = new Map<string, ParsedDocument[]>();
   const rootSingletons: ParsedDocument[] = [];
@@ -45,6 +49,7 @@ export function loadWorkspace(rootDir: string): WorkspaceData {
   const metaPath = path.join(llmdocDir, "meta.json");
   const meta = loadMeta(metaPath, preloadIssues);
   const llmdocConfig = loadLlmdocConfig(rootDir, documentsByLlmdocPath);
+  const loadedSources = loadSourcesReadOnly(rootDir, llmdocConfig.sources);
 
   return {
     rootDir,
@@ -56,11 +61,21 @@ export function loadWorkspace(rootDir: string): WorkspaceData {
     rootSingletons,
     meta,
     llmdocConfig,
-    preloadIssues
+    preloadIssues,
+    sources: loadedSources.sources,
+    sourcesByName: loadedSources.sourcesByName,
+    sourceDocuments: loadedSources.sourceDocuments,
+    sourceDocumentsById: loadedSources.sourceDocumentsById,
+    unparsedDocPaths
   };
 }
 
-function scanDocuments(rootDir: string, llmdocDir: string, preloadIssues: ValidationIssue[]): ParsedDocument[] {
+function scanDocuments(
+  rootDir: string,
+  llmdocDir: string,
+  preloadIssues: ValidationIssue[],
+  unparsedDocPaths: Set<string>
+): ParsedDocument[] {
   const results: ParsedDocument[] = [];
 
   walk(llmdocDir, (absolutePath) => {
@@ -77,11 +92,13 @@ function scanDocuments(rootDir: string, llmdocDir: string, preloadIssues: Valida
       return;
     }
 
+    const llmdocPath = repoPath(llmdocDir, absolutePath);
     const raw = fs.readFileSync(absolutePath, "utf8");
     let parsed;
     try {
-      parsed = matter(raw);
+      parsed = parseYamlFrontmatter(raw);
     } catch (error) {
+      unparsedDocPaths.add(llmdocPath);
       preloadIssues.push({
         severity: "error",
         code: "frontmatter.parse",
@@ -90,8 +107,7 @@ function scanDocuments(rootDir: string, llmdocDir: string, preloadIssues: Valida
       });
       return;
     }
-    const frontmatter = parsed.data as DocumentFrontmatter;
-    const llmdocPath = repoPath(llmdocDir, absolutePath);
+    const frontmatter = parsed.data as unknown as DocumentFrontmatter;
     const segments = llmdocPath.split("/");
 
     results.push({
@@ -107,7 +123,10 @@ function scanDocuments(rootDir: string, llmdocDir: string, preloadIssues: Valida
       links: extractLinks(parsed.content),
       codeRefs: extractCodeRefs(parsed.content),
       estimatedTokens: estimateTokens(parsed.content),
-      lineCount: raw.split(/\r?\n/).length
+      lineCount: raw.split(/\r?\n/).length,
+      sourceName: null,
+      sourceRelativePath: null,
+      sourceMountPath: null
     });
   });
 
@@ -162,6 +181,7 @@ export function validateWorkspace(workspace: WorkspaceData): ValidationIssue[] {
   const issues: ValidationIssue[] = [...workspace.preloadIssues];
   issues.push(...workspace.llmdocConfig.issues);
   const seenDocPaths = new Set<string>();
+  const declaredSourceAliases = new Set(Object.keys(workspace.llmdocConfig.config?.sources ?? {}));
 
   if (!workspace.meta) {
     issues.push({
@@ -207,6 +227,15 @@ export function validateWorkspace(workspace: WorkspaceData): ValidationIssue[] {
       });
     }
 
+    if (workspace.llmdocConfig.schemaVersion === 2 && document.topic?.startsWith("@")) {
+      issues.push({
+        severity: "error",
+        code: "hierarchy.reserved-prefix",
+        path: document.repoPath,
+        message: `Topic "${document.topic}" starts with "@", which is reserved for external sources in llmdoc.config/v2. Rename it with \`llmdoc mv llmdoc/${document.topic} llmdoc/${document.topic.slice(1)}\`.`
+      });
+    }
+
     const mdxBodyErrors = validateMdxBody(document.body);
     for (const message of mdxBodyErrors) {
       issues.push({
@@ -227,6 +256,47 @@ export function validateWorkspace(workspace: WorkspaceData): ValidationIssue[] {
     }
 
     for (const relationPath of document.frontmatter.relations?.requires ?? []) {
+      if (isSourceRef(relationPath)) {
+        let parsedRef;
+        try {
+          parsedRef = parseSourceDocId(relationPath);
+        } catch (error) {
+          issues.push({
+            severity: "error",
+            code: "relations.requires.invalid-path",
+            path: document.repoPath,
+            message: (error as Error).message
+          });
+          continue;
+        }
+        if (!declaredSourceAliases.has(parsedRef.alias)) {
+          issues.push({
+            severity: "error",
+            code: "relations.requires.undeclared-source",
+            path: document.repoPath,
+            message: `requires references an undeclared source: @${parsedRef.alias} (${relationPath})`
+          });
+          continue;
+        }
+        const loadedSource = workspace.sourcesByName.get(parsedRef.alias);
+        if (!loadedSource || loadedSource.status !== "ready") {
+          issues.push({
+            severity: "warning",
+            code: "relations.requires.source-unavailable",
+            path: document.repoPath,
+            message: `requires target ${parsedRef.canonicalId} could not be verified because source @${parsedRef.alias} is unavailable${loadedSource?.remedy ? ` (${loadedSource.remedy})` : ""}.`
+          });
+        } else if (!workspace.sourceDocumentsById.has(parsedRef.canonicalId)) {
+          issues.push({
+            severity: "warning",
+            code: "relations.requires.source-missing",
+            path: document.repoPath,
+            message: `requires points to a missing document in @${parsedRef.alias}${loadedSource.revision ? ` (${loadedSource.revision.slice(0, 7)})` : ""}: ${parsedRef.canonicalId}`
+          });
+        }
+        continue;
+      }
+
       const normalizedRelation = validateLlmdocRelativePath(relationPath);
       if (!normalizedRelation.ok) {
         issues.push({
@@ -342,6 +412,54 @@ export function validateWorkspace(workspace: WorkspaceData): ValidationIssue[] {
     }
   }
 
+  for (const source of workspace.sources) {
+    if (source.status !== "ready") {
+      issues.push({
+        severity: "warning",
+        code: source.status === "missing" ? "source.unavailable" : "source.error",
+        path: LLMDOC_CONFIG_FILENAME,
+        message: `Source @${source.name} is unavailable: ${source.error ?? "no local snapshot"}.${source.remedy ? ` ${source.remedy}` : ""}`
+      });
+    }
+    for (const sourceIssue of source.issues) {
+      issues.push({
+        ...sourceIssue,
+        severity: "warning"
+      });
+    }
+  }
+
+  for (const preloadEntry of workspace.llmdocConfig.preloadEntries) {
+    if (preloadEntry.kind !== "source" || !preloadEntry.sourceName) {
+      continue;
+    }
+    const source = workspace.sourcesByName.get(preloadEntry.sourceName);
+    if (!source || source.status !== "ready") {
+      issues.push({
+        severity: "warning",
+        code: "config.startup.preload.source-unavailable",
+        path: LLMDOC_CONFIG_FILENAME,
+        message: `startup.preload source document could not be verified because @${preloadEntry.sourceName} is unavailable: ${preloadEntry.normalized}`
+      });
+    } else if (!workspace.sourceDocumentsById.has(preloadEntry.normalized)) {
+      issues.push({
+        severity: "warning",
+        code: "config.startup.preload.source-missing",
+        path: LLMDOC_CONFIG_FILENAME,
+        message: `startup.preload source document does not exist in @${preloadEntry.sourceName}${source.revision ? ` (${source.revision.slice(0, 7)})` : ""}: ${preloadEntry.normalized}`
+      });
+    }
+  }
+
+  if (workspace.llmdocConfig.localConfigExists && isGitTrackedFile(workspace.rootDir, LLMDOC_LOCAL_CONFIG_FILENAME)) {
+    issues.push({
+      severity: "warning",
+      code: "config.local.tracked",
+      path: LLMDOC_LOCAL_CONFIG_FILENAME,
+      message: `${LLMDOC_LOCAL_CONFIG_FILENAME} is tracked by Git. Add it to .gitignore so machine-specific paths are not committed.`
+    });
+  }
+
   for (const [topic, docs] of workspace.topics) {
     if (docs.length === 0) {
       issues.push({
@@ -382,7 +500,7 @@ export function validateWorkspace(workspace: WorkspaceData): ValidationIssue[] {
     }
 
     for (const metaPath of metaPaths) {
-      if (!seenDocPaths.has(metaPath)) {
+      if (!seenDocPaths.has(metaPath) && !workspace.unparsedDocPaths?.has(metaPath)) {
         issues.push({
           severity: "error",
           code: "meta.entry.orphaned",
@@ -403,6 +521,15 @@ export function validateWorkspace(workspace: WorkspaceData): ValidationIssue[] {
   }
 
   return issues;
+}
+
+function isGitTrackedFile(rootDir: string, repoRelativePath: string): boolean {
+  const result = spawnSync("git", ["ls-files", "--error-unmatch", "--", repoRelativePath], {
+    cwd: rootDir,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"]
+  });
+  return result.status === 0;
 }
 
 function isGlob(input: string): boolean {

@@ -147,10 +147,18 @@ function makeWorkspace(documents: ParsedDocument[]): WorkspaceData {
     },
     llmdocConfig: {
       exists: false,
+      schemaVersion: null,
       config: null,
       preloadPaths: [],
-      issues: []
+      preloadEntries: [],
+      sources: {},
+      issues: [],
+      hasLocalPreloadErrors: false
     },
-    preloadIssues: []
+    preloadIssues: [],
+    sources: [],
+    sourcesByName: new Map(),
+    sourceDocuments: [],
+    sourceDocumentsById: new Map()
   };
 }

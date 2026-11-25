@@ -67,6 +67,97 @@
         "description": {
           "type": "string",
           "minLength": 1
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "sourceSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "kind",
+        "target",
+        "status",
+        "documentCount"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "git",
+            "path"
+          ]
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dir": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ready",
+            "missing",
+            "error"
+          ]
+        },
+        "documentCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "revision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pinned": {
+          "type": "boolean"
+        },
+        "isSubmodule": {
+          "type": "boolean"
+        },
+        "lastSyncedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stale": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "remedy": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },
@@ -202,6 +293,12 @@
             }
           }
         },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourceSummary"
+          }
+        },
         "pagination": {
           "$ref": "#/$defs/pagination"
         }
@@ -247,8 +344,20 @@
                   "string",
                   "null"
                 ]
+              },
+              "source": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourceSummary"
           }
         },
         "pagination": {
@@ -319,8 +428,21 @@
                     }
                   }
                 }
+              },
+              "source": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
           }
         },
         "pagination": {
@@ -360,6 +482,12 @@
               },
               "body": {
                 "type": "string"
+              },
+              "source": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
           }
@@ -418,8 +546,21 @@
               },
               "score": {
                 "type": "number"
+              },
+              "source": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
           }
         },
         "pagination": {
@@ -449,7 +590,35 @@
             "$ref": "#/$defs/docRef"
           }
         },
+        "missingPrerequisites": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "reason"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
         "unmappedFiles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "warnings": {
           "type": "array",
           "items": {
             "type": "string",
@@ -587,6 +756,12 @@
         },
         "growth": {
           "$ref": "#/$defs/growth"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourceSummary"
+          }
         }
       }
     },

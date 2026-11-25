@@ -32,7 +32,7 @@ Claude 根插件是手工维护的 canonical surface；skills 定义知识门与
 
 生命周期 hook 从消费仓库 cwd 启动，可能被同名 local/`file:` 依赖抢先满足，且无效 bin 不会自动回退 registry。hook 因此必须借助不同 identity 的 scoped npm alias 选择发布 runtime；alias 只隔离包解析，不改变 CLI 契约，也不用于日常交互。
 
-SessionStart 默认同时输出状态信号与完整的最小 operating guidance，让宿主无需仓库配置也能恢复 retrieval gate、用户对齐、角色边界和 update 收尾约束。消费仓库可用 `llmdoc.config/v1` 的 `startup.remindSkill: false` 显式关闭 guidance，或通过有序的 `startup.preload` 把指定正文直接带入冷启动 context。冷启动不施加 llmdoc 预算，但以末尾 completion marker 区分完整输出与宿主截断；只有 marker 可见时才承诺无需重复检索。compact 重入仅恢复配置文档 ID，不重新灌入正文。
+SessionStart 默认同时输出状态信号与完整的最小 operating guidance，让宿主无需仓库配置也能恢复 retrieval gate、用户对齐、角色边界和 update 收尾约束。消费仓库可用 `llmdoc.config/v1` 或支持外部 `sources` 的 `llmdoc.config/v2`（以及 gitignored 的 `llmdoc.config.local.json`）关闭 guidance 或通过有序的 `startup.preload` 把指定本地/`@<alias>/` 正文直接带入冷启动 context。冷启动不对本地正文施加 llmdoc 预算，但对外部单条正文施加体积保护并以位于末尾的 completion marker 区分完整输出、部分跳过与宿主截断；只有完整 marker 可见时才承诺无需重复检索。compact 重入仅恢复配置文档 ID，不重新灌入正文。
 
 ## 生成与一致性不变量
 

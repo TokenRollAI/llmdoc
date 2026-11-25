@@ -43,7 +43,7 @@ Stop instead of improvising when:
    - Prefer the smallest sufficient set of high-value owner docs over broad shallow inventory. Depth never excuses a first-class subsystem with neither an owner nor an intentional no-doc decision.
    - Keep stable knowledge in `llmdoc/` and validity state in `llmdoc/meta.json`.
    - Create root singleton docs only for genuinely cross-topic contracts; otherwise create only the necessary one-level topic directories. Topics are plain directories with no `index.mdx` entry node.
-   - If the user wants non-default SessionStart guidance or deliberate document preload, read [Startup Configuration](../llmdoc/references/startup-config.md) and create `llmdoc.config.json`; otherwise do not add optional startup config during bootstrap.
+   - If the user wants non-default SessionStart guidance, external `sources`, or deliberate document preload, read [Startup Configuration](../llmdoc/references/startup-config.md) and create `llmdoc.config.json`; otherwise do not add optional config during bootstrap.
 
 3. Validate before reporting success.
    - Seed the ledger with `init-state` (writes meta.json with null revisions), then run `validate` and fix all schema, routing, and reference failures.

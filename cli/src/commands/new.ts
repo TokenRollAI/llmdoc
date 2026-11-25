@@ -5,6 +5,7 @@ import { parseDocTargetShape, assertDocKindMatchesShape, assertDocumentKind } fr
 import { CliError } from "../lib/errors.js";
 import { ensureDirectory, findProjectRootForNew, normalizeRepoRelativePath, resolveInsideRoot } from "../lib/fs.js";
 import { packageRootFromImport } from "../lib/package-root.js";
+import { isSourceRef } from "../lib/source-id.js";
 import { loadWorkspace } from "../lib/workspace.js";
 import { DocumentKind } from "../types.js";
 
@@ -17,10 +18,16 @@ interface NewOptions {
 }
 
 export function runNew(options: NewOptions): unknown {
+  if (isSourceRef(options.path)) {
+    throw new CliError(`External source documents (@...) are read-only and cannot be created with new: ${options.path}`);
+  }
   const rootDir = findProjectRootForNew(options.cwd);
   const repoRelativePath = normalizeDocDestination(options.path);
   const kind = assertDocumentKind(options.kind);
   const shape = parseDocTargetShape(repoRelativePath);
+  if (shape.topic?.startsWith("@")) {
+    throw new CliError(`Local topic names cannot start with "@", which is reserved for external sources: ${shape.topic}`);
+  }
   assertDocKindMatchesShape(shape);
   const absolutePath = resolveInsideRoot(rootDir, repoRelativePath, { allowMissing: true });
   if (fs.existsSync(absolutePath)) {
