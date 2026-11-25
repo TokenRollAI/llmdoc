@@ -5,6 +5,10 @@ code:
   paths:
     - package.json
     - cli/package.json
+    - AGENTS.md
+    - .gitattributes
+    - .agent/skills/llmdoc-dev-sync/SKILL.md
+    - .claude/skills/llmdoc-dev-sync/SKILL.md
     - .github/workflows/ci.yml
     - .github/workflows/codex-plugin-scanner.yml
     - .github/workflows/release.yml
@@ -26,7 +30,7 @@ code:
 
 ## 变更集同步不变量
 
-CLI 命令或输出语义变化必须在同一 change-set 同步 canonical prompt、生成宿主表面、版本元数据、公开文档和 dogfood knowledge；精确文件集合交给自动化。机械校验通过后仍需人工审查宿主 policy、授权边界和公开语义是否一致。
+CLI 命令、配置/输出 schema 或 hook 语义变化必须在同一 change-set 同步 canonical prompt（含 frontmatter 触发描述与按需 reference）、生成宿主表面、版本元数据、公开文档和 dogfood knowledge；精确文件集合与预算检查交给自动化。仓库内部开发维护用 skill 必须隔离在 `.agent/skills/` 与 `.claude/skills/`，并通过 `.gitattributes` `export-ignore` 从发布 tarball 中排除，绝不放入对外发布的 `skills/` 或 `.agents/skills/`。机械校验通过后仍需人工审查宿主 policy、授权边界和公开语义是否一致。
 
 仓库根的 `llmdoc.config.json` 是 startup 配置跨 validate、hook 与结构改写路径的 dogfood，而非仅供 README 展示的样例；startup 契约变更必须让它继续通过真实 workspace 校验。对外发布的 config schema 则以 CLI schema 为 canonical source，网站构建产物必须在 CI 中通过结构等价检查，避免编辑器所取 schema 与运行时校验漂移。
 

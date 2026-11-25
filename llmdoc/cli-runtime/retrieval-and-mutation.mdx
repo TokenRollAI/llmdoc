@@ -8,10 +8,13 @@ code:
   paths:
     - cli/src/cli.ts
     - cli/src/lib/doc-shape.ts
+    - cli/src/lib/frontmatter.ts
     - cli/src/lib/markdown.ts
     - cli/src/lib/output-schema.ts
     - cli/src/lib/package-root.ts
     - cli/src/lib/pagination.ts
+    - cli/src/lib/rewrite.ts
+    - cli/src/lib/source-id.ts
     - cli/src/commands/validate.ts
     - cli/src/commands/init-state.ts
     - cli/src/commands/status.ts
@@ -43,6 +46,7 @@ code:
     - cli/tests/viewer-http.test.ts
     - cli/tests/viewer-assets.test.ts
     - cli/tests/cli.test.ts
+    - cli/tests/sources-cli.test.ts
     - cli/tests/search-cjk.test.ts
     - cli/tests/cold-start.test.ts
     - cli/schemas/output.schema.json
@@ -52,9 +56,9 @@ code:
 
 ## 渐进读取模型
 
-读取面按“地图/索引或搜索/正文”渐进披露，任一层都允许停止。`context --files` 对每个输入独立反查 owner，再为 owner 并集补齐 `requires` 前置闭包；未命中输入必须单独返回，不能被同批成功项掩盖。文本与 JSON 输出共用语义契约，避免宿主分叉。
+读取面按“地图/索引或搜索/正文”渐进披露，任一层都允许停止。所有只读命令（`tree`、`index`、`search`、`show`、`context`）统一支持 `@<alias>/<path>` 外部知识源，但保持本地与外部清晰分离：`tree --docs` 将外部源单独分组展示，避免混入本地 `llmdoc/` 树；`context --files` 对 `path` 源按子树相对路径匹配、对 `git` 源按仓库相对 glob 匹配，并为每个输入独立反查 owner 与 `requires` 闭包（跨源缺失前置只通过 `missingPrerequisites` 与 warning 暴露），未命中本地 owner 的文件必须继续出现在 `unmappedFiles` 中，绝不能被外部命中掩盖。文本与 JSON 输出共用语义契约，避免宿主分叉。
 
-`search` 先做中文词法分段，使连续 CJK 查询不依赖人工空格；词法零召回时才降级到确定性的 CJK bigram。降级必须在文本与 JSON 中显式暴露，不能把弱匹配伪装成正常召回；完整短语优先，bigram 只承担兜底。
+`search` 先做中文词法分段，使连续 CJK 查询不依赖人工空格；词法零召回时才降级到确定性的 CJK bigram。降级必须在文本与 JSON 中显式暴露，不能把弱匹配伪装成正常召回；完整短语优先，bigram 只承担兜底。外部源文档只在内存中参与检索，消费仓库的 `.llmdoc-tmp/cache/search-index.json` 严格只持久化本地文档，防止私有跨仓内容落盘泄漏。
 
 Viewer 是同一知识面的 loopback 只读投影，不是改写入口。请求只能经过显式路由并命中 workspace 扫描出的 canonical 文档 ID，不能解释为任意文件系统路径；服务端响应边界与客户端 Markdown 清洗必须同时保留，扩展也不得绕过。
 
@@ -66,10 +70,10 @@ CLI 自己拥有的固定用户可见文案统一使用英文，包括 help/usag
 
 ## 结构改写不变量
 
-所有结构改写都受仓库与 `llmdoc/` realpath 边界约束，拒绝符号链接逃逸和覆盖目标。`new` 是唯一可在缺少 `llmdoc/` 时启动的改写，它锁定最近 Git 根；其他改写要求已有 workspace，失败必须原子回滚且不触碰源码。
+所有结构改写都受仓库与 `llmdoc/` realpath 边界约束，拒绝符号链接逃逸和覆盖目标，并统一拒绝 `@<alias>` 只读外部目标与 `@` 前缀本地 topic。`new` 是唯一可在缺少 `llmdoc/` 时启动的改写，它锁定最近 Git 根；其他改写要求已有 workspace，失败必须原子回滚且不触碰源码；frontmatter 重写必须使用安全 YAML 序列化，不得把正文重新交给 `gray-matter` 解析引擎。
 
-startup preload 是指向文档 ID 的持久引用。`mv` 必须在移动正文、重写文档关系与 ledger 的同一事务中改写所有匹配的 preload，并在任一写入失败时连同配置一起回滚；不能留下“移动成功但下一次 validate 才发现配置悬空”的中间状态。
+startup preload 是指向文档 ID 的持久引用。`mv` 必须在移动正文、重写文档关系与 ledger 的同一事务中改写所有匹配的本地 preload，并原样保留 `@<alias>/` 外部引用，任一写入失败时连同配置一起回滚；不能留下“移动成功但下一次 validate 才发现配置悬空”的中间状态。
 
-`commit` 是正式收尾边界：先 validate 和 revision/dirty 预检，只提交 `llmdoc/` 写集，再刷新 fingerprint 并单独提交 `meta.json`；已复核但正文未变的 owner 也可纳入 fingerprint。预检失败必须在任何 commit 前 fail-closed，不能卷入用户已 staged 的非 llmdoc 文件，也不得用 amend 合并 meta follow-up。
+`commit` 是正式收尾边界：先 validate、分支附着检查（在任何暂存前拒绝 detached HEAD，同时保留 `fingerprint --all` 在 detached HEAD 下的显式能力）与 revision/dirty 预检，只提交 `llmdoc/` 写集，再刷新 fingerprint 并单独提交 `meta.json`；已复核但正文未变的 owner 也可纳入 fingerprint。预检失败必须在任何 commit 前 fail-closed，不能卷入用户已 staged 的非 llmdoc 文件，也不得用 amend 合并 meta follow-up。
 
 `prune` 与 `upgrade` 的 CLI 只负责可重复的诊断；合并、删除、迁移和知识价值判断始终由工作流层交给 `recorder`。
