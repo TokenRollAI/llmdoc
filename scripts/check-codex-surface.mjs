@@ -70,7 +70,8 @@ const versionSurfaces = [
   ["cli/package.json", cliPackage?.version],
   [".claude-plugin/plugin.json", readJson(".claude-plugin/plugin.json")?.version],
   [".claude-plugin/marketplace.json", claudeMarketplace?.plugins?.[0]?.version],
-  [".codex-plugin/plugin.json", plugin?.version]
+  [".codex-plugin/plugin.json", plugin?.version],
+  ["plugins/antigravity/plugin.json", readJson("plugins/antigravity/plugin.json")?.version]
 ];
 const expectedVersion = cliPackage?.version;
 for (const [label, version] of versionSurfaces) {

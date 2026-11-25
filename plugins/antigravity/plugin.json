@@ -1,0 +1,26 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "llmdoc",
+  "displayName": "llmdoc",
+  "version": "3.8.0",
+  "description": "Find the design decisions behind your code and keep repository knowledge current as the implementation changes.",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Initialize llmdoc for this repository.",
+    "Use llmdoc to find the design decisions behind my changes.",
+    "Update repository knowledge for the changes on this branch."
+  ],
+  "author": {
+    "name": "TokenRollAI",
+    "url": "https://github.com/TokenRollAI"
+  },
+  "homepage": "https://llmdoc.tokenroll.ai/",
+  "repository": "https://github.com/TokenRollAI/llmdoc",
+  "keywords": [
+    "llmdoc",
+    "context",
+    "documentation",
+    "knowledge",
+    "mdx"
+  ]
+}

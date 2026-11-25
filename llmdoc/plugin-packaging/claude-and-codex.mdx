@@ -1,5 +1,5 @@
 ---
-description: Claude canonical surface、Codex 生成面，以及 lifecycle hook runtime 与 startup context 注入边界。
+description: Claude canonical surface、Codex 与 Antigravity 宿主插件面，以及 lifecycle hook runtime 与 startup context 注入边界。
 kind: architecture
 code:
   paths:
@@ -12,7 +12,17 @@ code:
     - skills/*/SKILL.md
     - agents/*.md
     - hooks/hooks.json
+    - plugins/antigravity/plugin.json
+    - plugins/antigravity/hooks.json
+    - plugins/antigravity/scripts/llmdoc-hook.mjs
+    - plugins/antigravity/skills/*/SKILL.md
+    - plugins/antigravity/skills/llmdoc/references/*.md
+    - plugins/antigravity/agents/*.md
+    - plugins/antigravity/README.md
+    - plugins/antigravity/assets/logo.svg
     - scripts/check-codex-surface.mjs
+    - scripts/sync-antigravity-plugin.mjs
+    - scripts/check-antigravity-surface.mjs
     - skills/llmdoc/references/knowledge-topology.md
     - .agents/skills/llmdoc/references/knowledge-topology.md
     - skills/llmdoc/references/startup-config.md
@@ -26,18 +36,20 @@ code:
 
 ## 真相源与 runtime 启动边界
 
-Claude 根插件是手工维护的 canonical surface；skills 定义知识门与显式工作流，agents 分隔调查、候选捕获和正式写入。Codex 的 skills、agents 与清单是转换产物，不得成为独立设计源。
+Claude 根插件是手工维护的 canonical surface；skills 定义知识门与显式工作流，agents 分隔调查、候选捕获和正式写入。Codex 表面与 `plugins/antigravity/` 下的 Antigravity 原生插件均从 Claude 准源转换或同步，不得成为独立设计源。
 
-两种宿主都把确定性行为收敛到外部 `@tokenroll/llmdoc` CLI，不向消费仓库写依赖；需要复现时固定包版本，不能退回会解析错误包名的裸调用。
+三种宿主都把确定性行为收敛到外部 `@tokenroll/llmdoc` CLI，不向消费仓库写依赖；需要复现时固定包版本，不能退回会解析错误包名的裸调用。
 
-生命周期 hook 从消费仓库 cwd 启动，可能被同名 local/`file:` 依赖抢先满足，且无效 bin 不会自动回退 registry。hook 因此必须借助不同 identity 的 scoped npm alias 选择发布 runtime；alias 只隔离包解析，不改变 CLI 契约，也不用于日常交互。
+Antigravity 插件独立放置在 `plugins/antigravity/` 而非仓库根：因为仓库根 `agents/*.md` 使用 Claude 专属逗号字符串 `tools` 字段，会导致 Antigravity 加载器直接报 YAML 错误并跳过角色；独立子目录既能通过 `agy plugin install .../tree/main/plugins/antigravity` 干净安装，又能生成符合 Antigravity 规范的 `mainAgent: false` / `subagent: true` 角色（有意省略 `tools` 白名单以规避工具名失配挂起问题）并排除仓库其他非插件文件。
+
+生命周期 hook 在 Claude/Codex 中从消费仓库 cwd 启动，可能被同名 local/`file:` 依赖抢先满足，且无效 bin 不会自动回退 registry。hook 因此必须借助不同 identity 的 scoped npm alias 选择发布 runtime；alias 只隔离包解析，不改变 CLI 契约，也不用于日常交互。Antigravity 的 hook 进程工作目录则是插件目录本身、消费仓路径经 stdin JSON 传入，因此通过 `plugins/antigravity/scripts/llmdoc-hook.mjs` 读取工作区路径后仍经同一 npm alias 调用 `llmdoc hook session-start` 并封装为 `injectSteps` JSON（非 `llmdoc` 仓库快速返回 `{}`）。Antigravity 无 `PreCompact` 事件且其 `Stop` hook 只支持阻塞续跑，因此 Antigravity 插件有意只注册 `SessionStart`。
 
 SessionStart 默认同时输出状态信号与完整的最小 operating guidance，让宿主无需仓库配置也能恢复 retrieval gate、用户对齐、角色边界和 update 收尾约束。消费仓库可用 `llmdoc.config/v1` 或支持外部 `sources` 的 `llmdoc.config/v2`（以及 gitignored 的 `llmdoc.config.local.json`）关闭 guidance 或通过有序的 `startup.preload` 把指定本地/`@<alias>/` 正文直接带入冷启动 context。冷启动不对本地正文施加 llmdoc 预算，但对外部单条正文施加体积保护并以位于末尾的 completion marker 区分完整输出、部分跳过与宿主截断；只有完整 marker 可见时才承诺无需重复检索。compact 重入仅恢复配置文档 ID，不重新灌入正文。
 
 ## 生成与一致性不变量
 
-转换必须在临时副本生成后替换式同步，防止陈旧输出残留。宿主特有元数据可以不同，skill、agent 及其按需 reference 的实际指令正文必须与 Claude canonical 一致并保持可发现；startup config reference 与 init/prune/update 的条件路由也属于这项 parity，而不是可遗漏的辅助文档。
+转换与同步必须在临时副本生成后替换式落盘，防止陈旧输出残留。宿主特有元数据可以不同，skill、agent 及其按需 reference 的实际指令正文必须与 Claude canonical 一致并保持可发现；startup config reference 与 init/prune/update 的条件路由也属于这项 parity，而不是可遗漏的辅助文档。
 
-CI 必须同时检查生成面身份、指令/reference parity、可发现路径、front matter 语法和 lifecycle alias；语法有效不能替代跨宿主正文一致。人工复核只补 UI policy、知识拓扑与信任模型等无法机械等价判断的部分。
+CI 必须同时检查生成面身份、指令/reference parity、可发现路径、front matter 语法、lifecycle alias 以及 Antigravity 启动适配器的成功/降级路径（本机有 `agy` 时联动执行 `agy plugin validate --strict`）；语法有效不能替代跨宿主正文一致。人工复核只补 UI policy、知识拓扑与信任模型等无法机械等价判断的部分。
 
 hooks 位于共享插件根，一份配置供两种宿主使用；它们保持只读，且由安装宿主按自己的信任模型启用。CLI 成功启动后 hook 逻辑保持 fail-open：无法解释 JSON/schema 时使用默认 guidance，schema 有效但 preload 无效时保留 `remindSkill` 并只跳过 preload，规范化重复项则去重后继续。进程启动前的 npm 解析或 registry 失败不受这层保护；保留 alias 启动边界是避免本地同名依赖把错误暴露在宿主生命周期中的必要条件。

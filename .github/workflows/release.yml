@@ -41,6 +41,7 @@ jobs:
           npm run build
           npm run validate:dogfood
           npm run check:prompts
+          npm run check:antigravity
 
       - name: Verify release versions
         shell: bash
@@ -51,12 +52,14 @@ jobs:
           root_version="$(node -p "require('./package.json').version")"
           claude_version="$(node -p "require('./.claude-plugin/plugin.json').version")"
           codex_version="$(node -p "require('./.codex-plugin/plugin.json').version")"
+          antigravity_version="$(node -p "require('./plugins/antigravity/plugin.json').version")"
           # acplugin 以 marketplace.json 的 plugins[].version 为插件版本来源,漏 bump 曾导致生成物版本漂移
           marketplace_version="$(node -p "require('./.claude-plugin/marketplace.json').plugins[0].version")"
           test "${cli_version}" = "${expected}"
           test "${root_version}" = "${expected}"
           test "${claude_version}" = "${expected}"
           test "${codex_version}" = "${expected}"
+          test "${antigravity_version}" = "${expected}"
           test "${marketplace_version}" = "${expected}"
 
       - name: Pack npm and plugin artifacts

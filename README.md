@@ -51,6 +51,21 @@ Codex session in the repository and ask:
 Use the llmdoc:init skill to initialize this repository.
 ```
 
+### Antigravity (`agy` CLI / App / IDE)
+
+Install the plugin from GitHub and check that it appears in the plugin list.
+
+```sh
+agy plugin install https://github.com/TokenRollAI/llmdoc/tree/main/plugins/antigravity
+agy plugin list
+```
+
+For a local checkout, run `agy plugin install ./plugins/antigravity` from the repository root.
+Open your project and run `/init` to create its knowledge base. When a workspace already
+contains `llmdoc/`, SessionStart loads its context automatically. Ask the `llmdoc` skill
+about a design decision, or run `/update` to review recent changes.
+[Antigravity plugin guide](https://antigravity.google/docs/plugins)
+
 ### Repository that already has `llmdoc/`
 
 Open its knowledge map immediately—no plugin is required for direct CLI use:
@@ -245,7 +260,7 @@ repository.
 
 The repository root is a private development workspace; the public consumer
 artifact is the `@tokenroll/llmdoc` CLI. Claude skills and agents are canonical,
-while the Codex surface is generated—do not hand-edit generated packaging.
+and the Codex and Antigravity plugins mirror their instructions.
 
 ```bash
 npm install
@@ -255,10 +270,11 @@ npm test
 npm run build
 npm run validate:dogfood
 npm run check:prompts
+npm run check:antigravity
 ```
 
 Install from the repository root so the local `llmdoc` bin is linked before
-validation. Changes to CLI semantics must remain synchronized with both host
+validation. Changes to CLI semantics must remain synchronized with all three host
 surfaces, the bilingual READMEs, design documentation, and dogfood knowledge.
 
 ## Reference

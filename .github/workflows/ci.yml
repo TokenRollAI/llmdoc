@@ -52,6 +52,9 @@ jobs:
       - name: Validate dogfood knowledge
         run: npm run validate:dogfood
 
+      - name: Check Antigravity plugin
+        run: npm run check:antigravity
+
       - name: Check prompt and hook budgets
         run: npm run check:prompts
 

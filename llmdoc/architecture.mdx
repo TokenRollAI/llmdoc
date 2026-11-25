@@ -18,6 +18,7 @@ code:
     - .claude-plugin/*.json
     - .agents/plugins/*.json
     - .codex-plugin/*.json
+    - plugins/antigravity/plugin.json
     - package.json
     - README.md
     - README.zh-CN.md
@@ -40,7 +41,7 @@ llmdoc 不是仓库的压缩副本，而是让任务在广泛探索前抵达正�
 
 - `cli/` 承担扫描、schema 校验、检索、git revision、delta、hook 与安全改写等确定性能力。
 - Claude 根表面承担判断性工作流：operating/workflow skills 决定何时行动，`investigator`、`reflector`、`recorder` 分别调查事实、捕获强反思信号、维护稳定知识。
-- Codex 表面由 Claude canonical surface 转换而来，不是第二份手工真相源。
+- Codex 与 Antigravity 表面均由 Claude canonical surface 派生或同步而来，不是独立手工真相源。
 - `llmdoc/` 是仓库自身的 dogfood 知识面，只保存源码不容易低成本还原的工程语义。
 
 核心分工是“提示词做判断，CLI 做机械”：prompt 不复制 diff、schema 或 git 逻辑；稳定正文也不复制命令、文件和测试库存。

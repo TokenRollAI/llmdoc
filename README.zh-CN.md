@@ -45,6 +45,20 @@ codex
 Use the llmdoc:init skill to initialize this repository.
 ```
 
+### Antigravity（`agy` CLI / App / IDE）
+
+从 GitHub 安装插件，然后查看已安装列表中是否出现 `llmdoc`。
+
+```sh
+agy plugin install https://github.com/TokenRollAI/llmdoc/tree/main/plugins/antigravity
+agy plugin list
+```
+
+也可以在本地克隆的仓库根目录运行 `agy plugin install ./plugins/antigravity`。
+打开项目，用 `/init` 初始化知识库。进入已有 `llmdoc/` 的工作区时，SessionStart
+会自动加载上下文。你可以直接说「用 llmdoc 找到这次改动涉及的设计决策」，也可以
+运行 `/update` 复核近期变更。[Antigravity 插件指南](https://antigravity.google/docs/plugins)
+
 ### 已有 `llmdoc/` 的仓库
 
 可以直接打开知识地图——只使用 CLI 不需要先安装插件：
@@ -214,8 +228,7 @@ Codex CLI 中运行 `/plugins` 浏览 Plugins Directory。安装后请打开新�
 ## 开发本仓库
 
 仓库根目录是私有开发工作区；面向消费方的公开产物是 `@tokenroll/llmdoc` CLI。
-Claude skills 和 agents 是准源，Codex surface 是生成产物——不要手工编辑生成的
-打包文件。
+Claude skills 和 agents 是准源，Codex 和 Antigravity 插件从这里同步指令。
 
 ```bash
 npm install
@@ -225,10 +238,11 @@ npm test
 npm run build
 npm run validate:dogfood
 npm run check:prompts
+npm run check:antigravity
 ```
 
 请从仓库根目录安装依赖，确保本地 `llmdoc` bin 在校验前已建立链接。CLI
-语义变化必须与两端宿主 surface、双语 README、设计文档和 dogfood knowledge
+语义变化必须与三个宿主的插件、双语 README、设计文档和 dogfood knowledge
 保持同步。
 
 ## 参考
