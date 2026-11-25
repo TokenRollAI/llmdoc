@@ -1,4 +1,5 @@
 import { FRAGMENT_TOKEN_THRESHOLD } from "../lib/constants.js";
+import { isSourceRef } from "../lib/source-id.js";
 import { computeGrowthState } from "../lib/state.js";
 import { loadWorkspace } from "../lib/workspace.js";
 import { ParsedDocument } from "../types.js";
@@ -27,7 +28,9 @@ export function runPrune(options: PruneOptions): unknown {
   const growth = computeGrowthState(workspace);
   const duplicateCandidates = findDuplicateCandidates(workspace.documents);
   const mergeCandidates = findMergeCandidates(workspace.documents);
-  const startupPreloads = workspace.llmdocConfig.preloadPaths.map((preloadPath) => `llmdoc/${preloadPath}`);
+  const startupPreloads = workspace.llmdocConfig.preloadPaths.map((preloadPath) =>
+    isSourceRef(preloadPath) ? preloadPath : `llmdoc/${preloadPath}`
+  );
 
   if (options.json) {
     return {

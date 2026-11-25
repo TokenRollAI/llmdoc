@@ -1,4 +1,5 @@
 .llmdoc-tmp/
+llmdoc.config.local.json
 node_modules/
 cli/dist/
 cli/coverage/

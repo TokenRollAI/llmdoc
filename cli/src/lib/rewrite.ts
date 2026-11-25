@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import matter from "gray-matter";
 
 import { DocumentFrontmatter, ParsedDocument } from "../types.js";
+import { stringifyYamlFrontmatter } from "./frontmatter.js";
 import { resolveDocLink } from "./markdown.js";
 
 export interface MoveMapping {
@@ -12,7 +12,12 @@ export interface MoveMapping {
 
 export function updateDocumentForMove(document: ParsedDocument, mapping: MoveMapping[]): string {
   const frontmatter: DocumentFrontmatter = structuredClone(document.frontmatter);
-  frontmatter.relations = updateRelations(frontmatter.relations, mapping);
+  const nextRelations = updateRelations(frontmatter.relations, mapping);
+  if (nextRelations) {
+    frontmatter.relations = nextRelations;
+  } else {
+    delete frontmatter.relations;
+  }
 
   let body = document.body;
   body = rewriteMarkdownLinks({
@@ -22,7 +27,7 @@ export function updateDocumentForMove(document: ParsedDocument, mapping: MoveMap
     mapping
   });
 
-  return matter.stringify(body, frontmatter);
+  return stringifyYamlFrontmatter(frontmatter as unknown as Record<string, unknown>, body);
 }
 
 function updateRelations(

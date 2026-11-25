@@ -1,4 +1,5 @@
 import { CliError } from "../lib/errors.js";
+import { isSourceRef } from "../lib/source-id.js";
 import { updateMetaRevisions, writeMeta } from "../lib/state.js";
 import { loadWorkspace } from "../lib/workspace.js";
 
@@ -10,6 +11,11 @@ interface FingerprintOptions {
 }
 
 export function runFingerprint(options: FingerprintOptions): unknown {
+  for (const value of options.update ?? []) {
+    if (isSourceRef(value)) {
+      throw new CliError(`External source documents (@...) are read-only and cannot be fingerprinted: ${value}`);
+    }
+  }
   const workspace = loadWorkspace(options.cwd);
   const targetPaths = options.update?.map((value) => (value.startsWith("llmdoc/") ? value.slice("llmdoc/".length) : value)) ?? [];
 

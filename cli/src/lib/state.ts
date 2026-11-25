@@ -4,7 +4,7 @@ import { DocumentImpact, GitState, MetaLedger, ParsedDocument, WorkspaceData } f
 import { canAdvanceRevisions, gitCommitExists, readChangedPathsSince, readGitState } from "./git.js";
 import { normalizeRepoRelativePath } from "./fs.js";
 import { matchesCodePathPattern } from "./search.js";
-import { LLMDOC_CONFIG_FILENAME } from "./config.js";
+import { LLMDOC_CONFIG_FILENAME, LLMDOC_LOCAL_CONFIG_FILENAME } from "./config.js";
 
 export interface ScopeFilter {
   topics: Set<string>;
@@ -333,6 +333,7 @@ export function loadIgnorePatterns(rootDir: string): string[] {
 export function isImplementationSurfacePath(repoRelativePath: string, ignorePatterns: string[] = []): boolean {
   if (
     repoRelativePath === LLMDOC_CONFIG_FILENAME ||
+    repoRelativePath === LLMDOC_LOCAL_CONFIG_FILENAME ||
     repoRelativePath.startsWith("llmdoc/") ||
     repoRelativePath.startsWith(".llmdoc-tmp/")
   ) {

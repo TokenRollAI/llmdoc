@@ -6,3 +6,14 @@ export const CACHE_DIR = ".llmdoc-tmp/cache";
 export const SEARCH_CACHE_FILE = "search-index.json";
 export const FRAGMENT_TOKEN_THRESHOLD = 180;
 export const DUPLICATE_SIMILARITY_THRESHOLD = 0.72;
+
+export const DEFAULT_SOURCE_REFRESH = "24h";
+export const DEFAULT_SOURCE_REFRESH_MS = 24 * 60 * 60 * 1000;
+export const DEFAULT_SOURCE_GIT_TIMEOUT_MS = 15_000;
+export const DEFAULT_SOURCE_COLD_WALL_TIMEOUT_MS = 25_000;
+export const DEFAULT_SOURCE_MAX_RETRIES = 3;
+export const DEFAULT_SOURCE_COOLDOWN_MS = 5 * 60 * 1000;
+export const DEFAULT_SOURCE_LOCK_STALE_MS = 120_000;
+export const MAX_SOURCE_DOCUMENTS = 500;
+export const MAX_SOURCE_DOCUMENT_BYTES = 256 * 1024;
+export const MAX_EXTERNAL_PRELOAD_BYTES = 128 * 1024;

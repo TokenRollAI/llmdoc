@@ -1,17 +1,52 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://llmdoc.tokenroll.ai/schemas/config.schema.json",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["schema"],
-  "properties": {
-    "$schema": {
-      "type": "string"
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema"],
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "schema": {
+          "type": "string",
+          "const": "llmdoc.config/v1"
+        },
+        "startup": {
+          "$ref": "#/$defs/startup"
+        }
+      }
     },
-    "schema": {
-      "type": "string",
-      "const": "llmdoc.config/v1"
-    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema"],
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "schema": {
+          "type": "string",
+          "const": "llmdoc.config/v2"
+        },
+        "sources": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/sourceEntry"
+          }
+        },
+        "startup": {
+          "$ref": "#/$defs/startup"
+        }
+      }
+    }
+  ],
+  "$defs": {
     "startup": {
       "type": "object",
       "additionalProperties": false,
@@ -29,6 +64,48 @@
           "default": []
         }
       }
+    },
+    "sourceEntry": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["git"],
+          "properties": {
+            "git": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ref": {
+              "type": "string",
+              "minLength": 1
+            },
+            "dir": {
+              "type": "string",
+              "minLength": 1
+            },
+            "refresh": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*[mhd]$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path"],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "dir": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
     }
   }
 }

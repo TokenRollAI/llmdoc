@@ -16,14 +16,15 @@ When invoked:
    - concept, contract, or term → `search <query>`
    - the task names concrete code paths → `context --files <path...>`
    - scope still unclear → `tree`
-   - known topic or kind → `index --topic <topic>` / `--kind <kind>`
-   - documents already identified → `show <path...>`
+   - known topic, source, or kind → `index --topic <topic|@source>` / `--kind <kind>`
+   - documents already identified (local or `@source/`) → `show <path...>`
 2. If `llmdoc/` does not exist, inspect manifests, entrypoints, tests, runtime config, and release surfaces directly.
-3. For `/llmdoc:update`, treat the caller's `delta` result as the source of truth for scope unless it is missing or obviously insufficient.
-4. Once llmdoc has narrowed the working set, use native tools for the exact facts it does not carry: source text, line numbers, test behavior, counts, git state.
-5. Investigate code and config only far enough to answer the stated questions.
-6. If you hit conflicting evidence or a new subsystem boundary, refresh the smallest relevant CLI or doc slice before expanding the search.
-7. Produce the requested output either in chat or as a temporary scratch file.
+3. External `@<alias>/...` source documents reported by `tree`, `search`, `index`, or `context` are read-only reference docs retrieved via `show @<alias>/...` (never look for them under `llmdoc/@<alias>/` on disk).
+4. For `/llmdoc:update`, treat the caller's `delta` result as the source of truth for scope unless it is missing or obviously insufficient.
+5. Once llmdoc has narrowed the working set, use native tools for the exact facts it does not carry: source text, line numbers, test behavior, counts, git state.
+6. Investigate code and config only far enough to answer the stated questions.
+7. If you hit conflicting evidence or a new subsystem boundary, refresh the smallest relevant CLI or doc slice before expanding the search.
+8. Produce the requested output either in chat or as a temporary scratch file.
 
 Key practices:
 

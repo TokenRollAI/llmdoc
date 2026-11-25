@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { assertDocKindMatchesShape, parseDocTargetShape } from "../lib/doc-shape.js";
 import { CliError } from "../lib/errors.js";
 import { findProjectRoot, normalizeRepoRelativePath, resolveInsideRoot } from "../lib/fs.js";
+import { isSourceRef } from "../lib/source-id.js";
 import { writeMeta } from "../lib/state.js";
 import { loadWorkspace, validateWorkspace } from "../lib/workspace.js";
 
@@ -22,6 +23,9 @@ export function runAdopt(options: AdoptOptions): unknown {
   }
 
   const llmdocPaths = options.paths.map((input) => {
+    if (isSourceRef(input)) {
+      throw new CliError(`External source documents (@...) are read-only and cannot be adopted: ${input}`);
+    }
     const repoRelativePath = normalizeRepoRelativePath(input.startsWith("llmdoc/") ? input : `llmdoc/${input}`);
     if (!repoRelativePath.startsWith("llmdoc/") || !repoRelativePath.endsWith(".mdx")) {
       throw new CliError(`adopt can register only .mdx documents under llmdoc/: ${input}`);

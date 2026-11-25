@@ -49,6 +49,8 @@ V3 document model:
 - Below the root, use exactly one topic directory level. Topics are plain directories: no `index.mdx` entry node anywhere — topic summaries are aggregated by the CLI from document front matter.
 - Valid kinds are `architecture`, `guide`, and `reference`.
 - Document paths are IDs; do not invent parallel identifiers.
+- External `@<alias>/<path>` source documents declared in `llmdoc.config.json` are strictly read-only: local documents may list them in `relations.requires`, but never create, edit, `adopt`, or `mv` `@...` paths or create local topics starting with `@`.
+- When renaming, merging, or deleting a document referenced by `llmdoc.config.json` `startup.preload`, read `startup-config.md` from the installed llmdoc skill's `references/` directory and keep local preload entries in sync.
 - `code.paths` is the authoritative reverse-mapping surface from code to docs.
 - `relations` should capture prerequisite or neighboring docs without recreating a second routing tree.
 

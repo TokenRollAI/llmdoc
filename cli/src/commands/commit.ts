@@ -2,7 +2,8 @@ import { spawnSync } from "node:child_process";
 
 import { CliError } from "../lib/errors.js";
 import { findProjectRoot } from "../lib/fs.js";
-import { assertRevisionAdvancePreconditions, updateMetaRevisions, writeMeta } from "../lib/state.js";
+import { isSourceRef } from "../lib/source-id.js";
+import { assertRevisionAdvancePreconditions, readWorkspaceGitState, updateMetaRevisions, writeMeta } from "../lib/state.js";
 import { loadWorkspace, validateWorkspace } from "../lib/workspace.js";
 
 interface CommitOptions {
@@ -20,6 +21,11 @@ export function runCommit(options: CommitOptions): unknown {
   const rootDir = findProjectRoot(options.cwd);
 
   const preflightWorkspace = loadWorkspace(rootDir);
+  for (const value of options.verified ?? []) {
+    if (isSourceRef(value)) {
+      throw new CliError(`External source documents (@...) are read-only and cannot be passed to commit --verified: ${value}`);
+    }
+  }
   const verifiedPaths = uniquePaths(
     (options.verified ?? []).map((value) => (value.startsWith("llmdoc/") ? value.slice("llmdoc/".length) : value))
   );
@@ -30,6 +36,11 @@ export function runCommit(options: CommitOptions): unknown {
     if (!preflightWorkspace.documentsByLlmdocPath.has(docPath)) {
       throw new CliError(`Document does not exist: ${docPath}`);
     }
+  }
+
+  const preflightGit = readWorkspaceGitState(preflightWorkspace);
+  if (preflightGit.available && preflightGit.detached) {
+    throw new CliError("Cannot run commit on a detached HEAD. Create or switch to a branch first (e.g. `git checkout -b <branch>`).", 70);
   }
 
   const issues = validateWorkspace(preflightWorkspace);

@@ -3,17 +3,19 @@ import { Minimatch } from "minimatch";
 
 import { CACHE_DIR, SEARCH_CACHE_FILE } from "./constants.js";
 import { ensureDirectory, resolveInsideRoot } from "./fs.js";
+import { formatDocumentPath, matchesDocumentTopic } from "./source-id.js";
 import { ParsedDocument, WorkspaceData } from "../types.js";
 
 interface SearchCacheEntry {
   llmdocPath: string;
+  absolutePath?: string;
   mtimeMs: number;
   searchableText: string;
   wordCount: number;
 }
 
 interface SearchCacheFile {
-  version: 2;
+  version: 3;
   entries: Record<string, SearchCacheEntry>;
 }
 
@@ -69,9 +71,12 @@ export function searchDocuments(
 ): SearchResponse {
   const normalizedQuery = query.trim().toLowerCase();
   const lexicalTokens = tokenizeQuery(query).map((value) => ({ value, weight: 1 }));
-  const cache = loadSearchCache(workspace);
-  const filteredDocs = workspace.documents.filter((document) => {
-    if (filters?.topic && document.topic !== filters.topic) {
+  const allDocuments = [...workspace.documents, ...workspace.sourceDocuments];
+  // Persist only local workspace documents to the repository search cache so external private
+  // source bodies and ~/.llmdoc paths are never copied into the consumer repository.
+  const cache = loadSearchCache(workspace, workspace.documents);
+  const filteredDocs = allDocuments.filter((document) => {
+    if (filters?.topic && !matchesDocumentTopic(document, filters.topic)) {
       return false;
     }
     if (filters?.kind && document.frontmatter.kind !== filters.kind) {
@@ -124,7 +129,8 @@ function scoreDocuments(
   for (const token of tokens) {
     let count = 0;
     for (const document of documents) {
-      const searchableText = cache.entries[document.llmdocPath]?.searchableText ?? buildSearchableText(document);
+      const cacheKey = formatDocumentPath(document);
+      const searchableText = cache.entries[cacheKey]?.searchableText ?? buildSearchableText(document);
       if (searchableText.includes(token.value)) {
         count += 1;
       }
@@ -134,8 +140,9 @@ function scoreDocuments(
 
   return documents
     .map((document) => {
-      const searchableText = cache.entries[document.llmdocPath]?.searchableText ?? buildSearchableText(document);
-      const wordCount = cache.entries[document.llmdocPath]?.wordCount ?? countWords(searchableText);
+      const cacheKey = formatDocumentPath(document);
+      const searchableText = cache.entries[cacheKey]?.searchableText ?? buildSearchableText(document);
+      const wordCount = cache.entries[cacheKey]?.wordCount ?? countWords(searchableText);
       let score = 0;
       let matchedTokenCount = 0;
 
@@ -191,25 +198,37 @@ function normalizeCodePathPattern(pattern: string): string {
   return normalized.replace(/\/+$/, "");
 }
 
-function loadSearchCache(workspace: WorkspaceData): SearchCacheFile {
+function loadSearchCache(workspace: WorkspaceData, documents: readonly ParsedDocument[]): SearchCacheFile {
   const next: SearchCacheFile = {
-    version: 2,
+    version: 3,
     entries: {}
   };
   const cachePath = resolveCachePath(workspace);
   const existing = cachePath ? readCache(cachePath) : null;
 
-  for (const document of workspace.documents) {
-    const stats = fs.statSync(document.absolutePath);
-    const cachedEntry = existing?.entries[document.llmdocPath];
-    if (existing?.version === 2 && cachedEntry && cachedEntry.mtimeMs === stats.mtimeMs) {
-      next.entries[document.llmdocPath] = cachedEntry;
+  for (const document of documents) {
+    let mtimeMs = 0;
+    try {
+      mtimeMs = fs.statSync(document.absolutePath).mtimeMs;
+    } catch {
+      continue;
+    }
+    const cacheKey = formatDocumentPath(document);
+    const cachedEntry = existing?.entries[cacheKey];
+    if (
+      existing?.version === 3 &&
+      cachedEntry &&
+      cachedEntry.mtimeMs === mtimeMs &&
+      cachedEntry.absolutePath === document.absolutePath
+    ) {
+      next.entries[cacheKey] = cachedEntry;
       continue;
     }
     const searchableText = buildSearchableText(document);
-    next.entries[document.llmdocPath] = {
-      llmdocPath: document.llmdocPath,
-      mtimeMs: stats.mtimeMs,
+    next.entries[cacheKey] = {
+      llmdocPath: cacheKey,
+      absolutePath: document.absolutePath,
+      mtimeMs,
       searchableText,
       wordCount: countWords(searchableText)
     };

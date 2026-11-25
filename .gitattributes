@@ -1,0 +1,4 @@
+/.agent export-ignore
+/.agent/** export-ignore
+/.claude export-ignore
+/.claude/** export-ignore

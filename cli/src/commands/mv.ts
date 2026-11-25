@@ -8,6 +8,7 @@ import { gitMove, gitRestorePaths } from "../lib/git.js";
 import { MoveMapping, updateDocumentForMove, writeFileIfChanged } from "../lib/rewrite.js";
 import { loadWorkspace } from "../lib/workspace.js";
 import { LLMDOC_CONFIG_FILENAME, rewriteStartupPreloadForMove } from "../lib/config.js";
+import { isSourceRef } from "../lib/source-id.js";
 import { MetaLedger, ParsedDocument } from "../types.js";
 
 interface MoveOptions {
@@ -18,9 +19,16 @@ interface MoveOptions {
 }
 
 export function runMove(options: MoveOptions): unknown {
+  if (isSourceRef(options.from) || isSourceRef(options.to)) {
+    throw new CliError("External source documents (@...) are read-only and cannot be moved with mv.");
+  }
   const rootDir = findProjectRoot(options.cwd);
   const fromRepoPath = normalizeRepoRelativePath(options.from.startsWith("llmdoc/") ? options.from : `llmdoc/${options.from}`);
   const toRepoPath = normalizeRepoRelativePath(options.to.startsWith("llmdoc/") ? options.to : `llmdoc/${options.to}`);
+  const toFirstSegment = toRepoPath.startsWith("llmdoc/") ? toRepoPath.slice("llmdoc/".length).split("/")[0] : "";
+  if (toFirstSegment?.startsWith("@")) {
+    throw new CliError(`Local topic names cannot start with "@", which is reserved for external sources: ${toFirstSegment}`);
+  }
   const fromAbsolutePath = resolveInsideRoot(rootDir, fromRepoPath);
 
   if (!fromRepoPath.startsWith("llmdoc/") || !toRepoPath.startsWith("llmdoc/")) {
